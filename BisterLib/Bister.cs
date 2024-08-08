@@ -10,6 +10,9 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Data;
 using Microsoft.VisualBasic;
+using System.IO;
+using System.Collections.ObjectModel;
+using System.Xml.Linq;
 
 namespace EasyCFLib
 {
@@ -49,7 +52,7 @@ namespace EasyCFLib
         static Lazy<IBister> _lazy = new Lazy<IBister>(()=> new Bister());
         public static IBister Instance => _lazy.Value;
 
-        Dictionary<Type, IBisterGenerated> _typeToSerializer = new();
+        Dictionary<Type, IBisterGenerated> _typeToSerializer = new Dictionary<Type, IBisterGenerated>();
 
         /// <summary>
         /// If not empty, will dump the latest serialization class into the path, e.g. c:\temp\gen.cs
@@ -74,7 +77,7 @@ namespace EasyCFLib
         {
             string[] resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames();
             string clientProxyResourceName = resourceNames.First(res => res.Contains("BisterTemplate"));
-            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(clientProxyResourceName)!)
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(clientProxyResourceName))
             {
                 using (StreamReader reader = new StreamReader(stream))
                 {
@@ -83,11 +86,35 @@ namespace EasyCFLib
             }
         }
 
+        public static string GetFriendlyGenericTypeName(Type type)
+        {
+            if (!type.IsGenericType)
+            {
+                return type.FullName;
+            }
+
+            string typeName = type.Name;
+            int backtickIndex = typeName.IndexOf('`');
+            if (backtickIndex > 0)
+            {
+                typeName = typeName.Remove(backtickIndex);
+            }
+
+            Type[] genericArguments = type.GetGenericArguments();
+            string[] genericArgumentNames = new string[genericArguments.Length];
+            for (int i = 0; i < genericArguments.Length; i++)
+            {
+                genericArgumentNames[i] = GetFriendlyGenericTypeName(genericArguments[i]);
+            }
+
+            return $"{typeName}<{string.Join(", ", genericArgumentNames)}>";
+        }
+
         IBisterGenerated<T> GenerateSerializer<T>() where T : new()
         {
             IBisterGenerated<T> serializer;
             Type objType = typeof(T);
-            if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated? serTmp))
+            if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated serTmp))
             {
                 return (IBisterGenerated <T>)serTmp;
             }
@@ -95,11 +122,13 @@ namespace EasyCFLib
             StringBuilder sb = new StringBuilder();
             sb.Append(ReadServerTemplateFromResource());
 
-            
-            string serializerTypeName = $"Serializer{objType.Name}";
+            string friendlyTypeName = GetFriendlyGenericTypeName(objType);
+            sb.Replace("<<<TYPE_NAME>>>", friendlyTypeName);
+
+            string serializerTypeName = objType.IsGenericType? $"Serializer{objType.Name.Replace('`', '_')}" : $"Serializer{objType.Name}";
 
             sb.Replace("<<<SERIALIZER_TYPE_NAME>>>", serializerTypeName);
-            sb.Replace("<<<TYPE_NAME>>>", objType.Name);
+            
             sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
 
             GenerateSerializerBody(sb, objType);
@@ -111,9 +140,9 @@ namespace EasyCFLib
                 File.WriteAllText(@"c:\temp\serialize.cs", sb.ToString());
             }
 
-            Type genType = GenerateType(sb.ToString(), serializerTypeName, new() { objType, typeof(IBisterGenerated) });
+            Type genType = GenerateType(sb.ToString(), serializerTypeName, new List<Type>() { objType, typeof(IBisterGenerated) });
 
-            serializer = (IBisterGenerated<T>)Activator.CreateInstance(genType)!;
+            serializer = (IBisterGenerated<T>)Activator.CreateInstance(genType);
             _typeToSerializer[objType] = serializer;
             return serializer;
         }
@@ -138,7 +167,7 @@ namespace EasyCFLib
 
         private static void PropertyDeserializer(string indentation, PropertyInfo prop, StringBuilder sb)
         {
-            sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType!.Name}.{prop.Name}");
+            sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
 
             // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
             if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string))
@@ -153,7 +182,7 @@ namespace EasyCFLib
             else if (prop.PropertyType.IsEnum)
             {
                 Type underlytingType = Enum.GetUnderlyingType(prop.PropertyType);
-                string propType = prop.PropertyType.FullName!.Replace("+", ".");
+                string propType = prop.PropertyType.FullName.Replace("+", ".");
                 sb.AppendLine(indentation + $"instance.{prop.Name} = ({propType})br.{BinaryReaderMethod(Type.GetTypeCode(underlytingType))};");
             }
             else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
@@ -221,7 +250,7 @@ namespace EasyCFLib
             sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(short)) enumVal = br.ReadInt16();");
             sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(int)) enumVal = br.ReadInt32();");
             sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(long)) enumVal = br.ReadInt64();");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to read {prop.DeclaringType!.Name}.{prop.PropertyType.Name} \");");
+            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to read {prop.DeclaringType.Name}.{prop.PropertyType.Name} \");");
             sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue(instance.{prop.Name}, enumVal);");
         }
 
@@ -273,10 +302,7 @@ namespace EasyCFLib
             string indentation = "\t\t\t";
 
             // Estimate 8 bytes per property...simple huristic
-            StringBuilder sbBinaryWriter = new StringBuilder();
-            sbBinaryWriter.AppendLine(indentation+$"using var ms = new MemoryStream({props.Length * 8});");
-            sbBinaryWriter.AppendLine(indentation+"using var bw = new BinaryWriter(ms);");
-            sb.Replace("<<<CREATE_BINARY_WRITER>>>", sbBinaryWriter.ToString());
+            sb.Replace("<<<BINARY_WRITER_BUFFER_SIZE>>>", $"{props.Length * 8}");
 
             foreach (var prop in props)
             {
@@ -285,7 +311,6 @@ namespace EasyCFLib
                 if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
                 {
                     PropertySerializer(indentation + "\t\t",prop, sbSerializer);
-                    
                 }
             }
 
@@ -307,12 +332,12 @@ namespace EasyCFLib
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to serialize {prop.DeclaringType!.Name}.{prop.Name}\");");
+            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to serialize {prop.DeclaringType.Name}.{prop.Name}\");");
         }
 
         static void PropertySerializer(string indentation,PropertyInfo prop, StringBuilder sb)
         {
-            sb.AppendLine(indentation + $"// Serializing {prop.DeclaringType!.Name}.{prop.Name}");
+            sb.AppendLine(indentation + $"// Serializing {prop.DeclaringType.Name}.{prop.Name}");
             if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string))
             {
                 sb.AppendLine(indentation + $"bw.Write(instance.{prop.Name});");
@@ -413,7 +438,7 @@ namespace EasyCFLib
                     MetadataReference.CreateFromFile(typeof(Enum).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(ICollection<>).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(System.Collections.Hashtable).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Collection).Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(Collection<>).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(IEnumerable<>).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(IDictionary<,>).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(Dictionary<,>).Assembly.Location),

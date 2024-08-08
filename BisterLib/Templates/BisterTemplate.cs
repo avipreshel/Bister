@@ -41,7 +41,8 @@ namespace GeneratedNS
 
         public byte[] Serialize(<<<TYPE_NAME>>> instance)
         {
-<<<CREATE_BINARY_WRITER>>>
+            using var ms = new MemoryStream(<<<BINARY_WRITER_BUFFER_SIZE>>>);
+            using var bw = new BinaryWriter(ms);
             return Serialize(instance,ms, bw);
         }
 

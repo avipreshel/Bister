@@ -5,6 +5,8 @@ VisualStudioVersion = 17.10.35122.118
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BisterLib", "BisterLib\BisterLib.csproj", "{D405FD49-17AF-4D78-87ED-73A541834383}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BisterLib.UnitTest", "BisterLib.UnitTest\BisterLib.UnitTest.csproj", "{E69F077C-E8A3-4717-B6DB-5FF510D4FEB1}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -15,6 +17,10 @@ Global
 		{D405FD49-17AF-4D78-87ED-73A541834383}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D405FD49-17AF-4D78-87ED-73A541834383}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D405FD49-17AF-4D78-87ED-73A541834383}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E69F077C-E8A3-4717-B6DB-5FF510D4FEB1}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E69F077C-E8A3-4717-B6DB-5FF510D4FEB1}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E69F077C-E8A3-4717-B6DB-5FF510D4FEB1}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E69F077C-E8A3-4717-B6DB-5FF510D4FEB1}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
