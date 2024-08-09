@@ -2,9 +2,21 @@
 
 A binary serializer for C#, which is based on run time code generation, implemented in dotnet standard 2.0.
 
-Whenever the serialzier encounters a new type, it generates a run time serializer code to efficently serialize it to/from byte array.
+# Usage
+```cs
+SomeClass instance = new();
+// Serialize
+// Bister.Instance returns a Singelton instance of IBister, which means that Bister can easily fit with any dependency injection framework
+// The instance is Thread safe, lockless and can be shared by multiple threads, as the generated class is state-less.
+byte[] blob = Bister.Instance.Serialize<SomeClass>(instance);
 
-Note that this behavior means that the first usage per type will incur some single run-time cost, as it takes time to create the class code and compile it, in run time.
+// De-Serialize
+SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob);
+```
+# How does it work
+* It serialize only Public property fields that have a public get & set accessors
+* Bister also identifies Generic types, and is able to treat them accordingly
+* Whenever the serialzier encounters a new type, it generates a run time serializer code to efficently serialize it to/from byte array. The generated class is then cached for further usage. Note that this behavior means that the first usage per type will incur some single run-time cost, as it takes time to create the class code and compile it, in run time.
 The generated code is fully debug-able and easy to understand.
 
 # Advantage compared Json
@@ -18,19 +30,7 @@ The generated binary is not backward compatible, which means that using it in pe
 2) Save the byte array to File
 3) Modify the class structure, in any way
 4) Read the byte array from the file == This will fail!
-
-# Usage
-```cs
-SomeClass instance = new();
-// Serialize
-// Bister.Instance returns a Singelton instance of IBister, which means that Bister can easily fit with any dependency injection framework
-// The instance is Thread safe, lockless and can be shared by multiple threads, as the generated class is state-less.
-byte[] blob = Bister.Instance.Serialize<SomeClass>(instance);
-
-// De-Serialize
-SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob);
-```
-
+  
 # Benchmarks
 Done on a class that contains Dictionary<string,float> and List<string> fields.
 
