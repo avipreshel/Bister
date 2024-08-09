@@ -157,15 +157,7 @@ namespace BisterLib
 
         IBisterGenerated<T> GenerateSerializer<T>()
         {
-            Type objType = typeof(T);
-            if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated serTmp))
-            {
-                return (IBisterGenerated<T>)serTmp;
-            }
-            else
-            {
-                return (IBisterGenerated<T>)GenerateSerializer(objType);
-            }
+            return (IBisterGenerated<T>)GenerateSerializer(typeof(T));
         }
 
         private static void GenerateDeSerializerBody(StringBuilder sb, Type objType)
@@ -241,12 +233,12 @@ namespace BisterLib
             Type valType = prop.PropertyType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"int count{prop.Name} = br.ReadInt32();");
             sb.AppendLine(indentation + $"instance.{prop.Name} = new List<{valType.Name}>(count{prop.Name});");
-            if (valType == typeof(Enum))
+            if (valType.IsEnum || valType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"Type? enumType{prop.Name} = count{prop.Name} > 0? Type.GetType(br.ReadString()) : null;");
+                sb.AppendLine(indentation + $"Type enumType{prop.Name} = count{prop.Name} > 0? Type.GetType(br.ReadString()) : null;");
                 sb.AppendLine(indentation + $"for (int i = 0; i < count{prop.Name}; i++)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tinstance.{prop.Name}.Add((Enum)Enum.ToObject(enumType{prop.Name}!,br.ReadInt64()));");
+                sb.AppendLine(indentation + $"\tinstance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt64()));");
                 sb.AppendLine(indentation + "}");
             }
             else
@@ -407,11 +399,11 @@ namespace BisterLib
             sb.AppendLine(indentation + $"bw.Write((int)instance.{prop.Name}.Count);");
 
             Type keyType = prop.PropertyType.GenericTypeArguments[0];
-            if (keyType == typeof(Enum))
+            if (keyType.IsEnum || keyType == typeof(Enum))
             {
                 sb.AppendLine(indentation + $"if (instance.{prop.Name}.Count>0)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(instance.{prop.Name}[0].GetType().AssemblyQualifiedName!);");
+                sb.AppendLine(indentation + $"\tbw.Write(instance.{prop.Name}[0].GetType().AssemblyQualifiedName);");
                 sb.AppendLine(indentation + "}");
                 sb.AppendLine(indentation + $"foreach (var item in instance.{prop.Name})");
                 sb.AppendLine(indentation + "{");

@@ -6,6 +6,21 @@ using System.Threading.Tasks;
 
 namespace BisterLib.UnitTest
 {
+    public enum TestEnum
+    {
+        One,Two, Three
+    }
+
+    public class ClassWithAListOfEnum
+    {
+        public List<Enum> Prop { get; set; } = new List<Enum>();
+    }
+
+    public class ClassWithAListOfEnumExplicit
+    {
+        public List<TestEnum> Prop { get; set; } = new List<TestEnum>();
+    }
+
     public class ClassWithADictStringToInt
     {
         public Dictionary<string,int> Prop { get; set; }
