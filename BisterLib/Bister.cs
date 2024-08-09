@@ -16,37 +16,6 @@ using System.Xml.Linq;
 
 namespace BisterLib
 {
-    public interface IBister
-    {
-        string DebugPath { get; set; }
-        /// <summary>
-        /// Generated an optimized binary serializer on the fly or take a cached instance of one
-        /// </summary>
-        /// <typeparam name="T"></typeparam>
-        /// <returns></returns>
-        IBisterGenerated<T> GetSerializer<T>() where T : new ();
-    }
-
-    /// <summary>
-    /// This interface is needed just so we can cache all the generated serializers
-    /// </summary>
-    public interface IBisterGenerated
-    { }
-
-    /// <summary>
-    /// This interface will be implemented by the generated serializers
-    /// </summary>
-    public interface IBisterGenerated<T> : IBisterGenerated where T : new()
-    {
-        byte[] Serialize(T obj);
-
-        T Deserialize(byte[] buffer);
-
-        byte[] Serialize(T obj,MemoryStream ms,BinaryWriter bw);
-
-        T Deserialize(BinaryReader br);
-    }
-
     public class Bister : IBister
     {
         static Lazy<IBister> _lazy = new Lazy<IBister>(()=> new Bister());
@@ -61,17 +30,50 @@ namespace BisterLib
 
         private Bister() { }
 
-        public T Deserialize<T>(byte[] buffer) where T : new()
+        Type ReadTypeFromBlob(byte[] buffer)
         {
-            IBisterGenerated<T> serializer = GenerateSerializer<T>();
-            return serializer.Deserialize(buffer);
+            using (MemoryStream stream = new MemoryStream(buffer))
+            {
+                using (BinaryReader reader = new BinaryReader(stream))
+                {
+                    string typeName = reader.ReadString();
+                    return Type.GetType(typeName);
+                }
+            }
         }
 
-        public byte[] Serialize<T>(T obj) where T : new()
+        #region IBister
+        public T Deserialize<T>(byte[] buffer)
         {
-            IBisterGenerated<T> serializer = GenerateSerializer<T>();
-            return serializer.Serialize(obj);
+            if (typeof(T) == typeof(object))
+            {
+                Type realType = ReadTypeFromBlob(buffer);
+                IBisterGenerated serializer = GenerateSerializer(realType);
+                return (T)serializer.DeserializeObj(buffer);
+            }
+            else
+            {
+                IBisterGenerated<T> serializer = GenerateSerializer<T>();
+                return serializer.Deserialize(buffer);
+            }
         }
+
+        public byte[] Serialize<T>(T obj)
+        {
+            if (typeof(T) == typeof(object))
+            {
+                IBisterGenerated serializer = GenerateSerializer(obj.GetType());
+                return serializer.SerializeObj(obj);
+            }
+            else
+            {
+                IBisterGenerated<T> serializer = GenerateSerializer<T>();
+                return serializer.Serialize(obj);
+            }
+            
+        }
+
+        #endregion
 
         string ReadServerTemplateFromResource()
         {
@@ -110,35 +112,32 @@ namespace BisterLib
             return $"{typeName}<{string.Join(", ", genericArgumentNames)}>";
         }
 
-        IBisterGenerated<T> GenerateSerializer<T>() where T : new()
+        IBisterGenerated GenerateSerializer(Type objType)
         {
-            IBisterGenerated<T> serializer;
-            Type objType = typeof(T);
             if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated serTmp))
             {
-                return (IBisterGenerated <T>)serTmp;
+                return serTmp;
             }
 
             StringBuilder sb = new StringBuilder();
             sb.Append(ReadServerTemplateFromResource());
 
             string friendlyTypeName = GetFriendlyGenericTypeName(objType);
-            sb.Replace("<<<TYPE_NAME>>>", friendlyTypeName);
+            sb.Replace("___TYPE_NAME___", friendlyTypeName);
 
-            string serializerTypeName = objType.IsGenericType? $"Serializer{objType.Name.Replace('`', '_')}" : $"Serializer{objType.Name}";
+            string serializerTypeName = objType.IsGenericType ? $"Serializer{objType.Name.Replace('`', '_')}" : $"Serializer{objType.Name}";
 
-            sb.Replace("<<<SERIALIZER_TYPE_NAME>>>", serializerTypeName);
-            
+            sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
+
             // If the user is trying to generate serializer for generic type, no need to have any "using"
             if (objType.Namespace.StartsWith("System"))
             {
                 sb.Replace("<<<USINGS>>>", string.Empty);
             }
-            else 
+            else
             {
                 sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
             }
-            
 
             GenerateSerializerBody(sb, objType);
 
@@ -151,9 +150,22 @@ namespace BisterLib
 
             Type genType = GenerateType(sb.ToString(), serializerTypeName, new List<Type>() { objType, typeof(IBisterGenerated) });
 
-            serializer = (IBisterGenerated<T>)Activator.CreateInstance(genType);
+            var serializer = (IBisterGenerated)Activator.CreateInstance(genType);
             _typeToSerializer[objType] = serializer;
             return serializer;
+        }
+
+        IBisterGenerated<T> GenerateSerializer<T>()
+        {
+            Type objType = typeof(T);
+            if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated serTmp))
+            {
+                return (IBisterGenerated<T>)serTmp;
+            }
+            else
+            {
+                return (IBisterGenerated<T>)GenerateSerializer(objType);
+            }
         }
 
         private static void GenerateDeSerializerBody(StringBuilder sb, Type objType)
@@ -171,7 +183,7 @@ namespace BisterLib
                 }
             }
 
-            sb.Replace("<<<DESERIALIZER_BODY>>>", sbSerializer.ToString());
+            sb.Replace("___DESERIALIZER_BODY___", sbSerializer.ToString());
         }
 
         private static void PropertyDeserializer(string indentation, PropertyInfo prop, StringBuilder sb)
@@ -311,7 +323,7 @@ namespace BisterLib
             string indentation = "\t\t\t";
 
             // Estimate 8 bytes per property...simple huristic
-            sb.Replace("<<<BINARY_WRITER_BUFFER_SIZE>>>", $"{props.Length * 8}");
+            sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"{props.Length * 8}");
 
             foreach (var prop in props)
             {
@@ -323,7 +335,7 @@ namespace BisterLib
                 }
             }
 
-            sb.Replace("<<<SERIALIZER_BODY>>>", sbSerializer.ToString());
+            sb.Replace("___SERIALIZER_BODY___", sbSerializer.ToString());
         }
 
         static void PropertySerializerEnum(string indentation, PropertyInfo prop, StringBuilder sb)
@@ -416,15 +428,6 @@ namespace BisterLib
             
         }
 
-
-        /// <summary>
-        /// Takes in text, and output a type.
-        /// </summary>
-        /// <param name="theCode"></param>
-        /// <param name="expectedTypeName"></param>
-        /// <param name="domainDependencies">If the type has any dependencies which are NOT part of the dotnet runtime, need to mention it here</param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
         private static Type GenerateType(string theCode, string expectedTypeName,List<Type> domainDependencies)
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(theCode);
@@ -478,11 +481,6 @@ namespace BisterLib
 
                 return myClassType;
             }
-        }
-
-        public IBisterGenerated<T> GetSerializer<T>() where T : new()
-        {
-            return GenerateSerializer<T>();
         }
     }
 }

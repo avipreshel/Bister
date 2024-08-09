@@ -7,10 +7,11 @@ using BisterLib;
 
 namespace GeneratedNS
 {
-    internal class <<<SERIALIZER_TYPE_NAME>>> : IBisterGenerated<<<<TYPE_NAME>>>>
+    internal class ___SERIALIZER_TYPE_NAME___ : IBisterGenerated<___TYPE_NAME___>
     {
-            public byte[] Serialize(<<<TYPE_NAME>>> instance, MemoryStream ms, BinaryWriter bw)
+            public byte[] Serialize(___TYPE_NAME___ instance, MemoryStream ms, BinaryWriter bw)
             {
+                bw.Write(instance.GetType().AssemblyQualifiedName);
                 if (instance == null)
                 {
                     bw.Write((byte)0);
@@ -18,14 +19,15 @@ namespace GeneratedNS
                 else
                 {
                     bw.Write((byte)1);
-<<<SERIALIZER_BODY>>>
+___SERIALIZER_BODY___
                 }
                 bw.Flush();
                 return ms.ToArray();
             }
 
-        public <<<TYPE_NAME>>> Deserialize(BinaryReader br)
+        public ___TYPE_NAME___ Deserialize(BinaryReader br)
         {
+            _ = br.ReadString(); // Reads the type name
             byte isNull = br.ReadByte();
             if (isNull == 0)
             {
@@ -33,24 +35,42 @@ namespace GeneratedNS
             }
             else
             {
-                <<<TYPE_NAME>>> instance = new <<<TYPE_NAME>>>();
-<<<DESERIALIZER_BODY>>>
+                ___TYPE_NAME___ instance = new ___TYPE_NAME___();
+___DESERIALIZER_BODY___
                 return instance;
             }
         }
 
-        public byte[] Serialize(<<<TYPE_NAME>>> instance)
+        public byte[] Serialize(___TYPE_NAME___ instance)
         {
-            using var ms = new MemoryStream(<<<BINARY_WRITER_BUFFER_SIZE>>>);
-            using var bw = new BinaryWriter(ms);
-            return Serialize(instance,ms, bw);
+            using (var ms = new MemoryStream(___BINARY_WRITER_BUFFER_SIZE___))
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    return Serialize(instance, ms, bw);
+                }
+            }
         }
 
-        public <<<TYPE_NAME>>> Deserialize(byte[] buffer)
+        public ___TYPE_NAME___ Deserialize(byte[] buffer)
         {
-            using var ms = new MemoryStream(buffer);
-            using var br = new BinaryReader(ms);
-            return Deserialize(br);
+            using (var ms = new MemoryStream(buffer))
+            {
+                using (var br = new BinaryReader(ms))
+                {
+                    return Deserialize(br);
+                }
+            }
+        }
+
+        public byte[] SerializeObj(object obj)
+        {
+            return Serialize((___TYPE_NAME___)obj);
+        }
+
+        public object DeserializeObj(byte[] buffer)
+        {
+            return (object)Deserialize(buffer);
         }
     }
 }
