@@ -13,7 +13,25 @@ byte[] blob = Bister.Instance.Serialize<SomeClass>(instance);
 // De-Serialize
 SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob);
 ```
+# Wish to see the generated class? no problem...
+```cs
+
+Bister.Instance.DebugPath = @"c:\temp\generatedcode.cs"; // Will dump the generated code into this file
+SomeClass instance = new();
+byte[] blob = Bister.Instance.Serialize<SomeClass>(instance); // Dump will happen here
+SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob); // No dump here, as class was already generated in previous call to Serialize<SomeClass>
+```
+
 # How does it work
+* It uses run time reflection to discover the incoming type, and then performs following steps
+  1. Discover all the Public property fields that have a public get & set accessors
+  2. For each property, it generates code stringthat serializes it
+  3. The string is then combined into a class which implement a certain internal interface
+  4. String is sent to Roslyn, the compiler API
+  5. An assembly is created, and it contains the newly defined serializer type
+  6. An instance is create from that type
+  7. The instance is cached, and then used to perform the actual serialization
+     
 * It serialize only Public property fields that have a public get & set accessors
 * Bister also identifies Generic types, and is able to treat them accordingly
 * Whenever the serialzier encounters a new type, it generates a run time serializer code to efficently serialize it to/from byte array. The generated class is then cached for further usage. Note that this behavior means that the first usage per type will incur some single run-time cost, as it takes time to create the class code and compile it, in run time.
