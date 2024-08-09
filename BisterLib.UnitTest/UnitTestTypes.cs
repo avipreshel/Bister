@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -9,6 +10,34 @@ namespace BisterLib.UnitTest
     public enum TestEnum
     {
         One,Two, Three
+    }
+
+    public class ClassWithPrimitivesOnly
+    {
+        public TestEnum Prop { get; set; }
+
+        public int Prop_int { get; set; }
+
+        public uint Prop_uint { get; set; }
+
+        public byte Prop_byte { get; set; }
+
+        public sbyte Prop_sbyte { get; set; }
+
+        public string Prop_string { get; set; } = string.Empty;
+
+        public short Prop_short { get; set; }
+        public ushort Prop_ushort { get; set; }
+
+        public long Prop_long { get; set; }
+        public ulong Prop_ulong { get; set; }
+        public decimal Prop_decimal { get; set; }
+        public char Prop_char { get; set; }
+        public bool Prop_bool { get; set; }
+
+        public Half Prop_half { get; set; }
+        public float Prop_float { get; set; }
+        public double Prop_double { get; set; }
     }
 
     public class ClassWithAListOfEnum
