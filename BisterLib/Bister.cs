@@ -14,7 +14,7 @@ using System.IO;
 using System.Collections.ObjectModel;
 using System.Xml.Linq;
 
-namespace EasyCFLib
+namespace BisterLib
 {
     public interface IBister
     {
@@ -129,7 +129,16 @@ namespace EasyCFLib
 
             sb.Replace("<<<SERIALIZER_TYPE_NAME>>>", serializerTypeName);
             
-            sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
+            // If the user is trying to generate serializer for generic type, no need to have any "using"
+            if (objType.Namespace.StartsWith("System"))
+            {
+                sb.Replace("<<<USINGS>>>", string.Empty);
+            }
+            else 
+            {
+                sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
+            }
+            
 
             GenerateSerializerBody(sb, objType);
 
@@ -432,6 +441,7 @@ namespace EasyCFLib
                 $"{expectedTypeName}.asm",
                 new[] { syntaxTree },
                 new[] {
+                    MetadataReference.CreateFromFile(Assembly.Load("netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51").Location),
                     MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
                     MetadataReference.CreateFromFile(Path.GetDirectoryName(typeof(object).Assembly.Location) + @"\System.Runtime.dll"),
                     MetadataReference.CreateFromFile(Path.GetDirectoryName(typeof(object).Assembly.Location) + @"\System.Collections.dll"),
