@@ -1,11 +1,24 @@
 # Bister
 
-A binary serialize for C# which is based on run time code generation, implemented in dotnet standard 2.0.
+A binary serializer for C#, which is based on run time code generation, implemented in dotnet standard 2.0.
 
 Whenever the serialzier encounters a new type, it generates a run time serializer code to efficently serialize it to/from byte array.
 
 Note that this behavior means that the first usage per type will incur some single run-time cost, as it takes time to create the class code and compile it, in run time.
 The generated code is fully debug-able and easy to understand.
+
+# Advantage compared Json
+* Better performance (See benchmarks below)
+* Usage of binary means that the serialized class consumes less bytes
+* Ability to handle Enum type, including List<Enum>
+
+# Disadvantage compared to Json
+The generated binary is not backward compatible, which means that using it in persistency scenarios is risky:
+1) Serialzie a class
+2) Save the byte array to File
+3) Modify the class structure, in any way
+4) Read the byte array from the file == This will fail!
+
 # Usage
 ```cs
 SomeClass instance = new();
