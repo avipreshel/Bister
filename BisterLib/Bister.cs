@@ -60,17 +60,8 @@ namespace BisterLib
 
         public byte[] Serialize<T>(T obj)
         {
-            if (typeof(T) == typeof(object))
-            {
-                var serializer = GenerateSerializer(obj.GetType());
-                return serializer.SerializeObj(obj);
-            }
-            else
-            {
-                var serializer = GenerateSerializer<T>();
-                return serializer.Serialize(obj);
-            }
-            
+            var serializer = GenerateSerializer<T>();
+            return serializer.Serialize(obj);
         }
 
         #endregion
