@@ -28,12 +28,11 @@ SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob); // No dum
 # How does it work
 * It uses run time reflection to discover the incoming type, and then performs following steps
   1. Discover all the Public property fields that have a public get & set accessors
-  2. For each property, it generates code stringthat serializes it
-  3. The string is then combined into a class which implement a certain internal interface
-  4. String is sent to Roslyn, the compiler API
-  5. An assembly is created, and it contains the newly defined serializer type
-  6. An instance is create from that type
-  7. The instance is cached, and then used to perform the actual serialization
+  2. For each property, it generates code text (StringBuilder) that can serializes it
+  3. StringBuilder output is sent to Roslyn (dotnet compiler)
+  4. An assembly is created during run time, and it contains the newly defined serializer type
+  5. An instance is create from that type
+  6. The instance is cached in the Singelton of Bister, and then used to perform the actual serialization
      
 * It serialize only Public property fields that have a public get & set accessors
 * Bister also identifies Generic types, and is able to treat them accordingly
