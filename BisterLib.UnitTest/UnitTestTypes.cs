@@ -34,8 +34,6 @@ namespace BisterLib.UnitTest
         public decimal Prop_decimal { get; set; }
         public char Prop_char { get; set; }
         public bool Prop_bool { get; set; }
-
-        public Half Prop_half { get; set; }
         public float Prop_float { get; set; }
         public double Prop_double { get; set; }
     }

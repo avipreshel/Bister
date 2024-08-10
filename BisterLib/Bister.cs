@@ -183,7 +183,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
 
             // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
-            if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string))
+            if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string) || prop.PropertyType == typeof(decimal))
             {
                 sb.AppendLine(indentation + $"instance.{prop.Name} = br.{BinaryReaderMethod(Type.GetTypeCode(prop.PropertyType))};");
             }
@@ -269,7 +269,6 @@ namespace BisterLib
 
         static string BinaryReaderMethod(TypeCode typeCode)
         {
-            BinaryReader br = new BinaryReader(new MemoryStream());
             switch (typeCode)
             {
                 case TypeCode.Boolean:
@@ -282,14 +281,14 @@ namespace BisterLib
                     return "ReadSByte()";
                 case TypeCode.Int16:
                     return "ReadInt16()";
-                case TypeCode.Int32:
-                    return "ReadInt32()";
-                case TypeCode.Int64:
-                    return "ReadInt64()";
                 case TypeCode.UInt16:
                     return "ReadUInt16()";
+                case TypeCode.Int32:
+                    return "ReadInt32()";
                 case TypeCode.UInt32:
                     return "ReadUInt32()";
+                case TypeCode.Int64:
+                    return "ReadInt64()";
                 case TypeCode.UInt64:
                     return "ReadUInt64()";
                 case TypeCode.Single:
@@ -351,7 +350,7 @@ namespace BisterLib
         static void PropertySerializer(string indentation,PropertyInfo prop, StringBuilder sb)
         {
             sb.AppendLine(indentation + $"// Serializing {prop.DeclaringType.Name}.{prop.Name}");
-            if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string))
+            if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string) || prop.PropertyType == typeof(decimal))
             {
                 sb.AppendLine(indentation + $"bw.Write(instance.{prop.Name});");
             }

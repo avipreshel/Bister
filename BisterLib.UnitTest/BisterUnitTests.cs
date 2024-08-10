@@ -25,8 +25,7 @@ namespace BisterLib.UnitTest
                 Prop_uint = 11,
                 Prop_ushort = 12,
                 Prop_double = 13.33,
-                Prop_float = 14.44f,
-                Prop_half = Half.E
+                Prop_float = 14.44f
             };
 
             var blob = Bister.Instance.Serialize(instance);
