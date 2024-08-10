@@ -7,6 +7,18 @@ namespace BisterLib.UnitTest
     public class BisterUnitTests
     {
         [TestMethod]
+        public void Test_GenericListOfPrimitives()
+        {
+            List<float> instance = new List<float>();
+            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            var copyOfinstance = Bister.Instance.Deserialize<List<float>>(blob);
+            Assert.IsNotNull(copyOfinstance);
+            CollectionAssert.AreEqual(instance, copyOfinstance);
+        }
+
+        [TestMethod]
         public void Test_ClassWithPrimitivesOnly()
         {
             var instance = new ClassWithPrimitivesOnly()
@@ -47,12 +59,12 @@ namespace BisterLib.UnitTest
                 TestEnum.Three,TestEnum.Two,TestEnum.Three,TestEnum.One
             };
 
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+            
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
-            object copyOfinstance = Bister.Instance.Deserialize<object>(blob);
+            var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfEnum>(blob);
             Assert.IsNotNull(copyOfinstance);
-            CollectionAssert.AreEqual(instance.Prop, instance.Prop);
+            CollectionAssert.AreEqual(instance.Prop, copyOfinstance.Prop);
         }
 
         [TestMethod]
@@ -69,7 +81,7 @@ namespace BisterLib.UnitTest
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfEnumExplicit>(blob);
             Assert.IsNotNull(copyOfinstance);
-            CollectionAssert.AreEqual(instance.Prop, instance.Prop);
+            CollectionAssert.AreEqual(instance.Prop, copyOfinstance.Prop);
         }
 
         [TestMethod]
@@ -84,7 +96,7 @@ namespace BisterLib.UnitTest
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfFloats>(blob);
             Assert.IsNotNull(copyOfinstance);
-            CollectionAssert.AreEqual(instance.Prop, instance.Prop);
+            CollectionAssert.AreEqual(instance.Prop, copyOfinstance.Prop);
         }
 
         [TestMethod]
@@ -99,7 +111,7 @@ namespace BisterLib.UnitTest
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfStrings>(blob);
             Assert.IsNotNull(copyOfinstance);
-            CollectionAssert.AreEqual(instance.Prop, instance.Prop);
+            CollectionAssert.AreEqual(instance.Prop, copyOfinstance.Prop);
         }
 
         [TestMethod]
@@ -114,7 +126,7 @@ namespace BisterLib.UnitTest
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithADictStringToInt>(blob);
             Assert.IsNotNull(copyOfinstance);
-            CollectionAssert.AreEqual(instance.Prop, instance.Prop);
+            CollectionAssert.AreEqual(instance.Prop, copyOfinstance.Prop);
         }
     }
 }
