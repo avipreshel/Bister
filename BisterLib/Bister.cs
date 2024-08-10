@@ -62,12 +62,12 @@ namespace BisterLib
         {
             if (typeof(T) == typeof(object))
             {
-                IBisterGenerated serializer = GenerateSerializer(obj.GetType());
+                var serializer = GenerateSerializer(obj.GetType());
                 return serializer.SerializeObj(obj);
             }
             else
             {
-                IBisterGenerated<T> serializer = GenerateSerializer<T>();
+                var serializer = GenerateSerializer<T>();
                 return serializer.Serialize(obj);
             }
             
