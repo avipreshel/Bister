@@ -39,6 +39,9 @@ SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob); // No dum
 * Whenever the serialzier encounters a new type, it generates a run time serializer code to efficently serialize it to/from byte array. The generated class is then cached for further usage. Note that this behavior means that the first usage per type will incur some single run-time cost, as it takes time to create the class code and compile it, in run time.
 The generated code is fully debug-able and easy to understand.
 
+# Unsupported types
+* System.Half (because it's unsupported by Dotnet standard 2.0)
+ 
 # Advantage compared Json
 * Better performance (See benchmarks below)
 * Usage of binary means that the serialized class consumes less bytes
