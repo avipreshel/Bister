@@ -9,21 +9,21 @@ namespace GeneratedNS
 {
     internal class ___SERIALIZER_TYPE_NAME___ : IBisterGenerated<___TYPE_NAME___>
     {
-            public byte[] Serialize(___TYPE_NAME___ instance, MemoryStream ms, BinaryWriter bw)
+        public byte[] Serialize(___TYPE_NAME___ instance, MemoryStream ms, BinaryWriter bw)
+        {
+            bw.Write(instance.GetType().AssemblyQualifiedName);
+            if (instance == null)
             {
-                bw.Write(instance.GetType().AssemblyQualifiedName);
-                if (instance == null)
-                {
-                    bw.Write((byte)0);
-                }
-                else
-                {
-                    bw.Write((byte)1);
-___SERIALIZER_BODY___
-                }
-                bw.Flush();
-                return ms.ToArray();
+                bw.Write((byte)0);
             }
+            else
+            {
+                bw.Write((byte)1);
+___SERIALIZER_BODY___
+            }
+            bw.Flush();
+            return ms.ToArray();
+        }
 
         public ___TYPE_NAME___ Deserialize(BinaryReader br)
         {

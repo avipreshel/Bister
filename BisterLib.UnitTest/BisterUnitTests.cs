@@ -6,11 +6,15 @@ namespace BisterLib.UnitTest
     [TestClass]
     public class BisterUnitTests
     {
+        public BisterUnitTests() 
+        {
+            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+        }
+
         [TestMethod]
         public void Test_GenericListOfPrimitives()
         {
             List<float> instance = new List<float>();
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<List<float>>(blob);
@@ -76,7 +80,6 @@ namespace BisterLib.UnitTest
                 TestEnum.Three,TestEnum.Two,TestEnum.Three,TestEnum.One
             };
 
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfEnumExplicit>(blob);
@@ -91,7 +94,6 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithAListOfFloats(size);
 
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfFloats>(blob);
@@ -106,7 +108,6 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithAListOfStrings(size);
 
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfStrings>(blob);
@@ -121,7 +122,6 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithADictStringToInt(size);
 
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithADictStringToInt>(blob);

@@ -13,6 +13,7 @@ using Microsoft.VisualBasic;
 using System.IO;
 using System.Collections.ObjectModel;
 using System.Xml.Linq;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BisterLib
 {
@@ -116,7 +117,7 @@ namespace BisterLib
             string friendlyTypeName = GetFriendlyGenericTypeName(objType);
             sb.Replace("___TYPE_NAME___", friendlyTypeName);
 
-            string serializerTypeName = objType.IsGenericType ? $"Serializer{objType.Name.Replace('`', '_')}" : $"Serializer{objType.Name}";
+            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace('.', '_').Replace('<', '_').Replace('>', '_')}";
 
             sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
 
@@ -151,18 +152,54 @@ namespace BisterLib
             return (IBisterGenerated<T>)GenerateSerializer(typeof(T));
         }
 
+        static void DeSerializeGeneric(string indentation,StringBuilder sb, Type objType,string instanceName)
+        {
+            if (objType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                Type valType = objType.GenericTypeArguments[0];
+                sb.AppendLine(indentation + $"int count{instanceName} = br.ReadInt32();");
+                sb.AppendLine(indentation + $"{instanceName}.Capacity = count{instanceName};");
+                if (valType.IsEnum || valType == typeof(Enum))
+                {
+                    sb.AppendLine(indentation + $"Type enumType{instanceName} = {instanceName}.Length > 0 ? Type.GetType(br.ReadString()) : null;");
+                    sb.AppendLine(indentation + $"for (int i = 0; i < count{instanceName}; i++)");
+                    sb.AppendLine(indentation + "{");
+                    sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType.Name})Enum.ToObject(enumType{instanceName}!,br.ReadInt64()));");
+                    sb.AppendLine(indentation + "}");
+                }
+                else
+                {
+                    sb.AppendLine(indentation + $"for (int i = 0; i < count{instanceName}; i++)");
+                    sb.AppendLine(indentation + "{");
+                    sb.AppendLine(indentation + $"\t{instanceName}.Add(br.{BinaryReaderMethod(Type.GetTypeCode(valType))});");
+                    sb.AppendLine(indentation + "}");
+                }
+            }
+            else
+            {
+                throw new NotImplementedException($"Unable to create serializer code for {instanceName} since type {objType} is unsupported");
+            }
+        }
+
         private static void GenerateDeSerializerBody(StringBuilder sb, Type objType)
         {
-            StringBuilder sbSerializer = new StringBuilder();
-            var props = objType.GetProperties();
             string indentation = "\t\t\t\t";
-            foreach (var prop in props)
+            StringBuilder sbSerializer = new StringBuilder();
+            if (objType.IsGenericType)
             {
-                var propAccessors = prop.GetAccessors();
-                // only deal with properties that have get/set accessors
-                if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
+                DeSerializeGeneric(indentation, sbSerializer, objType, "instance");
+            }
+            else
+            {
+                var props = objType.GetProperties();
+                foreach (var prop in props)
                 {
-                    PropertyDeserializer(indentation, prop, sbSerializer);
+                    var propAccessors = prop.GetAccessors();
+                    // only deal with properties that have get/set accessors
+                    if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
+                    {
+                        PropertyDeserializer(indentation, prop, sbSerializer);
+                    }
                 }
             }
 
@@ -181,7 +218,7 @@ namespace BisterLib
             else if (prop.PropertyType == typeof(Enum)) // Unspecific enum
             {
                 // Since we can't know the actual type, we need to assume the worst (64bit enum)
-                PropertyDeserializerEnum(indentation, prop, sb);
+                DeserializerEnum(indentation, $"instance.{prop.Name}", sb);
             }
             else if (prop.PropertyType.IsEnum)
             {
@@ -226,10 +263,22 @@ namespace BisterLib
             sb.AppendLine(indentation + $"instance.{prop.Name} = new List<{valType.Name}>(count{prop.Name});");
             if (valType.IsEnum || valType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"Type enumType{prop.Name} = count{prop.Name} > 0? Type.GetType(br.ReadString()) : null;");
-                sb.AppendLine(indentation + $"for (int i = 0; i < count{prop.Name}; i++)");
+                sb.AppendLine(indentation + $"if (count{prop.Name} > 0)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tinstance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt64()));");
+                sb.AppendLine(indentation + $"\tType enumType{prop.Name} = count{prop.Name} > 0? Type.GetType(br.ReadString()) : null;");
+                sb.AppendLine(indentation + $"\tType enumNativeType{prop.Name} = enumType{prop.Name}.GetEnumUnderlyingType();");
+                sb.AppendLine(indentation + $"\tfor (int i = 0; i < count{prop.Name}; i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\tif (enumNativeType{prop.Name} == typeof(byte)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadByte()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(sbyte)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadSByte()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(short)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt16()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(ushort)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadUInt16()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(int)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt32()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(uint)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadUInt32()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(long)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt64()));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(ulong)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadUInt64()));");
+                sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to deserialize {prop.Name}. Unknown enum underlying type\");");
+                sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
             else
@@ -243,19 +292,19 @@ namespace BisterLib
             
         }
 
-        private static void PropertyDeserializerEnum(string indentation, PropertyInfo prop, StringBuilder sb)
+        private static void DeserializerEnum(string indentation, string instanceName, StringBuilder sb)
         {
             sb.AppendLine(indentation + $"string enumTypeStr = br.ReadString();");
             sb.AppendLine(indentation + $"Type enumType =Type.GetType(enumTypeStr);");
-            sb.AppendLine(indentation + $"instance.{prop.Name} = (Enum)Activator.CreateInstance(enumType)!;");
+            sb.AppendLine(indentation + $"{instanceName} = (Enum)Activator.CreateInstance(enumType)!;");
             sb.AppendLine(indentation + $"var enumInstanceType = enumType.GetEnumUnderlyingType();");
             sb.AppendLine(indentation + $"object enumVal;");
             sb.AppendLine(indentation + $"if (enumInstanceType == typeof(byte)) enumVal = br.ReadByte();");
             sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(short)) enumVal = br.ReadInt16();");
             sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(int)) enumVal = br.ReadInt32();");
             sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(long)) enumVal = br.ReadInt64();");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to read {prop.DeclaringType.Name}.{prop.PropertyType.Name} \");");
-            sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue(instance.{prop.Name}, enumVal);");
+            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to read {instanceName} \");");
+            sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue({instanceName}, enumVal);");
         }
 
         static string BinaryReaderMethod(TypeCode typeCode)
@@ -299,7 +348,7 @@ namespace BisterLib
 
         private static void GenerateSerializerBody(StringBuilder sb, Type objType)
         {
-            StringBuilder sbSerializer = new StringBuilder();
+            
             var props = objType.GetProperties();
 
             string indentation = "\t\t\t";
@@ -307,25 +356,101 @@ namespace BisterLib
             // Estimate 8 bytes per property...simple huristic
             sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"{props.Length * 8}");
 
-            foreach (var prop in props)
+            StringBuilder sbSerializerBody = new StringBuilder();
+            if (objType.IsGenericType)
             {
-                var propAccessors = prop.GetAccessors();
-                // only deal with properties that have get/set accessors
-                if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
+                SerializeGeneric("instance",indentation + '\t', sbSerializerBody, objType);
+            }
+            else
+            {
+                foreach (var prop in props)
                 {
-                    PropertySerializer(indentation + "\t\t",prop, sbSerializer);
+
+                    var propAccessors = prop.GetAccessors();
+                    // only deal with properties that have get/set accessors
+                    if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
+                    {
+                        if (prop.PropertyType.IsGenericType)
+                        {
+                            SerializeGeneric($"instance.{prop.Name}", indentation + "\t", sbSerializerBody, prop.PropertyType);
+                        }
+                        else
+                        {
+                            PropertySerializer(indentation + "\t", prop, sbSerializerBody);
+                        }
+
+                    }
                 }
             }
+            
 
-            sb.Replace("___SERIALIZER_BODY___", sbSerializer.ToString());
+            sb.Replace("___SERIALIZER_BODY___", sbSerializerBody.ToString());
         }
 
-        static void PropertySerializerEnum(string indentation, PropertyInfo prop, StringBuilder sb)
+        static void SerializeGeneric(string instanceName,string indentation,StringBuilder sb, Type objType)
+        {
+            sb.AppendLine(indentation+$"// Serializing {instanceName}");
+            if (objType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                Type valType = objType.GenericTypeArguments[0];
+                if (valType == typeof(Enum))
+                {
+                    // Write the enum type
+                    sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+                    sb.AppendLine(indentation + $"if ({instanceName}.Count > 0)");
+                    sb.AppendLine(indentation + "{");
+                    sb.AppendLine(indentation + $"\tType enumType = {instanceName}[0].GetType();");
+                    sb.AppendLine(indentation + $"\tbw.Write(enumType.AssemblyQualifiedName);");
+                    sb.AppendLine(indentation + $"\tType enumNativeType = enumType.GetEnumUnderlyingType();");
+                    sb.AppendLine(indentation + $"\tvar enumValueField = enumType.GetField(\"value__\");");
+                    sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
+                    sb.AppendLine(indentation + "\t{");
+                    sb.AppendLine(indentation + $"\t\tobject numericVal = enumValueField.GetValue(item);");
+                    sb.AppendLine(indentation + $"\t\tif (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
+                    sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to serialize {instanceName}\");");
+                    sb.AppendLine(indentation + "\t}");
+                    sb.AppendLine(indentation + "}");
+                }
+                else
+                {
+                    sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+                    sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
+                    sb.AppendLine(indentation + "{");
+                    SerializeType("item", indentation + '\t', valType, sb);
+                    sb.AppendLine(indentation + "}");
+                }
+            }
+            else
+            {
+                throw new NotImplementedException($"Unable to create serializer code for {instanceName} since type {objType} is unsupported");
+            }
+        }
+
+        static void SerializeType(string instanceName,string indentation, Type objType, StringBuilder sb)
+        {
+            if (objType.IsPrimitive || objType == typeof(string) || objType == typeof(decimal))
+            {
+                sb.AppendLine(indentation + $"bw.Write({instanceName});");
+            }
+            else
+            {
+                throw new NotImplementedException($"Unable to create serialize code for {instanceName} of type {objType}");
+            }
+        }
+
+        static void SerializerEnum(string indentation, string instanceName, StringBuilder sb)
         {
             // Since we can't know the actual Enum during run time, so we need to do magic
-            sb.AppendLine(indentation + $"Type enumType = instance.{prop.Name}.GetType();");
-            sb.AppendLine(indentation + $"Type enumNativeType = instance.{prop.Name}.GetType()!.GetEnumUnderlyingType()!;");
-            sb.AppendLine(indentation + $"object numericVal = enumType!.GetField(\"value__\")!.GetValue(instance.{prop.Name})!;");
+            sb.AppendLine(indentation + $"Type enumType = {instanceName}.GetType();");
+            sb.AppendLine(indentation + $"Type enumNativeType = {instanceName}.GetType()!.GetEnumUnderlyingType()!;");
+            sb.AppendLine(indentation + $"object numericVal = enumType!.GetField(\"value__\")!.GetValue({instanceName})!;");
             sb.AppendLine(indentation + $"bw.Write(enumType!.AssemblyQualifiedName!);");
             sb.AppendLine(indentation + $"if (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
@@ -335,7 +460,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
             sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to serialize {prop.DeclaringType.Name}.{prop.Name}\");");
+            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to serialize {instanceName}\");");
         }
 
         static void PropertySerializer(string indentation,PropertyInfo prop, StringBuilder sb)
@@ -347,7 +472,7 @@ namespace BisterLib
             }
             else if (prop.PropertyType == typeof(Enum)) // Unspecific enum
             {
-                PropertySerializerEnum(indentation, prop, sb);
+                SerializerEnum(indentation, $"instance.{prop.Name}", sb);
             }
             else if (prop.PropertyType.IsEnum) // Specific enum
             {
