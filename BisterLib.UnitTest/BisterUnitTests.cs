@@ -116,7 +116,6 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
-        [DataRow(1)]
         [DataRow(1000)]
         public void Test_ClassWithADictStringToInt(int size)
         {

@@ -162,10 +162,15 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
                 if (valType == typeof(Enum))
                 {
+
+                    
                     sb.AppendLine(indentation + $"Type enumType{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetType(br.ReadString()) : null;");
+                    sb.AppendLine(indentation + $"TypeCode enumTypeCode{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetTypeCode(enumType{usefulVariableName}) : TypeCode.Empty;");
                     sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
                     sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName}!,br.ReadInt64()));");
+                    sb.AppendLine(indentation + $"\tif (enumTypeCode{usefulVariableName} == TypeCode.Int32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt32()));");
+                    sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
+                    sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt16()));");
                     sb.AppendLine(indentation + "}");
                 }
                 else
