@@ -1,5 +1,6 @@
 using BisterLib;
 using System.ComponentModel.DataAnnotations;
+using System.Drawing;
 
 namespace BisterLib.UnitTest
 {
@@ -55,15 +56,16 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
-        public void Test_ClassWithAListOfEnum()
+        [DataRow(1)]
+        [DataRow(1000)]
+        public void Test_ClassWithAListOfEnum(int size)
         {
             var instance = new ClassWithAListOfEnum();
-            instance.Prop = new List<Enum>()
-            {
-                TestEnum.Three,TestEnum.Two,TestEnum.Three,TestEnum.One
-            };
-
+            Random random = new Random(42);
             
+            instance.Prop = Enumerable.Range(0, size).Select(i => (Enum)Enum.ToObject(typeof(TestEnum),random.Next((int)TestEnum.One, (int)TestEnum.Three + 1))).ToList();
+
+
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithAListOfEnum>(blob);
@@ -72,13 +74,13 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
-        public void Test_ClassWithAListOfEnumExplicit()
+        [DataRow(1)]
+        [DataRow(1000)]
+        public void Test_ClassWithAListOfEnumExplicit(int size)
         {
             var instance = new ClassWithAListOfEnumExplicit();
-            instance.Prop = new List<TestEnum>()
-            {
-                TestEnum.Three,TestEnum.Two,TestEnum.Three,TestEnum.One
-            };
+            Random random = new Random(42);
+            instance.Prop = Enumerable.Range(0, size).Select(i => (TestEnum)random.Next((int)TestEnum.One, (int)TestEnum.Three + 1)).ToList();
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
