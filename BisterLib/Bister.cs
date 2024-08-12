@@ -157,34 +157,62 @@ namespace BisterLib
             string usefulVariableName = instanceName.Replace(".", "");
             if (objType.GetGenericTypeDefinition() == typeof(List<>))
             {
-                Type valType = objType.GenericTypeArguments[0];
-                sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
-                sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
-                if (valType == typeof(Enum))
-                {
-
-                    
-                    sb.AppendLine(indentation + $"Type enumType{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetType(br.ReadString()) : null;");
-                    sb.AppendLine(indentation + $"TypeCode enumTypeCode{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetTypeCode(enumType{usefulVariableName}) : TypeCode.Empty;");
-                    sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tif (enumTypeCode{usefulVariableName} == TypeCode.Int32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt32()));");
-                    sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
-                    sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt16()));");
-                    sb.AppendLine(indentation + "}");
-                }
-                else
-                {
-                    Type enumPrimitiveType = valType.IsEnum ? valType.GetEnumUnderlyingType() : valType;
-                    sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType})br.{BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
-                    sb.AppendLine(indentation + "}");
-                }
+                DeSerializeGenericList(indentation, sb, objType, instanceName, usefulVariableName);
+            }
+            else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                DeSerializeGenericDictionary(indentation, sb, objType, instanceName,usefulVariableName);
             }
             else
             {
                 throw new NotImplementedException($"Unable to create serializer code for {instanceName} since type {objType} is unsupported");
+            }
+        }
+        private static void DeSerializeGenericDictionary(string indentation, StringBuilder sb, Type objType, string instanceName, string usefulVariableName)
+        {
+            Type keyType = objType.GenericTypeArguments[0];
+            Type valType = objType.GenericTypeArguments[1];
+            if (IsPrimitive(keyType) && IsPrimitive(valType))
+            {
+                sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
+                sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tvar key = br.{BinaryReaderMethod(Type.GetTypeCode(keyType))};");
+                sb.AppendLine(indentation + $"\tvar val = br.{BinaryReaderMethod(Type.GetTypeCode(valType))};");
+                sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private static void DeSerializeGenericList(string indentation, StringBuilder sb, Type objType, string instanceName, string usefulVariableName)
+        {
+            Type valType = objType.GenericTypeArguments[0];
+            sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
+            sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
+            if (valType == typeof(Enum))
+            {
+
+
+                sb.AppendLine(indentation + $"Type enumType{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetType(br.ReadString()) : null;");
+                sb.AppendLine(indentation + $"TypeCode enumTypeCode{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetTypeCode(enumType{usefulVariableName}) : TypeCode.Empty;");
+                sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tif (enumTypeCode{usefulVariableName} == TypeCode.Int32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt32()));");
+                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
+                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt16()));");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                Type enumPrimitiveType = valType.IsEnum ? valType.GetEnumUnderlyingType() : valType;
+                sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType})br.{BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
+                sb.AppendLine(indentation + "}");
             }
         }
 
@@ -226,7 +254,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
 
             // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
-            if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string) || prop.PropertyType == typeof(decimal))
+            if (IsPrimitive(prop.PropertyType))
             {
                 sb.AppendLine(indentation + $"instance.{prop.Name} = br.{BinaryReaderMethod(Type.GetTypeCode(prop.PropertyType))};");
             }
@@ -407,40 +435,11 @@ namespace BisterLib
             sb.AppendLine(indentation+$"// Serializing {instanceName}");
             if (objType.GetGenericTypeDefinition() == typeof(List<>))
             {
-                Type valType = objType.GenericTypeArguments[0];
-                if (valType == typeof(Enum))
-                {
-                    // Write the enum type
-                    sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                    sb.AppendLine(indentation + $"if ({instanceName}.Count > 0)");
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tType enumType = {instanceName}[0].GetType();");
-                    sb.AppendLine(indentation + $"\tbw.Write(enumType.AssemblyQualifiedName);");
-                    sb.AppendLine(indentation + $"\tType enumNativeType = enumType.GetEnumUnderlyingType();");
-                    sb.AppendLine(indentation + $"\tvar enumValueField = enumType.GetField(\"value__\");");
-                    sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
-                    sb.AppendLine(indentation + "\t{");
-                    sb.AppendLine(indentation + $"\t\tobject numericVal = enumValueField.GetValue(item);");
-                    sb.AppendLine(indentation + $"\t\tif (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
-                    sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to serialize {instanceName}\");");
-                    sb.AppendLine(indentation + "\t}");
-                    sb.AppendLine(indentation + "}");
-                }
-                else
-                {
-                    sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                    sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
-                    sb.AppendLine(indentation + "{");
-                    SerializeGenericItem("item", indentation + '\t', valType, sb);
-                    sb.AppendLine(indentation + "}");
-                }
+                SerializeGenericList(instanceName, indentation, sb, objType);
+            }
+            else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                SerializeGenericDictionary(instanceName, indentation, sb, objType);
             }
             else
             {
@@ -448,9 +447,71 @@ namespace BisterLib
             }
         }
 
+        static bool IsPrimitive(Type type)
+        {
+            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal);
+        }
+
+        private static void SerializeGenericDictionary(string instanceName, string indentation, StringBuilder sb, Type objType)
+        {
+            Type keyType = objType.GenericTypeArguments[0];
+            Type valType = objType.GenericTypeArguments[1];
+            if (IsPrimitive(keyType) && IsPrimitive(valType))
+            {
+                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(item.Key);");
+                sb.AppendLine(indentation + $"\tbw.Write(item.Value);");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        private static void SerializeGenericList(string instanceName, string indentation, StringBuilder sb, Type objType)
+        {
+            Type valType = objType.GenericTypeArguments[0];
+            if (valType == typeof(Enum))
+            {
+                // Write the enum type
+                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+                sb.AppendLine(indentation + $"if ({instanceName}.Count > 0)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tType enumType = {instanceName}[0].GetType();");
+                sb.AppendLine(indentation + $"\tbw.Write(enumType.AssemblyQualifiedName);");
+                sb.AppendLine(indentation + $"\tType enumNativeType = enumType.GetEnumUnderlyingType();");
+                sb.AppendLine(indentation + $"\tvar enumValueField = enumType.GetField(\"value__\");");
+                sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\tobject numericVal = enumValueField.GetValue(item);");
+                sb.AppendLine(indentation + $"\t\tif (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
+                sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to serialize {instanceName}\");");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
+                sb.AppendLine(indentation + "{");
+                SerializeGenericItem("item", indentation + '\t', valType, sb);
+                sb.AppendLine(indentation + "}");
+            }
+        }
+
         static void SerializeGenericItem(string instanceName,string indentation, Type objType, StringBuilder sb)
         {
-            if (objType.IsPrimitive || objType == typeof(string) || objType == typeof(decimal))
+            if (IsPrimitive(objType))
             {
                 sb.AppendLine(indentation + $"bw.Write(({objType}){instanceName});");
             }
@@ -486,7 +547,7 @@ namespace BisterLib
         static void PropertySerializer(string indentation,PropertyInfo prop, StringBuilder sb)
         {
             sb.AppendLine(indentation + $"// Serializing {prop.DeclaringType.Name}.{prop.Name}");
-            if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(string) || prop.PropertyType == typeof(decimal))
+            if (IsPrimitive(prop.PropertyType))
             {
                 sb.AppendLine(indentation + $"bw.Write(instance.{prop.Name});");
             }

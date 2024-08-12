@@ -118,10 +118,13 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        [DataRow(1)]
         [DataRow(1000)]
         public void Test_ClassWithADictStringToInt(int size)
         {
-            var instance = new ClassWithADictStringToInt(size);
+            var instance = new ClassWithADictStringToInt();
+
+            instance.Prop = Enumerable.Range(1, size).Select(i => (i.ToString(), i)).ToDictionary();
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);

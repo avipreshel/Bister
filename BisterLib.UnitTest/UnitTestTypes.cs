@@ -56,12 +56,6 @@ namespace BisterLib.UnitTest
         {
             Prop = new Dictionary<string, int>();
         }
-
-        public ClassWithADictStringToInt(int size)
-        {
-            Prop = Enumerable.Range(1, size)
-                .Select(i => (i.ToString(), i)).ToDictionary();
-        }
     }
 
     public class ClassWithAListOfFloats
