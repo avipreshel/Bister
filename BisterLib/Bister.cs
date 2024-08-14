@@ -14,6 +14,8 @@ using System.IO;
 using System.Collections.ObjectModel;
 using System.Xml.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections;
+using System.Runtime.InteropServices;
 
 namespace BisterLib
 {
@@ -391,13 +393,45 @@ namespace BisterLib
 
         private static void GenerateSerializerBody(StringBuilder sb, Type objType)
         {
-            
+
             var props = objType.GetProperties();
 
             string indentation = "\t\t\t";
+            
+            StringBuilder sbSizeOfObject = new StringBuilder();
+            sbSizeOfObject.Append($"0");
+            foreach (var prop in props)
+            {
+                if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(Decimal))
+                {
+                    sbSizeOfObject.Append($"+{Marshal.SizeOf(prop.PropertyType)}");
+                }
+                else if (prop.PropertyType.IsEnum)
+                {
+                    sbSizeOfObject.Append($"+8");
+                }
+                else if (prop.PropertyType == typeof(string))
+                {
+                    sbSizeOfObject.Append($"+instance.{prop.Name}.Length");
+                }
+                else if (prop.PropertyType.IsArray)
+                {
+                    sbSizeOfObject.Append($"+{Marshal.SizeOf(prop.PropertyType.GetElementType())}");
+                }
+                else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
+                {
+                    int size = prop.PropertyType.GenericTypeArguments.Sum(t => t.IsPrimitive? Marshal.SizeOf(t) : 8);
+                    sbSizeOfObject.Append($"+{size}");
+                }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+                // Estimate 8 bytes per property...simple huristic
 
-            // Estimate 8 bytes per property...simple huristic
-            sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"{props.Length * 8}");
+            }
+
+            sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"(int)Math.Ceiling(1.5f * ({sbSizeOfObject.ToString()}))");
 
             StringBuilder sbSerializerBody = new StringBuilder();
             if (objType.IsGenericType)
@@ -647,6 +681,7 @@ namespace BisterLib
                     MetadataReference.CreateFromFile(typeof(MemoryStream).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(BinaryReader).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(BinaryWriter).Assembly.Location)
+                    //Marshal
                 },
                 new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
                 .AddReferences(dependencyFiles);
