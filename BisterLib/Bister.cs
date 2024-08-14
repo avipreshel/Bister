@@ -279,6 +279,10 @@ namespace BisterLib
             {
                 PropertyDeserializerDictionary(indentation, prop, sb);
             }
+            else if (prop.PropertyType.IsArray)
+            {
+
+            }
             else if (prop.PropertyType.IsClass)
             {
                 sb.AppendLine(indentation + $"instance.{prop.Name} = Bister.Instance.GetSerializer<{prop.PropertyType}>().Deserialize(br);");
@@ -393,7 +397,6 @@ namespace BisterLib
 
         private static void GenerateSerializerBody(StringBuilder sb, Type objType)
         {
-
             var props = objType.GetProperties();
 
             string indentation = "\t\t\t";
@@ -416,7 +419,15 @@ namespace BisterLib
                 }
                 else if (prop.PropertyType.IsArray)
                 {
-                    sbSizeOfObject.Append($"+{Marshal.SizeOf(prop.PropertyType.GetElementType())}");
+                    Type arrayItemType = prop.PropertyType.GetElementType();
+                    if (arrayItemType.IsPrimitive || arrayItemType == typeof(Decimal))
+                    {
+                        sbSizeOfObject.Append($"+instance.{prop.Name}.Length * {Marshal.SizeOf(arrayItemType)}");
+                    }
+                    else
+                    {
+                        sbSizeOfObject.Append($"+instance.{prop.Name}.Length * 8");
+                    }
                 }
                 else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
                 {
@@ -447,26 +458,90 @@ namespace BisterLib
                     // only deal with properties that have get/set accessors
                     if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
                     {
+                        sbSerializerBody.AppendLine(indentation + $"\t// Serializing instance.{prop.Name}");
                         if (prop.PropertyType.IsGenericType)
                         {
                             SerializeGeneric($"instance.{prop.Name}", indentation + "\t", sbSerializerBody, prop.PropertyType);
+                        }
+                        else if (prop.PropertyType.IsArray || prop.PropertyType == typeof(ArrayList))
+                        {
+                            SerializeArray(sbSerializerBody, indentation + '\t', $"instance.{prop.Name}", prop.PropertyType);
                         }
                         else
                         {
                             PropertySerializer(indentation + "\t", prop, sbSerializerBody);
                         }
-
                     }
                 }
             }
-            
 
             sb.Replace("___SERIALIZER_BODY___", sbSerializerBody.ToString());
         }
 
+        static void SerializeArray(StringBuilder sb,string indentation,string instanceName,Type arrayType)
+        {
+            if (arrayType == typeof(ArrayList))
+            {
+                SerializeArrayList(sb, indentation, instanceName, arrayType);
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Length);");
+                Type arrayItemType = arrayType.GetElementType();
+                if (IsPrimitive(arrayItemType))
+                {
+                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
+                    sb.AppendLine(indentation + "{");
+                    sb.AppendLine(indentation + $"\tbw.Write({instanceName}[i]);");
+                    sb.AppendLine(indentation + "}");
+                }
+                else if (arrayItemType == typeof(Enum))
+                {
+                    sb.AppendLine(indentation + $"bw.Write({instanceName}.GetType().AssemblyQualifiedName);");
+                }
+                else if (arrayItemType.IsEnum)
+                {
+                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
+                    sb.AppendLine(indentation + "{");
+                    if (Type.GetTypeCode(arrayItemType) == TypeCode.Int16 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt16)
+                    {
+                        sb.AppendLine(indentation + $"\tbw.Write((short){instanceName}[i]);");
+                    }
+                    else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int32 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt32)
+                    {
+                        sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}[i]);");
+                    }
+                    else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int64 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt64)
+                    {
+                        sb.AppendLine(indentation + $"\tbw.Write((long){instanceName}[i]);");
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                    sb.AppendLine(indentation + "}");
+                }
+            }
+        }
+
+        private static void SerializeArrayList(StringBuilder sb, string indentation, string instanceName, Type arrayType)
+        {
+            
+            sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+            sb.AppendLine(indentation + $"if ((int){instanceName}.Count > 0);");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\tvar arrayItemType = {instanceName}[0].GetType();");
+            sb.AppendLine(indentation + $"\tif (!arrayItemType.IsPrimitive) throw new NotImplementedException()");
+            sb.AppendLine(indentation + $"\tbw.Write(arrayItemType.AssemblyQualifiedName);");
+            sb.AppendLine(indentation + $"\tfor (int i =0;i<{instanceName}.Count;i++)");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + $"\t\tbw.Write");
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "}");
+        }
+
         static void SerializeGeneric(string instanceName,string indentation,StringBuilder sb, Type objType)
         {
-            sb.AppendLine(indentation+$"// Serializing {instanceName}");
             if (objType.GetGenericTypeDefinition() == typeof(List<>))
             {
                 SerializeGenericList(instanceName, indentation, sb, objType);

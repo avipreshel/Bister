@@ -13,6 +13,30 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_ClassWithArrays()
+        {
+            var instance = new ClassWithArrays()
+            { 
+                ArrayPropEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
+                ArrayPropInt = [1,2,3,4,5],
+                ArrayPropString = ["wow","this","is","cool"],
+                ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
+                ArrayDotNet2 = [10,11,12]
+            };
+
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            var copyOfinstance = Bister.Instance.Deserialize<ClassWithArrays>(blob);
+            Assert.IsNotNull(copyOfinstance);
+            
+            CollectionAssert.AreEqual(instance.ArrayPropEnum, copyOfinstance.ArrayPropEnum);
+            CollectionAssert.AreEqual(instance.ArrayPropInt, copyOfinstance.ArrayPropInt);
+            CollectionAssert.AreEqual(instance.ArrayPropString, copyOfinstance.ArrayPropString);
+            CollectionAssert.AreEqual(instance.ArrayPropTestEnum, copyOfinstance.ArrayPropTestEnum);
+            CollectionAssert.AreEqual(instance.ArrayDotNet2, copyOfinstance.ArrayDotNet2);
+        }
+
+        [TestMethod]
         public void Test_GenericListOfPrimitives()
         {
             List<float> instance = new List<float>();
