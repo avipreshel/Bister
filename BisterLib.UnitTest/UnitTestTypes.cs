@@ -8,6 +8,12 @@ using System.Threading.Tasks;
 
 namespace BisterLib.UnitTest
 {
+    public struct Vector<T> where T : struct
+    {
+        public T X {  get; set; }
+        public T Y { get; set; }
+    }
+
     public enum TestEnum
     {
         One,Two, Three
@@ -41,12 +47,11 @@ namespace BisterLib.UnitTest
 
     public class ClassWithArrays
     {
-        
+        public ArrayList ArrayDotNet2 { get; set; } = new ArrayList();
         public int[] ArrayPropInt { get; set; } = new int[10];
         public TestEnum[] ArrayPropTestEnum { get; set; } = new TestEnum[10];
         public Enum[] ArrayPropEnum { get; set; } = new Enum[10];
         public string[] ArrayPropString { get; set; } = new string[10];
-        public ArrayList ArrayDotNet2 { get; set; } = new ArrayList();
     }
 
     public class ClassWithAListOfEnum

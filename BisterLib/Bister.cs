@@ -253,6 +253,8 @@ namespace BisterLib
 
         private static void PropertyDeserializer(string indentation, PropertyInfo prop, StringBuilder sb)
         {
+            sb.AppendLine(indentation + $"// {MethodBase.GetCurrentMethod().Name}");
+
             sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
 
             // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
@@ -283,6 +285,10 @@ namespace BisterLib
             {
 
             }
+            else if (prop.PropertyType == typeof(ArrayList))
+            {
+                BisterDeserializer.DeserializeArrayList(indentation, sb, $"instance.{prop.Name}");
+            }
             else if (prop.PropertyType.IsClass)
             {
                 sb.AppendLine(indentation + $"instance.{prop.Name} = Bister.Instance.GetSerializer<{prop.PropertyType}>().Deserialize(br);");
@@ -292,6 +298,10 @@ namespace BisterLib
                 throw new Exception($"Property {prop.Name} type {prop.PropertyType} is not supported");
             }
         }
+
+       
+
+
 
         private static void PropertyDeserializerDictionary(string indentation, PropertyInfo prop, StringBuilder sb)
         {
@@ -480,9 +490,10 @@ namespace BisterLib
 
         static void SerializeArray(StringBuilder sb,string indentation,string instanceName,Type arrayType)
         {
+            sb.AppendLine(indentation + $"// {MethodBase.GetCurrentMethod().Name}");
             if (arrayType == typeof(ArrayList))
             {
-                SerializeArrayList(sb, indentation, instanceName, arrayType);
+                BisterSerializer.SerializeArrayList(sb, indentation, instanceName, arrayType);
             }
             else
             {
@@ -524,21 +535,11 @@ namespace BisterLib
             }
         }
 
-        private static void SerializeArrayList(StringBuilder sb, string indentation, string instanceName, Type arrayType)
-        {
-            
-            sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-            sb.AppendLine(indentation + $"if ((int){instanceName}.Count > 0);");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tvar arrayItemType = {instanceName}[0].GetType();");
-            sb.AppendLine(indentation + $"\tif (!arrayItemType.IsPrimitive) throw new NotImplementedException()");
-            sb.AppendLine(indentation + $"\tbw.Write(arrayItemType.AssemblyQualifiedName);");
-            sb.AppendLine(indentation + $"\tfor (int i =0;i<{instanceName}.Count;i++)");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\tbw.Write");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "}");
-        }
+        
+
+        
+
+        
 
         static void SerializeGeneric(string instanceName,string indentation,StringBuilder sb, Type objType)
         {
@@ -758,9 +759,13 @@ namespace BisterLib
                     MetadataReference.CreateFromFile(typeof(BinaryWriter).Assembly.Location)
                     //Marshal
                 },
-                new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary))
+                new CSharpCompilationOptions(
+                    outputKind: OutputKind.DynamicallyLinkedLibrary,
+                    optimizationLevel: string.IsNullOrEmpty(Bister.Instance.DebugPath) ? OptimizationLevel.Release : OptimizationLevel.Debug,
+                    platform: Platform.X64
+                ))
                 .AddReferences(dependencyFiles);
-
+            
             using (var ms = new MemoryStream())
             {
                 EmitResult result = compilation.Emit(ms);

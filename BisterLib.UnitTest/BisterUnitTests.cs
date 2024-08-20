@@ -13,6 +13,18 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_VectorT()
+        {
+            Vector<float> instance = new Vector<float>();
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            var copyOfinstance = Bister.Instance.Deserialize<Vector<float>>(blob);
+            Assert.IsNotNull(copyOfinstance);
+            Assert.AreEqual(instance.X, copyOfinstance.X);
+            Assert.AreEqual(instance.Y, copyOfinstance.Y);
+        }
+
+        [TestMethod]
         public void Test_ClassWithArrays()
         {
             var instance = new ClassWithArrays()
