@@ -45,14 +45,20 @@ namespace BisterLib.UnitTest
         public double Prop_double { get; set; }
     }
 
-    public class ClassWithArrays
+    public class ClassWithLegacyArray
     {
         public ArrayList ArrayDotNet2 { get; set; } = new ArrayList();
+    }
+
+    public class ClassWithArrays
+    {
         public int[] ArrayPropInt { get; set; } = new int[10];
+        public string[] ArrayPropString { get; set; } = new string[10];
+        public ArrayList ArrayDotNet2 { get; set; } = new ArrayList();
         public TestEnum[] ArrayPropTestEnum { get; set; } = new TestEnum[10];
         public Enum[] ArrayPropEnum { get; set; } = new Enum[10];
-        public string[] ArrayPropString { get; set; } = new string[10];
     }
+
 
     public class ClassWithAListOfEnum
     {

@@ -283,7 +283,7 @@ namespace BisterLib
             }
             else if (prop.PropertyType.IsArray)
             {
-
+                BisterDeserializer.DeserializeArray(indentation, sb, $"instance.{prop.Name}", prop.PropertyType);
             }
             else if (prop.PropertyType == typeof(ArrayList))
             {
@@ -366,7 +366,46 @@ namespace BisterLib
             sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue({instanceName}, enumVal);");
         }
 
-        static string BinaryReaderMethod(TypeCode typeCode)
+        public static string BinaryWriterMethod(TypeCode typeCode,string instanceName)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Boolean:
+                    return $"br.WriteBoolean({instanceName})";
+                case TypeCode.Char:
+                    return "br.WriteChar({instanceName})";
+                case TypeCode.Byte:
+                    return "br.WriteByte({instanceName})";
+                case TypeCode.SByte:
+                    return "br.WriteSByte({instanceName})";
+                case TypeCode.Int16:
+                    return "br.WriteInt16({instanceName})";
+                case TypeCode.UInt16:
+                    return "br.WriteUInt16({instanceName})";
+                case TypeCode.Int32:
+                    return "br.WriteInt32({instanceName})";
+                case TypeCode.UInt32:
+                    return "br.WriteUInt32({instanceName})";
+                case TypeCode.Int64:
+                    return "br.WriteInt64({instanceName})";
+                case TypeCode.UInt64:
+                    return "br.WriteUInt64({instanceName})";
+                case TypeCode.Single:
+                    return "br.WriteSingle({instanceName})";
+                case TypeCode.Double:
+                    return "br.WriteDouble({instanceName})";
+                case TypeCode.Decimal:
+                    return "br.WriteDecimal({instanceName})";
+                case TypeCode.String:
+                    return "br.WriteString({instanceName})";
+                case TypeCode.DateTime:
+                    return "br.WriteInt64({instanceName}.ToFileTime())";
+                default:
+                    throw new NotImplementedException();
+            }
+        }
+
+        public static string BinaryReaderMethod(TypeCode typeCode)
         {
             switch (typeCode)
             {
@@ -475,7 +514,7 @@ namespace BisterLib
                         }
                         else if (prop.PropertyType.IsArray || prop.PropertyType == typeof(ArrayList))
                         {
-                            SerializeArray(sbSerializerBody, indentation + '\t', $"instance.{prop.Name}", prop.PropertyType);
+                            BisterSerializer.SerializeArray(sbSerializerBody, indentation + '\t', $"instance.{prop.Name}", prop.PropertyType);
                         }
                         else
                         {
@@ -488,52 +527,7 @@ namespace BisterLib
             sb.Replace("___SERIALIZER_BODY___", sbSerializerBody.ToString());
         }
 
-        static void SerializeArray(StringBuilder sb,string indentation,string instanceName,Type arrayType)
-        {
-            sb.AppendLine(indentation + $"// {MethodBase.GetCurrentMethod().Name}");
-            if (arrayType == typeof(ArrayList))
-            {
-                BisterSerializer.SerializeArrayList(sb, indentation, instanceName, arrayType);
-            }
-            else
-            {
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Length);");
-                Type arrayItemType = arrayType.GetElementType();
-                if (IsPrimitive(arrayItemType))
-                {
-                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tbw.Write({instanceName}[i]);");
-                    sb.AppendLine(indentation + "}");
-                }
-                else if (arrayItemType == typeof(Enum))
-                {
-                    sb.AppendLine(indentation + $"bw.Write({instanceName}.GetType().AssemblyQualifiedName);");
-                }
-                else if (arrayItemType.IsEnum)
-                {
-                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
-                    sb.AppendLine(indentation + "{");
-                    if (Type.GetTypeCode(arrayItemType) == TypeCode.Int16 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt16)
-                    {
-                        sb.AppendLine(indentation + $"\tbw.Write((short){instanceName}[i]);");
-                    }
-                    else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int32 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt32)
-                    {
-                        sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}[i]);");
-                    }
-                    else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int64 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt64)
-                    {
-                        sb.AppendLine(indentation + $"\tbw.Write((long){instanceName}[i]);");
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-                    sb.AppendLine(indentation + "}");
-                }
-            }
-        }
+        
 
         
 
@@ -557,7 +551,7 @@ namespace BisterLib
             }
         }
 
-        static bool IsPrimitive(Type type)
+        public static bool IsPrimitive(Type type)
         {
             return type.IsPrimitive || type == typeof(string) || type == typeof(decimal);
         }
@@ -772,7 +766,7 @@ namespace BisterLib
 
                 if (!result.Success)
                 {
-                    throw new Exception(result.Diagnostics.First().ToString());
+                    throw new Exception("CODEGEN ERROR:\n" + result.Diagnostics.First().ToString());
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);

@@ -25,6 +25,22 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_ClassWithLegacyArray()
+        {
+            var instance = new ClassWithLegacyArray()
+            {
+                ArrayDotNet2 = [10, 11, 12]
+            };
+
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            var copyOfinstance = Bister.Instance.Deserialize<ClassWithArrays>(blob);
+            Assert.IsNotNull(copyOfinstance);
+
+            CollectionAssert.AreEqual(instance.ArrayDotNet2, copyOfinstance.ArrayDotNet2);
+        }
+
+        [TestMethod]
         public void Test_ClassWithArrays()
         {
             var instance = new ClassWithArrays()
