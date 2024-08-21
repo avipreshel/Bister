@@ -4,6 +4,7 @@ A binary serializer for C#, which is based on run time code generation, implemen
 * Offers better performance than System.Text.Json (see benchmarks below)
 * Offers better type coverage than both System.Text.Json and Newtonsoft (For example: Ability to serialize and de-serialize Generics with Enum type)
 * Implemented in pure dotnet standard 2.0 and does not rely on any 3rd party library
+* No special attributes! Ability to serialize ANYTHING with public properties.
 * Ability to handle System.Enum with run-time serialization and de-serialization of the underlying enum type
 
 # Usage
