@@ -164,9 +164,9 @@ namespace BisterLib
 
             EstimateInstanceSize(sb, GetRelevantProperties(objType));
 
-            GenerateSerializerBody(sb, objType);
+            SerializerEntry(sb, objType);
 
-            GenerateDeSerializerBody(sb, objType);
+            DeSerializerEntry(sb, objType);
 
             if (!string.IsNullOrEmpty(DebugPath))
             {
@@ -180,7 +180,7 @@ namespace BisterLib
             return serializer;
         }
 
-        private static void GenerateDeSerializerBody(StringBuilderVerbose sb, Type objType)
+        private static void DeSerializerEntry(StringBuilderVerbose sb, Type objType)
         {
             var sbSerializer = new StringBuilderVerbose();
             string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
@@ -294,7 +294,7 @@ namespace BisterLib
             }
         }
 
-        private static void GenerateSerializerBody(StringBuilderVerbose sb, Type objType)
+        private static void SerializerEntry(StringBuilderVerbose sb, Type objType)
         {
             var sbSerializerBody = new StringBuilderVerbose(Bister.Instance.IsDebug);
 
