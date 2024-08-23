@@ -7,10 +7,21 @@ namespace BisterLib
 {
     public interface IBister
     {
+        bool IsDebug { get; }
         string DebugPath { get; set; }
 
         byte[] Serialize<T>(T instance);
+
+
+        /// <summary>
+        /// This API should be used when the type of the object is unknown during compile time.
+        /// </summary>
+        /// <param name="instance"></param>
+        /// <returns></returns>
+        byte[] Serialize(object instance);
         T Deserialize<T>(byte[] blob);
+
+        object Deserialize(byte[] blob,Type objType);
     }
 
     /// <summary>

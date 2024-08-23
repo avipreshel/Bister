@@ -17,9 +17,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections;
 using System.Runtime.InteropServices;
 using System.Numerics;
+using System.Diagnostics;
 
 namespace BisterLib
 {
+
+
     public class Bister : IBister
     {
         static Lazy<IBister> _lazy = new Lazy<IBister>(()=> new Bister());
@@ -31,6 +34,8 @@ namespace BisterLib
         /// If not empty, will dump the latest serialization class into the path, e.g. c:\temp\gen.cs
         /// </summary>
         public string DebugPath { get; set; } = string.Empty;
+
+        public bool IsDebug => string.IsNullOrEmpty(DebugPath);
 
         private Bister() { }
 
@@ -47,37 +52,40 @@ namespace BisterLib
         }
 
         #region IBister
-        public T Deserialize<T>(byte[] buffer)
+
+        public object Deserialize(byte[] blob, Type objType)
         {
             try
             {
-                if (typeof(T) == typeof(object))
-                {
-                    Type realType = ReadTypeFromBlob(buffer);
-                    IBisterGenerated serializer = GenerateSerializer(realType);
-                    return (T)serializer.DeserializeObj(buffer);
-                }
-                else
-                {
-                    IBisterGenerated<T> serializer = GenerateSerializer<T>();
-                    return serializer.Deserialize(buffer);
-                }
+                IBisterGenerated serializer = GenerateSerializationEngine(objType);
+                return serializer.DeserializeObj(blob);
             }
             catch (EndOfStreamException ex)
             {
-                throw new Exception($"Failed to deserialize. Buffer contains data which does not match the expected type {typeof(T).FullName}");
+                throw new Exception($"Failed to deserialize. Buffer contains data which does not match the expected type {objType}", ex);
             }
+        }
+
+        public T Deserialize<T>(byte[] blob)
+        {
+            return (T)Deserialize(blob, typeof(T));
         }
 
         public byte[] Serialize<T>(T obj)
         {
-            var serializer = GenerateSerializer<T>();
+            var serializer = (IBisterGenerated<T>)GenerateSerializationEngine(typeof(T));
             return serializer.Serialize(obj);
+        }
+
+        public byte[] Serialize(object obj)
+        {
+            var serializer = GenerateSerializationEngine(obj.GetType());
+            return serializer.SerializeObj(obj);
         }
 
         #endregion
 
-        string ReadServerTemplateFromResource()
+        string ReadTemplateFromResource()
         {
             string[] resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames();
             string clientProxyResourceName = resourceNames.First(res => res.Contains("BisterTemplate"));
@@ -87,6 +95,19 @@ namespace BisterLib
                 {
                     return reader.ReadToEnd();
                 }
+            }
+        }
+
+        public static void PrintMethodName(StringBuilderVerbose sb, string indentation, Type objType = null)
+        {
+            var callingMethod = (new StackTrace()).GetFrame(1).GetMethod();
+            if (objType == null)
+            {
+                sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}()");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}({objType.FullName})");
             }
         }
 
@@ -114,15 +135,15 @@ namespace BisterLib
             return $"{typeName}<{string.Join(", ", genericArgumentNames)}>";
         }
 
-        IBisterGenerated GenerateSerializer(Type objType)
+        IBisterGenerated GenerateSerializationEngine(Type objType)
         {
             if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated serTmp))
             {
                 return serTmp;
             }
 
-            StringBuilder sb = new StringBuilder();
-            sb.Append(ReadServerTemplateFromResource());
+            var sb = new StringBuilderVerbose(true);
+            sb.Append(ReadTemplateFromResource());
 
             string friendlyTypeName = GetFriendlyGenericTypeName(objType);
             sb.Replace("___TYPE_NAME___", friendlyTypeName);
@@ -141,6 +162,8 @@ namespace BisterLib
                 sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
             }
 
+            EstimateInstanceSize(sb, GetRelevantProperties(objType));
+
             GenerateSerializerBody(sb, objType);
 
             GenerateDeSerializerBody(sb, objType);
@@ -157,278 +180,76 @@ namespace BisterLib
             return serializer;
         }
 
-        IBisterGenerated<T> GenerateSerializer<T>()
+        private static void GenerateDeSerializerBody(StringBuilderVerbose sb, Type objType)
         {
-            return (IBisterGenerated<T>)GenerateSerializer(typeof(T));
-        }
-
-        static void DeSerializeGeneric(string indentation,StringBuilder sb, Type objType,string instanceName)
-        {
-            string usefulVariableName = instanceName.Replace(".", "");
-            if (objType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                DeSerializeGenericList(indentation, sb, objType, instanceName, usefulVariableName);
-            }
-            else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                DeSerializeGenericDictionary(indentation, sb, objType, instanceName,usefulVariableName);
-            }
-            else if (objType.Namespace.StartsWith("System.Collections.Generic"))
-            {
-                throw new NotImplementedException("Unsupported System.Collections.Generic type");
-            }
-            else
-            {
-                var props = GetRelevantProperties(objType);
-                foreach (var prop in props)
-                {
-                    BisterDeserializer.DeserializeObject(indentation, sb, $"{instanceName}.{prop.Name}",prop.PropertyType);
-                }
-            }
-        }
-
-        public static void PrintMethodName(string indentation, StringBuilder sb,Type objType = null)
-        {
-            if (objType == null)
-            {
-                sb.AppendLine(indentation + $"// Method : {MethodBase.GetCurrentMethod().DeclaringType.Name}.{MethodBase.GetCurrentMethod().Name}()");
-            }
-            else
-            {
-                sb.AppendLine(indentation + $"// Method : {MethodBase.GetCurrentMethod().DeclaringType.Name}.{MethodBase.GetCurrentMethod().Name}({objType.FullName})");
-            }
-        }
-
-        private static void DeSerializeGenericDictionary(string indentation, StringBuilder sb, Type objType, string instanceName, string usefulVariableName)
-        {
-            Type keyType = objType.GenericTypeArguments[0];
-            Type valType = objType.GenericTypeArguments[1];
-            if (IsPrimitive(keyType) && IsPrimitive(valType))
-            {
-                sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
-                sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tvar key = br.{BinaryReaderMethod(Type.GetTypeCode(keyType))};");
-                sb.AppendLine(indentation + $"\tvar val = br.{BinaryReaderMethod(Type.GetTypeCode(valType))};");
-                sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        private static void DeSerializeGenericList(string indentation, StringBuilder sb, Type objType, string instanceName, string usefulVariableName)
-        {
-            Type valType = objType.GenericTypeArguments[0];
-            sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
-            sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
-            if (valType == typeof(Enum))
-            {
-
-
-                sb.AppendLine(indentation + $"Type enumType{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetType(br.ReadString()) : null;");
-                sb.AppendLine(indentation + $"TypeCode enumTypeCode{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetTypeCode(enumType{usefulVariableName}) : TypeCode.Empty;");
-                sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tif (enumTypeCode{usefulVariableName} == TypeCode.Int32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt32()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt16()));");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                Type enumPrimitiveType = valType.IsEnum ? valType.GetEnumUnderlyingType() : valType;
-                sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType})br.{BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
-                sb.AppendLine(indentation + "}");
-            }
-        }
-
-        private static void GenerateDeSerializerBody(StringBuilder sb, Type objType)
-        {
-            string indentation = "\t\t\t\t";
-            StringBuilder sbSerializer = new StringBuilder();
-            if (objType.IsGenericType)
-            {
-                DeSerializeGeneric(indentation, sbSerializer, objType, "instance");
-            }
-            else
-            {
-                var props = objType.GetProperties();
-                foreach (var prop in props)
-                {
-                    var propAccessors = prop.GetAccessors();
-                    // only deal with properties that have get/set accessors
-                    if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
-                    {
-                        if (prop.PropertyType.IsGenericType)
-                        {
-                            DeSerializeGeneric(indentation, sbSerializer, prop.PropertyType, $"instance.{prop.Name}");
-                        }
-                        else
-                        {
-                            PropertyDeserializer(indentation, prop, sbSerializer);
-                        }
-                            
-                    }
-                }
-            }
-
+            var sbSerializer = new StringBuilderVerbose();
+            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
+            string indentation = "\t\t\t";
+            sbSerializer.AppendLine(indentation + $"{friendlyTypeName} instance = new {friendlyTypeName}();");
+            
+            //if (objType.IsGenericType)
+            //{
+            //    BisterDeserializer.DeSerializeGeneric(indentation, sbSerializer, objType, "instance");
+            //}
+            //else
+            //{
+            //    var props = objType.GetProperties();
+            //    foreach (var prop in props)
+            //    {
+            //        var propAccessors = prop.GetAccessors();
+            //        // only deal with properties that have get/set accessors
+            //        if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
+            //        {
+            //            if (prop.PropertyType.IsGenericType)
+            //            {
+            //                BisterDeserializer.DeSerializeGeneric(indentation, sbSerializer, prop.PropertyType, $"instance.{prop.Name}");
+            //            }
+            //            else
+            //            {
+            //                BisterDeserializer.PropertyDeserializer(indentation, prop, sbSerializer);
+            //            }
+            //        }
+            //    }
+            //}
+            sbSerializer.AppendLine(indentation + "return instance;");
             sb.Replace("___DESERIALIZER_BODY___", sbSerializer.ToString());
         }
 
-        private static void PropertyDeserializer(string indentation, PropertyInfo prop, StringBuilder sb)
-        {
-            sb.AppendLine(indentation + $"// {MethodBase.GetCurrentMethod().Name}");
-
-            sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
-
-            // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
-            if (IsPrimitive(prop.PropertyType))
-            {
-                sb.AppendLine(indentation + $"instance.{prop.Name} = br.{BinaryReaderMethod(Type.GetTypeCode(prop.PropertyType))};");
-            }
-            else if (prop.PropertyType == typeof(Enum)) // Unspecific enum
-            {
-                // Since we can't know the actual type, we need to assume the worst (64bit enum)
-                DeserializerEnum(indentation, $"instance.{prop.Name}", sb);
-            }
-            else if (prop.PropertyType.IsEnum)
-            {
-                Type underlytingType = Enum.GetUnderlyingType(prop.PropertyType);
-                string propType = prop.PropertyType.FullName.Replace("+", ".");
-                sb.AppendLine(indentation + $"instance.{prop.Name} = ({propType})br.{BinaryReaderMethod(Type.GetTypeCode(underlytingType))};");
-            }
-            else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                PropertyDeserializerList(indentation, prop, sb);
-            }
-            else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                PropertyDeserializerDictionary(indentation, prop, sb);
-            }
-            else if (prop.PropertyType.IsArray)
-            {
-                BisterDeserializer.DeserializeArray(indentation, sb, $"instance.{prop.Name}", prop.PropertyType);
-            }
-            else if (prop.PropertyType == typeof(ArrayList))
-            {
-                BisterDeserializer.DeserializeArrayList(indentation, sb, $"instance.{prop.Name}");
-            }
-            else if (prop.PropertyType.IsClass)
-            {
-                sb.AppendLine(indentation + $"instance.{prop.Name} = Bister.Instance.GetSerializer<{prop.PropertyType}>().Deserialize(br);");
-            }
-            else
-            {
-                throw new Exception($"Property {prop.Name} type {prop.PropertyType} is not supported");
-            }
-        }
-
-       
-
-
-
-        private static void PropertyDeserializerDictionary(string indentation, PropertyInfo prop, StringBuilder sb)
-        {
-            sb.AppendLine(indentation + $"int count{prop.Name} = br.ReadInt32();");
-            Type keyType = prop.PropertyType.GenericTypeArguments[0];
-            Type valType = prop.PropertyType.GenericTypeArguments[1];
-            sb.AppendLine(indentation + $"instance.{prop.Name} = new Dictionary<{keyType.Name},{valType.Name}>(count{prop.Name});");
-            sb.AppendLine(indentation + $"for (int i =0; i< count{prop.Name}; i++)");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tinstance.{prop.Name}[br.{BinaryReaderMethod(Type.GetTypeCode(keyType))}] = br.{BinaryReaderMethod(Type.GetTypeCode(valType))};");
-            sb.AppendLine(indentation + "}");
-        }
-
-        private static void PropertyDeserializerList(string indentation, PropertyInfo prop, StringBuilder sb)
-        {
-            Type valType = prop.PropertyType.GenericTypeArguments[0];
-            sb.AppendLine(indentation + $"int count{prop.Name} = br.ReadInt32();");
-            sb.AppendLine(indentation + $"instance.{prop.Name} = new List<{valType.Name}>(count{prop.Name});");
-            if (valType.IsEnum || valType == typeof(Enum))
-            {
-                sb.AppendLine(indentation + $"if (count{prop.Name} > 0)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tType enumType{prop.Name} = count{prop.Name} > 0? Type.GetType(br.ReadString()) : null;");
-                sb.AppendLine(indentation + $"\tType enumNativeType{prop.Name} = enumType{prop.Name}.GetEnumUnderlyingType();");
-                sb.AppendLine(indentation + $"\tfor (int i = 0; i < count{prop.Name}; i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\tif (enumNativeType{prop.Name} == typeof(byte)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadByte()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(sbyte)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadSByte()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(short)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt16()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(ushort)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadUInt16()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(int)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt32()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(uint)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadUInt32()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(long)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadInt64()));");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType{prop.Name} == typeof(ulong)) instance.{prop.Name}.Add(({valType.Name})Enum.ToObject(enumType{prop.Name}!,br.ReadUInt64()));");
-                sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to deserialize {prop.Name}. Unknown enum underlying type\");");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                sb.AppendLine(indentation + $"for (int i = 0; i < count{prop.Name}; i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tinstance.{prop.Name}.Add(br.{BinaryReaderMethod(Type.GetTypeCode(valType))});");
-                sb.AppendLine(indentation + "}");
-            }
-            
-            
-        }
-
-        private static void DeserializerEnum(string indentation, string instanceName, StringBuilder sb)
-        {
-            sb.AppendLine(indentation + $"string enumTypeStr = br.ReadString();");
-            sb.AppendLine(indentation + $"Type enumType =Type.GetType(enumTypeStr);");
-            sb.AppendLine(indentation + $"{instanceName} = (Enum)Activator.CreateInstance(enumType)!;");
-            sb.AppendLine(indentation + $"var enumInstanceType = enumType.GetEnumUnderlyingType();");
-            sb.AppendLine(indentation + $"object enumVal;");
-            sb.AppendLine(indentation + $"if (enumInstanceType == typeof(byte)) enumVal = br.ReadByte();");
-            sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(short)) enumVal = br.ReadInt16();");
-            sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(int)) enumVal = br.ReadInt32();");
-            sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(long)) enumVal = br.ReadInt64();");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to read {instanceName} \");");
-            sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue({instanceName}, enumVal);");
-        }
 
         public static string BinaryWriterMethod(TypeCode typeCode,string instanceName)
         {
             switch (typeCode)
             {
                 case TypeCode.Boolean:
-                    return $"br.WriteBoolean({instanceName})";
+                    return $"bw.Write((bool){instanceName})";
                 case TypeCode.Char:
-                    return "br.WriteChar({instanceName})";
+                    return $"bw.Write((char){instanceName})";
                 case TypeCode.Byte:
-                    return "br.WriteByte({instanceName})";
+                    return $"bw.Write((byte){instanceName})";
                 case TypeCode.SByte:
-                    return "br.WriteSByte({instanceName})";
+                    return $"bw.Write((sbyte){instanceName})";
                 case TypeCode.Int16:
-                    return "br.WriteInt16({instanceName})";
+                    return $"bw.Write((short){instanceName})";
                 case TypeCode.UInt16:
-                    return "br.WriteUInt16({instanceName})";
+                    return $"bw.Write((ushort){instanceName})";
                 case TypeCode.Int32:
-                    return "br.WriteInt32({instanceName})";
+                    return $"bw.Write((int){instanceName})";
                 case TypeCode.UInt32:
-                    return "br.WriteUInt32({instanceName})";
+                    return $"bw.Write((uint){instanceName})";
                 case TypeCode.Int64:
-                    return "br.WriteInt64({instanceName})";
+                    return $"bw.Write((long){instanceName})";
                 case TypeCode.UInt64:
-                    return "br.WriteUInt64({instanceName})";
+                    return $"bw.Write((ulong){instanceName})";
                 case TypeCode.Single:
-                    return "br.WriteSingle({instanceName})";
+                    return $"bw.Write((float){instanceName})";
                 case TypeCode.Double:
-                    return "br.WriteDouble({instanceName})";
+                    return $"bw.Write((double){instanceName})";
                 case TypeCode.Decimal:
-                    return "br.WriteDecimal({instanceName})";
+                    return $"bw.Write((decimal){instanceName})";
                 case TypeCode.String:
-                    return "br.WriteString({instanceName})";
+                    return $"bw.Write((string){instanceName})";
                 case TypeCode.DateTime:
-                    return "br.WriteInt64({instanceName}.ToFileTime())";
+                    return $"bw.Write({instanceName}.Ticks == 0 ? 0 : (long){instanceName}.ToFileTime())";
                 default:
                     throw new NotImplementedException();
             }
@@ -473,13 +294,26 @@ namespace BisterLib
             }
         }
 
-        private static void GenerateSerializerBody(StringBuilder sb, Type objType)
+        private static void GenerateSerializerBody(StringBuilderVerbose sb, Type objType)
         {
-            var props = objType.GetProperties();
+            var sbSerializerBody = new StringBuilderVerbose(Bister.Instance.IsDebug);
 
             string indentation = "\t\t\t";
+
+            BisterSerializer.SerializeAnyType(sbSerializerBody, indentation, "instance", objType);
+
+            sbSerializerBody.AppendLine(indentation + "bw.Flush();");
+            sbSerializerBody.AppendLine(indentation + "return ms.ToArray();");
+
+            sb.Replace("___SERIALIZER_BODY___", sbSerializerBody.ToString());
+
             
-            StringBuilder sbSizeOfObject = new StringBuilder();
+            
+        }
+
+        private static void EstimateInstanceSize(StringBuilderVerbose sb, IEnumerable<PropertyInfo> props)
+        {
+            var sbSizeOfObject = new StringBuilderVerbose();
             sbSizeOfObject.Append($"0");
             foreach (var prop in props)
             {
@@ -495,6 +329,10 @@ namespace BisterLib
                 {
                     sbSizeOfObject.Append($"+instance.{prop.Name}.Length");
                 }
+                else if (prop.PropertyType == typeof(DateTime))
+                {
+                    sbSizeOfObject.Append($"+8");
+                }
                 else if (prop.PropertyType.IsArray)
                 {
                     Type arrayItemType = prop.PropertyType.GetElementType();
@@ -509,7 +347,7 @@ namespace BisterLib
                 }
                 else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
                 {
-                    int size = prop.PropertyType.GenericTypeArguments.Sum(t => t.IsPrimitive? Marshal.SizeOf(t) : 8);
+                    int size = prop.PropertyType.GenericTypeArguments.Sum(t => t.IsPrimitive ? Marshal.SizeOf(t) : 8);
                     sbSizeOfObject.Append($"+{size}");
                 }
                 else
@@ -521,72 +359,9 @@ namespace BisterLib
             }
 
             sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"(int)Math.Ceiling(1.5f * ({sbSizeOfObject.ToString()}))");
-
-            StringBuilder sbSerializerBody = new StringBuilder();
-            if (objType.IsGenericType)
-            {
-                SerializeGeneric("instance",indentation + '\t', sbSerializerBody, objType);
-            }
-            else
-            {
-                foreach (var prop in props)
-                {
-
-                    var propAccessors = prop.GetAccessors();
-                    // only deal with properties that have get/set accessors
-                    if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
-                    {
-                        sbSerializerBody.AppendLine(indentation + $"\t// Serializing instance.{prop.Name}");
-                        if (prop.PropertyType.IsGenericType)
-                        {
-                            SerializeGeneric($"instance.{prop.Name}", indentation + "\t", sbSerializerBody, prop.PropertyType);
-                        }
-                        else if (prop.PropertyType.IsArray || prop.PropertyType == typeof(ArrayList))
-                        {
-                            BisterSerializer.SerializeArray(sbSerializerBody, indentation + '\t', $"instance.{prop.Name}", prop.PropertyType);
-                        }
-                        else
-                        {
-                            PropertySerializer(indentation + "\t", prop, sbSerializerBody);
-                        }
-                    }
-                }
-            }
-
-            sb.Replace("___SERIALIZER_BODY___", sbSerializerBody.ToString());
         }
 
         
-
-        
-
-        
-
-        
-
-        static void SerializeGeneric(string instanceName,string indentation,StringBuilder sb, Type objType)
-        {
-            if (objType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                SerializeGenericList(instanceName, indentation, sb, objType);
-            }
-            else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                SerializeGenericDictionary(instanceName, indentation, sb, objType);
-            }
-            else if (objType.Namespace.StartsWith("System.Collections.Generic"))
-            {
-                throw new NotImplementedException("Unsupported System.Collections.Generic type");
-            }
-            else
-            {
-                var props = GetRelevantProperties(objType);
-                foreach (var prop in props)
-                {
-                    SerializeGenericItem($"{instanceName}.{prop.Name}", indentation, prop.PropertyType, sb);
-                }
-            }
-        }
 
         /// <summary>
         /// Returns list of properties which have a public getter and setter
@@ -600,171 +375,7 @@ namespace BisterLib
 
         public static bool IsPrimitive(Type type)
         {
-            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal);
-        }
-
-        private static void SerializeGenericDictionary(string instanceName, string indentation, StringBuilder sb, Type objType)
-        {
-            Type keyType = objType.GenericTypeArguments[0];
-            Type valType = objType.GenericTypeArguments[1];
-            if (IsPrimitive(keyType) && IsPrimitive(valType))
-            {
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(item.Key);");
-                sb.AppendLine(indentation + $"\tbw.Write(item.Value);");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
-        private static void SerializeGenericList(string instanceName, string indentation, StringBuilder sb, Type objType)
-        {
-            Type valType = objType.GenericTypeArguments[0];
-            if (valType == typeof(Enum))
-            {
-                // Write the enum type
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                sb.AppendLine(indentation + $"if ({instanceName}.Count > 0)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tType enumType = {instanceName}[0].GetType();");
-                sb.AppendLine(indentation + $"\tbw.Write(enumType.AssemblyQualifiedName);");
-                sb.AppendLine(indentation + $"\tType enumNativeType = enumType.GetEnumUnderlyingType();");
-                sb.AppendLine(indentation + $"\tvar enumValueField = enumType.GetField(\"value__\");");
-                sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\tobject numericVal = enumValueField.GetValue(item);");
-                sb.AppendLine(indentation + $"\t\tif (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to serialize {instanceName}\");");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
-                sb.AppendLine(indentation + "{");
-                SerializeGenericItem("item", indentation + '\t', valType, sb);
-                sb.AppendLine(indentation + "}");
-            }
-        }
-
-        static void SerializeGenericItem(string instanceName,string indentation, Type objType, StringBuilder sb)
-        {
-            if (IsPrimitive(objType))
-            {
-                sb.AppendLine(indentation + $"bw.Write(({objType}){instanceName});");
-            }
-            else if (objType.IsEnum && objType != typeof(Enum))
-            {
-                Type enumNativeType = objType.GetEnumUnderlyingType();
-                SerializeGenericItem(instanceName, indentation, enumNativeType, sb);
-            }
-            else
-            {
-                throw new NotImplementedException($"Unable to create serialize code for {instanceName} of type {objType}");
-            }
-        }
-
-        static void SerializerEnum(string indentation, string instanceName, StringBuilder sb)
-        {
-            // Since we can't know the actual Enum during run time, so we need to do magic
-            sb.AppendLine(indentation + $"Type enumType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"Type enumNativeType = {instanceName}.GetType()!.GetEnumUnderlyingType()!;");
-            sb.AppendLine(indentation + $"object numericVal = enumType!.GetField(\"value__\")!.GetValue({instanceName})!;");
-            sb.AppendLine(indentation + $"bw.Write(enumType!.AssemblyQualifiedName!);");
-            sb.AppendLine(indentation + $"if (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to serialize {instanceName}\");");
-        }
-
-        static void PropertySerializer(string indentation,PropertyInfo prop, StringBuilder sb)
-        {
-            sb.AppendLine(indentation + $"// Serializing {prop.DeclaringType.Name}.{prop.Name}");
-            if (IsPrimitive(prop.PropertyType))
-            {
-                sb.AppendLine(indentation + $"bw.Write(instance.{prop.Name});");
-            }
-            else if (prop.PropertyType == typeof(Enum)) // Unspecific enum
-            {
-                SerializerEnum(indentation, $"instance.{prop.Name}", sb);
-            }
-            else if (prop.PropertyType.IsEnum) // Specific enum
-            {
-                Type underlytingType = Enum.GetUnderlyingType(prop.PropertyType);
-                sb.AppendLine(indentation + $"bw.Write(({underlytingType.FullName})instance.{prop.Name});");
-            }
-            else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                PropertySerializerList(indentation, prop, sb);
-            }
-            else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                PropertySerializerDictionary(indentation, prop, sb);
-            }
-            else if (prop.PropertyType.IsClass)
-            {
-                sb.AppendLine(indentation + $"Bister.Instance.GetSerializer<{prop.PropertyType}>().Serialize(instance.{prop.Name},ms,bw);");
-            }
-            else
-            {
-                throw new Exception($"Property {prop.Name} type {prop.PropertyType} is not supported");
-            }
-        }
-
-        private static void PropertySerializerDictionary(string indentation, PropertyInfo prop, StringBuilder sb)
-        {
-            Type keyType = prop.PropertyType.GenericTypeArguments[0];
-            Type valType = prop.PropertyType.GenericTypeArguments[1];
-            sb.AppendLine(indentation + $"bw.Write((int)instance.{prop.Name}.Count);");
-            sb.AppendLine(indentation + $"foreach (var item in instance.{prop.Name})");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tbw.Write(item.Key);");
-            sb.AppendLine(indentation + $"\tbw.Write(item.Value);");
-            sb.AppendLine(indentation + "}");
-        }
-
-        private static void PropertySerializerList(string indentation, PropertyInfo prop, StringBuilder sb)
-        {
-            sb.AppendLine(indentation + $"bw.Write((int)instance.{prop.Name}.Count);");
-
-            Type keyType = prop.PropertyType.GenericTypeArguments[0];
-            if (keyType.IsEnum || keyType == typeof(Enum))
-            {
-                sb.AppendLine(indentation + $"if (instance.{prop.Name}.Count>0)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(instance.{prop.Name}[0].GetType().AssemblyQualifiedName);");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + $"foreach (var item in instance.{prop.Name})");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(Convert.ToInt64(item));");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                sb.AppendLine(indentation + $"foreach (var item in instance.{prop.Name})");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(item);");
-                sb.AppendLine(indentation + "}");
-            }
-            
+            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime);
         }
 
         private static Type GenerateType(string theCode, string expectedTypeName,List<Type> domainDependencies)
@@ -826,5 +437,7 @@ namespace BisterLib
                 return myClassType;
             }
         }
+
+       
     }
 }

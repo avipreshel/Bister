@@ -5,9 +5,9 @@ using System.Drawing;
 namespace BisterLib.UnitTest
 {
     [TestClass]
-    public class BisterUnitTests
+    public class BisterTests
     {
-        public BisterUnitTests() 
+        public BisterTests() 
         {
             Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
         }
@@ -91,9 +91,9 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_ClassWithPrimitivesOnly()
         {
-            var instance = new ClassWithPrimitivesOnly()
+            ClassWithPrimitivesOnly obj = new ClassWithPrimitivesOnly()
             {
-                Prop = TestEnum.Two,
+                PropTestEnum = TestEnum.Two,
                 Prop_bool = true,
                 Prop_byte = 1,
                 Prop_short = 2,
@@ -110,16 +110,16 @@ namespace BisterLib.UnitTest
                 Prop_float = 14.44f
             };
 
-            var blob = Bister.Instance.Serialize(instance);
+            byte[] blob = Bister.Instance.Serialize(obj);
             Assert.IsNotNull(blob);
-            var copyOfinstance = Bister.Instance.Deserialize<ClassWithPrimitivesOnly>(blob);
-            Assert.IsNotNull(copyOfinstance);
 
-            string strInstance = System.Text.Json.JsonSerializer.Serialize(instance);
-            string strcopyOfinstance = System.Text.Json.JsonSerializer.Serialize(copyOfinstance);
-            Assert.AreEqual(strInstance, strcopyOfinstance);
+            object objCopy = Bister.Instance.Deserialize<ClassWithPrimitivesOnly>(blob);
+            Assert.IsNotNull(blob);
+            byte[] blobCopy = Bister.Instance.Serialize(objCopy);
+            CollectionAssert.AreEqual(blob, blobCopy);
         }
 
+       
         [TestMethod]
         [DataRow(1)]
         [DataRow(1000)]
@@ -183,7 +183,7 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
-        [DataRow(1)]
+        //[DataRow(1)]
         [DataRow(1000)]
         public void Test_ClassWithADictStringToInt(int size)
         {

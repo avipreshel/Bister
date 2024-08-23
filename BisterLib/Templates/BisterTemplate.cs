@@ -12,37 +12,12 @@ namespace GeneratedNS
     {
         public byte[] Serialize(___TYPE_NAME___ instance, MemoryStream ms, BinaryWriter bw)
         {
-            bw.Write(instance.GetType().AssemblyQualifiedName);
-            if (instance == null)
-            {
-                bw.Write((byte)0);
-            }
-            else
-            {
-                bw.Write((byte)1);
 ___SERIALIZER_BODY___
-            }
-            bw.Flush();
-            return ms.ToArray();
         }
 
         public ___TYPE_NAME___ Deserialize(BinaryReader br)
         {
-            _ = br.ReadString();
-            //string typeName = br.ReadString(); // Reads the type name
-            //if (!typeName.StartsWith("___TYPE_NAME___"))
-            //throw new Exception($"Expected type \"___TYPE_NAME___\" but found type \"{typeName}\"");
-            byte isNull = br.ReadByte();
-            if (isNull == 0)
-            {
-                return null;
-            }
-            else
-            {
-                ___TYPE_NAME___ instance = new ___TYPE_NAME___();
 ___DESERIALIZER_BODY___
-                return instance;
-            }
         }
 
         public byte[] Serialize(___TYPE_NAME___ instance)

@@ -14,14 +14,14 @@ namespace BisterLib.UnitTest
         public T Y { get; set; }
     }
 
-    public enum TestEnum
+    public enum TestEnum : ushort
     {
         One,Two, Three
     }
 
     public class ClassWithPrimitivesOnly
     {
-        public TestEnum Prop { get; set; }
+        public TestEnum PropTestEnum { get; set; }
 
         public int Prop_int { get; set; }
 
@@ -43,6 +43,7 @@ namespace BisterLib.UnitTest
         public bool Prop_bool { get; set; }
         public float Prop_float { get; set; }
         public double Prop_double { get; set; }
+        public DateTime Prop_DateTime { get; set; }
     }
 
     public class ClassWithLegacyArray
