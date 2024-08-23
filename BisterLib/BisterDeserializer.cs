@@ -8,6 +8,15 @@ namespace BisterLib
 {
     internal static class BisterDeserializer
     {
+        public static void DeserializeObject(string indentation, StringBuilder sb, string instanceName,Type objType)
+        {
+            Bister.PrintMethodName(indentation,sb, objType);
+            if (Bister.IsPrimitive(objType))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(objType))};");
+            }
+        }
+
         public static void DeserializeArrayList(string indentation, StringBuilder sb, string instanceName)
         {
             sb.AppendLine(indentation + $"// {MethodBase.GetCurrentMethod().Name}");

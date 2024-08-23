@@ -16,6 +16,7 @@ using System.Xml.Linq;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections;
 using System.Runtime.InteropServices;
+using System.Numerics;
 
 namespace BisterLib
 {
@@ -172,11 +173,32 @@ namespace BisterLib
             {
                 DeSerializeGenericDictionary(indentation, sb, objType, instanceName,usefulVariableName);
             }
+            else if (objType.Namespace.StartsWith("System.Collections.Generic"))
+            {
+                throw new NotImplementedException("Unsupported System.Collections.Generic type");
+            }
             else
             {
-                throw new NotImplementedException($"Unable to create serializer code for {instanceName} since type {objType} is unsupported");
+                var props = GetRelevantProperties(objType);
+                foreach (var prop in props)
+                {
+                    BisterDeserializer.DeserializeObject(indentation, sb, $"{instanceName}.{prop.Name}",prop.PropertyType);
+                }
             }
         }
+
+        public static void PrintMethodName(string indentation, StringBuilder sb,Type objType = null)
+        {
+            if (objType == null)
+            {
+                sb.AppendLine(indentation + $"// Method : {MethodBase.GetCurrentMethod().DeclaringType.Name}.{MethodBase.GetCurrentMethod().Name}()");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"// Method : {MethodBase.GetCurrentMethod().DeclaringType.Name}.{MethodBase.GetCurrentMethod().Name}({objType.FullName})");
+            }
+        }
+
         private static void DeSerializeGenericDictionary(string indentation, StringBuilder sb, Type objType, string instanceName, string usefulVariableName)
         {
             Type keyType = objType.GenericTypeArguments[0];
@@ -558,8 +580,22 @@ namespace BisterLib
             }
             else
             {
-                throw new NotImplementedException($"Unable to create serializer code for {instanceName} since type {objType} is unsupported");
+                var props = GetRelevantProperties(objType);
+                foreach (var prop in props)
+                {
+                    SerializeGenericItem($"{instanceName}.{prop.Name}", indentation, prop.PropertyType, sb);
+                }
             }
+        }
+
+        /// <summary>
+        /// Returns list of properties which have a public getter and setter
+        /// </summary>
+        /// <param name="objType"></param>
+        /// <returns></returns>
+        public static IEnumerable<PropertyInfo> GetRelevantProperties(Type objType)
+        {
+            return objType.GetProperties().Where(prop => prop.GetAccessors().Length > 0 && prop.GetAccessors().All(acc => acc.IsPublic)).ToList();
         }
 
         public static bool IsPrimitive(Type type)
