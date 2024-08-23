@@ -48,16 +48,23 @@ namespace BisterLib
         #region IBister
         public T Deserialize<T>(byte[] buffer)
         {
-            if (typeof(T) == typeof(object))
+            try
             {
-                Type realType = ReadTypeFromBlob(buffer);
-                IBisterGenerated serializer = GenerateSerializer(realType);
-                return (T)serializer.DeserializeObj(buffer);
+                if (typeof(T) == typeof(object))
+                {
+                    Type realType = ReadTypeFromBlob(buffer);
+                    IBisterGenerated serializer = GenerateSerializer(realType);
+                    return (T)serializer.DeserializeObj(buffer);
+                }
+                else
+                {
+                    IBisterGenerated<T> serializer = GenerateSerializer<T>();
+                    return serializer.Deserialize(buffer);
+                }
             }
-            else
+            catch (EndOfStreamException ex)
             {
-                IBisterGenerated<T> serializer = GenerateSerializer<T>();
-                return serializer.Deserialize(buffer);
+                throw new Exception($"Failed to deserialize. Buffer contains data which does not match the expected type {typeof(T).FullName}");
             }
         }
 
@@ -544,6 +551,10 @@ namespace BisterLib
             else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
             {
                 SerializeGenericDictionary(instanceName, indentation, sb, objType);
+            }
+            else if (objType.Namespace.StartsWith("System.Collections.Generic"))
+            {
+                throw new NotImplementedException("Unsupported System.Collections.Generic type");
             }
             else
             {

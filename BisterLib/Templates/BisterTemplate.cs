@@ -28,7 +28,10 @@ ___SERIALIZER_BODY___
 
         public ___TYPE_NAME___ Deserialize(BinaryReader br)
         {
-            _ = br.ReadString(); // Reads the type name
+            _ = br.ReadString();
+            //string typeName = br.ReadString(); // Reads the type name
+            //if (!typeName.StartsWith("___TYPE_NAME___"))
+            //throw new Exception($"Expected type \"___TYPE_NAME___\" but found type \"{typeName}\"");
             byte isNull = br.ReadByte();
             if (isNull == 0)
             {

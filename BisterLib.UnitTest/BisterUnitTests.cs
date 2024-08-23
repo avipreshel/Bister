@@ -34,10 +34,23 @@ namespace BisterLib.UnitTest
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
-            var copyOfinstance = Bister.Instance.Deserialize<ClassWithArrays>(blob);
+            var copyOfinstance = Bister.Instance.Deserialize<ClassWithLegacyArray>(blob);
             Assert.IsNotNull(copyOfinstance);
 
             CollectionAssert.AreEqual(instance.ArrayDotNet2, copyOfinstance.ArrayDotNet2);
+        }
+
+        [TestMethod]
+        public void Test_WrongTypeDeserialization()
+        {
+            var instance = new ClassWithLegacyArray()
+            {
+                ArrayDotNet2 = [10, 11, 12]
+            };
+
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            Assert.ThrowsException<Exception>(() => Bister.Instance.Deserialize<ClassWithArrays>(blob));
         }
 
         [TestMethod]
