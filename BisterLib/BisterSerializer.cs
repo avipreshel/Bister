@@ -170,11 +170,11 @@ namespace BisterLib
             Bister.PrintMethodName(sb, indentation, objType);
             sb.AppendLine(indentation + $"if ({instanceName} == null)");
             sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write((byte)0);");
+            sb.AppendLine(indentation + "\tbw.Write(true);");
             sb.AppendLine(indentation + "}");
             sb.AppendLine(indentation + $"else");
             sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write((byte)1);");
+            sb.AppendLine(indentation + "\tbw.Write(false);");
 
             if (objType.IsGenericType)
             {

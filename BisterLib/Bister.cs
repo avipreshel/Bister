@@ -57,6 +57,10 @@ namespace BisterLib
         {
             try
             {
+                if (blob.Length== 0)
+                {
+                    return null;
+                }
                 IBisterGenerated serializer = GenerateSerializationEngine(objType);
                 return serializer.DeserializeObj(blob);
             }
@@ -79,6 +83,10 @@ namespace BisterLib
 
         public byte[] Serialize(object obj)
         {
+            if (obj == null)
+            {
+                return new byte[0];
+            }
             var serializer = GenerateSerializationEngine(obj.GetType());
             return serializer.SerializeObj(obj);
         }
@@ -183,9 +191,33 @@ namespace BisterLib
         private static void DeSerializerEntry(StringBuilderVerbose sb, Type objType)
         {
             var sbSerializer = new StringBuilderVerbose();
-            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
             string indentation = "\t\t\t";
-            sbSerializer.AppendLine(indentation + $"{friendlyTypeName} instance = new {friendlyTypeName}();");
+
+            if (objType.IsClass)
+            {
+                if (objType.IsGenericType)
+                {
+                    string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
+                    sbSerializer.AppendLine(indentation + $"{friendlyTypeName} instance = new {friendlyTypeName}();");
+                }
+                else
+                {
+                    sbSerializer.AppendLine(indentation + $"var instance = new {objType.FullName}();");
+                }
+            }
+            else if (objType.IsByRef || (objType.IsValueType && !IsPrimitive(objType))) // is class or struct
+            {
+                sbSerializer.AppendLine(indentation + $"var instance = new {objType.FullName}();");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+            BisterDeserializer.DeserializeAnyType(sbSerializer, indentation, "instance", objType);
+
+            //string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
+            
+            //sbSerializer.AppendLine(indentation + $"{friendlyTypeName} instance = new {friendlyTypeName}();");
             
             //if (objType.IsGenericType)
             //{
@@ -255,6 +287,7 @@ namespace BisterLib
             }
         }
 
+     
         public static string BinaryReaderMethod(TypeCode typeCode)
         {
             switch (typeCode)

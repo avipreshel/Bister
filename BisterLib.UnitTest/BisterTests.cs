@@ -80,12 +80,23 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_GenericListOfPrimitives()
         {
-            List<float> instance = new List<float>();
+            List<float> instance = new List<float>() {  1f,2f,3f,10f};
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<List<float>>(blob);
             Assert.IsNotNull(copyOfinstance);
             CollectionAssert.AreEqual(instance, copyOfinstance);
+        }
+
+        [TestMethod]
+        public void Test_NullObject()
+        {
+            object? instance = null;
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            Assert.AreEqual(blob.Length, 0);
+            var copyOfinstance = Bister.Instance.Deserialize<object>(blob);
+            Assert.IsNull(copyOfinstance);
         }
 
         [TestMethod]
@@ -107,7 +118,8 @@ namespace BisterLib.UnitTest
                 Prop_uint = 11,
                 Prop_ushort = 12,
                 Prop_double = 13.33,
-                Prop_float = 14.44f
+                Prop_float = 14.44f,
+                Prop_DateTime = DateTime.Now,
             };
 
             byte[] blob = Bister.Instance.Serialize(obj);
