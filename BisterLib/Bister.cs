@@ -287,6 +287,11 @@ namespace BisterLib
             }
         }
 
+        public static string GetUsefulName(string instanceName)
+        {
+            return instanceName.Replace(".", "");
+        } 
+
      
         public static string BinaryReaderMethod(TypeCode typeCode)
         {

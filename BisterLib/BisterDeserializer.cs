@@ -18,33 +18,11 @@ namespace BisterLib
             }
         }
 
-        public static void DeSerializeGeneric(string indentation, StringBuilderVerbose sb, Type objType, string instanceName)
-        {
-            string usefulVariableName = instanceName.Replace(".", "");
-            if (objType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                DeSerializeGenericList(indentation, sb, objType, instanceName, usefulVariableName);
-            }
-            else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                DeSerializeGenericDictionary(indentation, sb, objType, instanceName, usefulVariableName);
-            }
-            else if (objType.Namespace.StartsWith("System.Collections.Generic"))
-            {
-                throw new NotImplementedException("Unsupported System.Collections.Generic type");
-            }
-            else
-            {
-                var props = Bister.GetRelevantProperties(objType);
-                foreach (var prop in props)
-                {
-                    BisterDeserializer.DeserializeObject(indentation, sb, $"{instanceName}.{prop.Name}", prop.PropertyType);
-                }
-            }
-        }
+     
 
-        public static void DeSerializeGenericDictionary(string indentation, StringBuilderVerbose sb, Type objType, string instanceName, string usefulVariableName)
+        public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
+            string usefulVariableName = Bister.GetUsefulName(instanceName);
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
             if (Bister.IsPrimitive(keyType) && Bister.IsPrimitive(valType))
@@ -63,8 +41,9 @@ namespace BisterLib
             }
         }
 
-        public static void DeSerializeGenericList(string indentation, StringBuilderVerbose sb, Type objType, string instanceName, string usefulVariableName)
+        public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
+            string usefulVariableName = Bister.GetUsefulName(instanceName);
             Type valType = objType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
             sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
@@ -127,7 +106,7 @@ namespace BisterLib
             }
             else if (prop.PropertyType == typeof(ArrayList))
             {
-                BisterDeserializer.DeserializeArrayList(indentation, sb, $"instance.{prop.Name}");
+                BisterDeserializer.DeserializeArrayList(sb, indentation, $"instance.{prop.Name}");
             }
             else if (prop.PropertyType.IsClass)
             {
@@ -202,7 +181,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue({instanceName}, enumVal);");
         }
 
-        public static void DeserializeArrayList(string indentation, StringBuilderVerbose sb, string instanceName)
+        public static void DeserializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
 
@@ -434,13 +413,18 @@ namespace BisterLib
         public static void DeserializeClass(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"bool isNull = br.ReadBoolean();");
+            string usefulName = Bister.GetUsefulName(instanceName);
+            sb.AppendLine(indentation + $"bool isNull_{usefulName} = br.ReadBoolean();");
             sb.AppendLine(indentation + "if (isNull)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{instanceName} = null;");
             sb.AppendLine(indentation + "}");
             sb.AppendLine(indentation + $"else");
             sb.AppendLine(indentation + "{");
+            if (objType == typeof(ArrayList))
+            {
+                DeserializeArrayList(sb, indentation, instanceName);
+            }
             if (objType.IsGenericType)
             {
                 DeserializeGenericClass(sb, indentation + "\t", instanceName, objType);
@@ -465,7 +449,22 @@ namespace BisterLib
         private static void DeserializeGenericClass(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            throw new NotImplementedException();
+            if (objType.GetGenericTypeDefinition() == typeof(List<>))
+            {
+                DeserializeGenericList(sb, indentation, instanceName, objType);
+            }
+            else if (objType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+            {
+                DeserializeGenericDictionary(sb, indentation, instanceName, objType);
+            }
+            else if (objType.Namespace.StartsWith("System.Collections.Generic"))
+            {
+                throw new NotImplementedException("Unsupported System.Collections.Generic type");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
         }
     }
 }
