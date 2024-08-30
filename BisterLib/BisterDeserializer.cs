@@ -302,59 +302,23 @@ namespace BisterLib
         private static void DeserializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            TypeCode typeCode = Type.GetTypeCode(objType);
-            switch (typeCode)
+            if (objType.IsPrimitive || objType == typeof(string) || objType == typeof(decimal))
             {
-                case TypeCode.Boolean:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadBoolean();");
-                    break;
-                case TypeCode.Char:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadChar();");
-                    break;
-                case TypeCode.Byte:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadByte();");
-                    break;
-                case TypeCode.SByte:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadSByte();");
-                    break;
-                case TypeCode.Int16:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadInt16();");
-                    break;
-                case TypeCode.UInt16:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadUInt16();");
-                    break;
-                case TypeCode.Int32:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadInt32();");
-                    break;
-                case TypeCode.UInt32:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadUInt32();");
-                    break;
-                case TypeCode.Int64:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadInt64();");
-                    break;
-                case TypeCode.UInt64:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadUInt64();");
-                    break;
-                case TypeCode.Single:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadSingle();");
-                    break;
-                case TypeCode.Double:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadDouble();");
-                    break;
-                case TypeCode.Decimal:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadDecimal();");
-                    break;
-                case TypeCode.String:
-                    sb.AppendLine(indentation + $"{instanceName} = br.ReadString();");
-                    break;
-                case TypeCode.DateTime:
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tlong dt = br.ReadInt64();");
-                    sb.AppendLine(indentation + $"\t{instanceName} = (dt == 0? new DateTime() : DateTime.FromFileTime(dt));");
-                    sb.AppendLine(indentation + "}");
-                    break;
-                default:
-                    throw new NotImplementedException();
+                sb.AppendLine(indentation + $"{instanceName} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(objType))};");
+            }
+            else if (objType == typeof(DateTime))
+            {
+                
+                sb.AppendLine(indentation + $"{instanceName} = DateTime.FromFileTime(br.ReadInt64());");
+            }
+            else if (objType == typeof(TimeSpan))
+            {
+                
+                sb.AppendLine(indentation + $"{instanceName} = TimeSpan.FromTicks(br.ReadInt64());");
+            }
+            else
+            {
+                throw new NotImplementedException();
             }
         }
 

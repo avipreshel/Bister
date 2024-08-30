@@ -93,6 +93,7 @@ namespace BisterLib.UnitTest
                 Prop_double = 13.33,
                 Prop_float = 14.44f,
                 Prop_DateTime = DateTime.Now,
+                Prop_TimeSpan = TimeSpan.Zero
             };
 
             ValidateLogic(instance);

@@ -345,6 +345,10 @@ namespace BisterLib
                 {
                     sbSizeOfObject.Append($"+8");
                 }
+                else if (prop.PropertyType == typeof(TimeSpan))
+                {
+                    sbSizeOfObject.Append($"+8");
+                }
                 else if (prop.PropertyType.IsArray)
                 {
                     Type arrayItemType = prop.PropertyType.GetElementType();
@@ -368,7 +372,7 @@ namespace BisterLib
                 }
                 else
                 {
-                    throw new NotImplementedException();
+                    sbSizeOfObject.Append($"+8"); // Unknown...
                 }
                 // Estimate 8 bytes per property...simple huristic
 
@@ -391,7 +395,7 @@ namespace BisterLib
 
         public static bool IsPrimitive(Type type)
         {
-            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime);
+            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(TimeSpan);
         }
 
         private static Type GenerateType(string theCode, string expectedTypeName,List<Type> domainDependencies)

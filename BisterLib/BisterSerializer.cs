@@ -241,7 +241,23 @@ namespace BisterLib
         public static void SerializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"{Bister.BinaryWriterMethod(Type.GetTypeCode(objType),instanceName)};");
+            if (objType.IsPrimitive || objType == typeof(string) || objType == typeof(decimal))
+            {
+                sb.AppendLine(indentation + $"bw.Write({instanceName});");
+            }
+            else if (objType == typeof(DateTime))
+            {
+                sb.AppendLine(indentation + $"bw.Write({instanceName}.ToFileTime());");
+            }
+            else if (objType == typeof(TimeSpan))
+            {
+                sb.AppendLine(indentation + $"bw.Write({instanceName}.Ticks);");
+            }
+            else
+            {
+                throw new NotImplementedException();
+            }
+
         }
 
         public static void SerializeEnum(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

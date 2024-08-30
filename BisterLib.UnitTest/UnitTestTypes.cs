@@ -57,6 +57,7 @@ namespace BisterLib.UnitTest
         public float Prop_float { get; set; }
         public double Prop_double { get; set; }
         public DateTime Prop_DateTime { get; set; }
+        public TimeSpan Prop_TimeSpan { get; set; }
     }
 
     public class ClassWithLegacyArray
