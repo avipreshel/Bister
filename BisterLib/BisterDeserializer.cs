@@ -415,7 +415,7 @@ namespace BisterLib
             Bister.PrintMethodName(sb, indentation, objType);
             string usefulName = Bister.GetUsefulName(instanceName);
             sb.AppendLine(indentation + $"bool isNull_{usefulName} = br.ReadBoolean();");
-            sb.AppendLine(indentation + "if (isNull)");
+            sb.AppendLine(indentation + $"if (isNull_{usefulName})");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{instanceName} = null;");
             sb.AppendLine(indentation + "}");
