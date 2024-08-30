@@ -178,6 +178,13 @@ namespace BisterLib.UnitTest
 
         }
 
+
+        /// <summary>
+        /// Helper method. This method takes an instance, serialize it to a blob, then de-serialize the blob, which effectively creates a copy of the original
+        /// instance. It then serialize it again, just so that we can do a simple blob-to-blob comparison, instead of coding specific comparison code for each class
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="instance"></param>
         public void ValidateLogic<T>(T instance)
         {
             var blob = Bister.Instance.Serialize(instance);
