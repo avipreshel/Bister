@@ -69,7 +69,7 @@ namespace BisterLib.UnitTest
         public void Test_NullObject()
         {
             object? instance = null;
-            ValidateLogic(instance);
+            ValidateLogic(instance, isExpectingNull : true);
         }
 
         [TestMethod]
@@ -185,16 +185,27 @@ namespace BisterLib.UnitTest
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="instance"></param>
-        public void ValidateLogic<T>(T instance)
+        public void ValidateLogic<T>(T instance, bool isExpectingNull = false)
         {
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
 
-            var copyOfinstance = Bister.Instance.Deserialize<T>(blob);
-            Assert.IsNotNull(copyOfinstance);
+            T copyOfinstance = Bister.Instance.Deserialize<T>(blob);
 
-            var copyOfBlob = Bister.Instance.Serialize(copyOfinstance);
-            CollectionAssert.AreEqual(blob, copyOfBlob);
+            if (isExpectingNull)
+            {
+                Assert.IsNull(copyOfinstance);
+            }
+            else
+            {
+                Assert.IsNotNull(copyOfinstance);
+
+                var copyOfBlob = Bister.Instance.Serialize(copyOfinstance);
+                Assert.IsNotNull(copyOfBlob);
+
+                CollectionAssert.AreEqual(blob, copyOfBlob);
+            }
+            
         }
 
     }
