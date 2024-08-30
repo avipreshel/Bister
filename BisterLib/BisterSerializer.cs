@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Security.Authentication;
 using System.Text;
 
 namespace BisterLib
@@ -50,6 +51,8 @@ namespace BisterLib
 
         public static void SerializeGenericDictionary(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
         {
+            Bister.PrintMethodName(sb, indentation, objType);
+
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
             if (Bister.IsPrimitive(keyType) && Bister.IsPrimitive(valType))
@@ -69,31 +72,40 @@ namespace BisterLib
 
         public static void SerializeGenericList(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
         {
+            Bister.PrintMethodName(sb, indentation, objType);
+
             Type valType = objType.GenericTypeArguments[0];
-            if (valType == typeof(Enum))
+            if (valType == typeof(Enum)) // List<Enum>
             {
+                
                 // Write the enum type
                 sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
                 sb.AppendLine(indentation + $"if ({instanceName}.Count > 0)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tType enumType = {instanceName}[0].GetType();");
-                sb.AppendLine(indentation + $"\tbw.Write(enumType.AssemblyQualifiedName);");
-                sb.AppendLine(indentation + $"\tType enumNativeType = enumType.GetEnumUnderlyingType();");
-                sb.AppendLine(indentation + $"\tvar enumValueField = enumType.GetField(\"value__\");");
+                //sb.AppendLine(indentation + $"\tType enumType = {instanceName}[0].GetType();");
+                //sb.AppendLine(indentation + $"\tbw.Write(enumType.AssemblyQualifiedName);");
+                //sb.AppendLine(indentation + $"\tType enumNativeType = enumType.GetEnumUnderlyingType();");
+                //sb.AppendLine(indentation + $"\tvar enumValueField = enumType.GetField(\"value__\");");
                 sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
                 sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\tobject numericVal = enumValueField.GetValue(item);");
-                sb.AppendLine(indentation + $"\t\tif (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
-                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
+                sb.AppendLine(indentation + $"\t\tType itemType = item.GetType();");
+                sb.AppendLine(indentation + $"\t\tbw.Write(itemType.AssemblyQualifiedName);");
+                sb.AppendLine(indentation + $"\t\tType enumNativeType = itemType.GetEnumUnderlyingType();");
+                sb.AppendLine(indentation + $"\t\tif (enumNativeType == typeof(byte)) bw.Write(Convert.ToByte(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(sbyte)) bw.Write(Convert.ToSByte(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(short)) bw.Write(Convert.ToInt16(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ushort)) bw.Write(Convert.ToUInt16(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(int)) bw.Write(Convert.ToInt32(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(uint)) bw.Write(Convert.ToUInt32(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(long)) bw.Write(Convert.ToInt64(item));");
+                sb.AppendLine(indentation + $"\t\telse if (enumNativeType == typeof(ulong)) bw.Write(Convert.ToUInt64(item));");
                 sb.AppendLine(indentation + $"\t\telse throw new Exception(\"Failed to serialize {instanceName}\");");
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
+            }
+            else if (valType == typeof(object)) // List<Enum>
+            {
+                throw new NotImplementedException();
             }
             else
             {
@@ -143,6 +155,7 @@ namespace BisterLib
 
         public static void SerializeGenericClass(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
+            Bister.PrintMethodName(sb, indentation, objType);
             if (objType.GetGenericTypeDefinition() == typeof(List<>))
             {
                 SerializeGenericList(instanceName, indentation, sb, objType);

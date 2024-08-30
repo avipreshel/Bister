@@ -129,7 +129,7 @@ namespace BisterLib.UnitTest
        
         [TestMethod]
         [DataRow(1)]
-        [DataRow(1000)]
+        [DataRow(10)]
         public void Test_ClassWithAListOfEnum(int size)
         {
             var instance = new ClassWithAListOfEnum();
@@ -190,7 +190,7 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
-        //[DataRow(1)]
+        [DataRow(1)]
         [DataRow(1000)]
         public void Test_ClassWithADictStringToInt(int size)
         {

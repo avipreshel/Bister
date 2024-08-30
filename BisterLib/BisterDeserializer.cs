@@ -22,6 +22,8 @@ namespace BisterLib
 
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
+            Bister.PrintMethodName(sb, indentation, objType);
+
             string usefulVariableName = Bister.GetUsefulName(instanceName);
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
@@ -43,22 +45,31 @@ namespace BisterLib
 
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
+            Bister.PrintMethodName(sb, indentation, objType);
+
             string usefulVariableName = Bister.GetUsefulName(instanceName);
             Type valType = objType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
             sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
             if (valType == typeof(Enum))
             {
-
-
-                sb.AppendLine(indentation + $"Type enumType{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetType(br.ReadString()) : null;");
-                sb.AppendLine(indentation + $"TypeCode enumTypeCode{usefulVariableName} = count{usefulVariableName} > 0 ? Type.GetTypeCode(enumType{usefulVariableName}) : TypeCode.Empty;");
                 sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
                 sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tstring itemTypeName = br.ReadString();");
+                sb.AppendLine(indentation + $"\tType enumType{usefulVariableName} =  Type.GetType(itemTypeName);");
+                sb.AppendLine(indentation + $"\tTypeCode enumTypeCode{usefulVariableName} =  Type.GetTypeCode(enumType{usefulVariableName});");
                 sb.AppendLine(indentation + $"\tif (enumTypeCode{usefulVariableName} == TypeCode.Int32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt32()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
+                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.UInt32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadUInt32()));");
                 sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt16()));");
+                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.UInt16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadUInt16()));");
+                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
+                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.UInt64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadUInt64()));");
+                sb.AppendLine(indentation + $"\telse throw new NotImplementedException();");
                 sb.AppendLine(indentation + "}");
+            }
+            else if (valType == typeof(object))
+            {
+                throw new NotImplementedException();
             }
             else
             {
