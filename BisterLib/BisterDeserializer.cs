@@ -298,8 +298,7 @@ namespace BisterLib
             }
             else if (objType.IsValueType) // a struct
             {
-                throw new NotImplementedException();
-                //SerializeStruct(sb, indentation, instanceName, objType);
+                DeserializeStruct(sb, indentation, instanceName, objType);
             }
             else if (objType.IsClass)
             {
@@ -341,6 +340,44 @@ namespace BisterLib
             //        }
             //    }
             //}
+        }
+
+        private static void DeserializeStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            if (objType.IsGenericType)
+            {
+                DeserializeGenericStruct(sb, indentation, instanceName, objType);
+            }
+            else
+            {
+                DeserializeNonGenericStruct(sb, indentation, instanceName, objType);
+            }
+
+
+        }
+
+        private static void DeserializeNonGenericStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            sb.AppendLine(indentation + $"{objType} {instanceName} = new {objType}();");
+            var props = Bister.GetRelevantProperties(objType);
+            foreach (var prop in props)
+            {
+                DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+            }
+        }
+
+        private static void DeserializeGenericStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            string friendlyTypename = Bister.GetFriendlyGenericTypeName(objType);
+            sb.AppendLine(indentation + $"{friendlyTypename} {instanceName} = new {friendlyTypename}();");
+            var props = Bister.GetRelevantProperties(objType);
+            foreach (var prop in props)
+            {
+                DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+            }
         }
 
         private static void DeserializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -414,6 +451,13 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
             string usefulName = Bister.GetUsefulName(instanceName);
+            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
+            
+            if (!instanceName.Contains(".")) // top level instance decleration
+            {
+                sb.AppendLine(indentation + $"{friendlyTypeName} {instanceName};"); 
+            }
+            
             sb.AppendLine(indentation + $"bool isNull_{usefulName} = br.ReadBoolean();");
             sb.AppendLine(indentation + $"if (isNull_{usefulName})");
             sb.AppendLine(indentation + "{");
@@ -421,6 +465,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "}");
             sb.AppendLine(indentation + $"else");
             sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = new {friendlyTypeName}();");
             if (objType == typeof(ArrayList))
             {
                 DeserializeArrayList(sb, indentation, instanceName);

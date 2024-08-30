@@ -193,56 +193,8 @@ namespace BisterLib
             var sbSerializer = new StringBuilderVerbose();
             string indentation = "\t\t\t";
 
-            if (objType.IsClass)
-            {
-                if (objType.IsGenericType)
-                {
-                    string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
-                    sbSerializer.AppendLine(indentation + $"{friendlyTypeName} instance = new {friendlyTypeName}();");
-                }
-                else
-                {
-                    sbSerializer.AppendLine(indentation + $"var instance = new {objType.FullName}();");
-                }
-            }
-            else if (objType.IsByRef || (objType.IsValueType && !IsPrimitive(objType))) // is class or struct
-            {
-                sbSerializer.AppendLine(indentation + $"var instance = new {objType.FullName}();");
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
             BisterDeserializer.DeserializeAnyType(sbSerializer, indentation, "instance", objType);
 
-            //string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
-            
-            //sbSerializer.AppendLine(indentation + $"{friendlyTypeName} instance = new {friendlyTypeName}();");
-            
-            //if (objType.IsGenericType)
-            //{
-            //    BisterDeserializer.DeSerializeGeneric(indentation, sbSerializer, objType, "instance");
-            //}
-            //else
-            //{
-            //    var props = objType.GetProperties();
-            //    foreach (var prop in props)
-            //    {
-            //        var propAccessors = prop.GetAccessors();
-            //        // only deal with properties that have get/set accessors
-            //        if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
-            //        {
-            //            if (prop.PropertyType.IsGenericType)
-            //            {
-            //                BisterDeserializer.DeSerializeGeneric(indentation, sbSerializer, prop.PropertyType, $"instance.{prop.Name}");
-            //            }
-            //            else
-            //            {
-            //                BisterDeserializer.PropertyDeserializer(indentation, prop, sbSerializer);
-            //            }
-            //        }
-            //    }
-            //}
             sbSerializer.AppendLine(indentation + "return instance;");
             sb.Replace("___DESERIALIZER_BODY___", sbSerializer.ToString());
         }

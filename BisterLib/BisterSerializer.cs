@@ -214,7 +214,12 @@ namespace BisterLib
 
         public static void SerializeStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
-            throw new NotImplementedException();
+            Bister.PrintMethodName(sb, indentation, objType);
+            var props = Bister.GetRelevantProperties(objType);
+            foreach (var prop in props)
+            {
+                SerializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+            }
         }
 
         public static void SerializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

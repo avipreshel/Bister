@@ -207,7 +207,9 @@ namespace BisterLib.UnitTest
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithADictStringToInt>(blob);
             Assert.IsNotNull(copyOfinstance);
-            CollectionAssert.AreEqual(instance.Prop, copyOfinstance.Prop);
+            var copyOfBlob = Bister.Instance.Serialize(copyOfinstance);
+
+            CollectionAssert.AreEqual(blob, copyOfBlob);
         }
     }
 }
