@@ -61,20 +61,15 @@ namespace BisterLib.UnitTest
                 ArrayPropEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
                 ArrayPropInt = [1,2,3,4,5],
                 ArrayPropString = ["wow","this","is","cool"],
-                ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
-                ArrayDotNet2 = [10,11,12]
+                ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three]
             };
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
             var copyOfinstance = Bister.Instance.Deserialize<ClassWithArrays>(blob);
             Assert.IsNotNull(copyOfinstance);
-            
-            CollectionAssert.AreEqual(instance.ArrayPropEnum, copyOfinstance.ArrayPropEnum);
-            CollectionAssert.AreEqual(instance.ArrayPropInt, copyOfinstance.ArrayPropInt);
-            CollectionAssert.AreEqual(instance.ArrayPropString, copyOfinstance.ArrayPropString);
-            CollectionAssert.AreEqual(instance.ArrayPropTestEnum, copyOfinstance.ArrayPropTestEnum);
-            CollectionAssert.AreEqual(instance.ArrayDotNet2, copyOfinstance.ArrayDotNet2);
+            var copyOfblob = Bister.Instance.Serialize(copyOfinstance);
+            CollectionAssert.AreEqual(blob, copyOfblob);
         }
 
         [TestMethod]

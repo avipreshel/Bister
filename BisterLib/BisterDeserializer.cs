@@ -70,53 +70,53 @@ namespace BisterLib
             }
         }
 
-        public static void PropertyDeserializer(string indentation, PropertyInfo prop, StringBuilderVerbose sb)
-        {
-            Bister.PrintMethodName(sb, indentation, prop.PropertyType);
+        //public static void PropertyDeserializer(string indentation, PropertyInfo prop, StringBuilderVerbose sb)
+        //{
+        //    Bister.PrintMethodName(sb, indentation, prop.PropertyType);
 
-            sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
+        //    sb.AppendLine(indentation + $"// Deserializing {prop.DeclaringType.Name}.{prop.Name}");
 
-            // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
-            if (Bister.IsPrimitive(prop.PropertyType))
-            {
-                sb.AppendLine(indentation + $"instance.{prop.Name} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(prop.PropertyType))};");
-            }
-            else if (prop.PropertyType == typeof(Enum)) // Unspecific enum
-            {
-                // Since we can't know the actual type, we need to assume the worst (64bit enum)
-                DeserializerSystemEnum(sb, indentation, $"instance.{prop.Name}");
-            }
-            else if (prop.PropertyType.IsEnum)
-            {
-                Type underlytingType = Enum.GetUnderlyingType(prop.PropertyType);
-                string propType = prop.PropertyType.FullName.Replace("+", ".");
-                sb.AppendLine(indentation + $"instance.{prop.Name} = ({propType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(underlytingType))};");
-            }
-            else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
-            {
-                PropertyDeserializerList(indentation, prop, sb);
-            }
-            else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
-            {
-                PropertyDeserializerDictionary(indentation, prop, sb);
-            }
-            else if (prop.PropertyType.IsArray)
-            {
-                BisterDeserializer.DeserializeArray(indentation, sb, $"instance.{prop.Name}", prop.PropertyType);
-            }
-            else if (prop.PropertyType == typeof(ArrayList))
-            {
-                BisterDeserializer.DeserializeArrayList(sb, indentation, $"instance.{prop.Name}");
-            }
-            else if (prop.PropertyType.IsClass)
-            {
-                sb.AppendLine(indentation + $"instance.{prop.Name} = Bister.Instance.GetSerializer<{prop.PropertyType}>().Deserialize(br);");
-            }
-            else
-            {
-                throw new Exception($"Property {prop.Name} type {prop.PropertyType} is not supported");
-            }
-        }
+        //    // we avoid c# 7 syntax since we want it to be porable for dotnet framework 4.8
+        //    if (Bister.IsPrimitive(prop.PropertyType))
+        //    {
+        //        sb.AppendLine(indentation + $"instance.{prop.Name} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(prop.PropertyType))};");
+        //    }
+        //    else if (prop.PropertyType == typeof(Enum)) // Unspecific enum
+        //    {
+        //        // Since we can't know the actual type, we need to assume the worst (64bit enum)
+        //        DeserializerSystemEnum(sb, indentation, $"instance.{prop.Name}");
+        //    }
+        //    else if (prop.PropertyType.IsEnum)
+        //    {
+        //        Type underlytingType = Enum.GetUnderlyingType(prop.PropertyType);
+        //        string propType = prop.PropertyType.FullName.Replace("+", ".");
+        //        sb.AppendLine(indentation + $"instance.{prop.Name} = ({propType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(underlytingType))};");
+        //    }
+        //    else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(List<>))
+        //    {
+        //        PropertyDeserializerList(indentation, prop, sb);
+        //    }
+        //    else if (prop.PropertyType.IsGenericType && prop.PropertyType.GetGenericTypeDefinition() == typeof(Dictionary<,>))
+        //    {
+        //        PropertyDeserializerDictionary(indentation, prop, sb);
+        //    }
+        //    else if (prop.PropertyType.IsArray)
+        //    {
+        //        BisterDeserializer.DeserializeArray(sb, indentation, $"instance.{prop.Name}", prop.PropertyType);
+        //    }
+        //    else if (prop.PropertyType == typeof(ArrayList))
+        //    {
+        //        BisterDeserializer.DeserializeArrayList(sb, indentation, $"instance.{prop.Name}");
+        //    }
+        //    else if (prop.PropertyType.IsClass)
+        //    {
+        //        sb.AppendLine(indentation + $"instance.{prop.Name} = Bister.Instance.GetSerializer<{prop.PropertyType}>().Deserialize(br);");
+        //    }
+        //    else
+        //    {
+        //        throw new Exception($"Property {prop.Name} type {prop.PropertyType} is not supported");
+        //    }
+        //}
 
         public static void PropertyDeserializerDictionary(string indentation, PropertyInfo prop, StringBuilderVerbose sb)
         {
@@ -193,20 +193,16 @@ namespace BisterLib
             sb.AppendLine(indentation + "}");
         }
 
-        public static void DeserializeArray(string indentation, StringBuilderVerbose sb, string instanceName, Type arrayType)
+        private static void DeserializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
-            Bister.PrintMethodName(sb, indentation, arrayType);
+            int dims = objType.GetArrayRank();
 
-            var itemType = arrayType.GetElementType();
-            if (arrayType.IsArray && itemType.IsArray)
-            {
-                throw new NotImplementedException("No support yet for multi-dim arrays");
-            }
-            else if (arrayType.IsArray) // 1D array
+            Type itemType = objType.GetElementType();
+            if (dims == 1) // 1D array
             {
                 if (itemType == typeof(Enum))
                 {
-                    
+
                     sb.AppendLine(indentation + "{");
                     sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
                     sb.AppendLine(indentation + $"\t{instanceName} = new Enum[count];");
@@ -256,7 +252,7 @@ namespace BisterLib
             }
             else
             {
-                throw new NotImplementedException();
+                throw new NotImplementedException("Only supporting 1D arrays, not support for 2D arrays yet");
             }
         }
 
@@ -286,7 +282,6 @@ namespace BisterLib
             if (objType == typeof(Enum)) // Unknown enum
             {
                 DeserializerSystemEnum(sb, indentation, instanceName);
-                //SerializerSystemEnum(indentation, instanceName, sb);
             }
             else if (objType.IsEnum) // Strongly-defined enum
             {
@@ -295,6 +290,14 @@ namespace BisterLib
             else if (Bister.IsPrimitive(objType)) // Native type
             {
                 DeserializePrimitive(sb, indentation, instanceName, objType);
+            }
+            else if (objType == typeof(ArrayList))
+            {
+                DeserializeArrayList(sb,indentation,instanceName);
+            }
+            else if (objType.IsArray) // such as int[5] or string[,]
+            {
+                DeserializeSystemArray(sb, indentation, instanceName, objType);
             }
             else if (objType.IsValueType) // a struct
             {
@@ -308,38 +311,6 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
-            
-            //if (objType.IsGenericType)
-            //{
-            //    SerializeGeneric("instance", indentation + '\t', sb, objType);
-            //}
-            //else
-            //{
-            //    var props = objType.GetProperties();
-
-            //    foreach (var prop in props)
-            //    {
-
-            //        var propAccessors = prop.GetAccessors();
-            //        // only deal with properties that have get/set accessors
-            //        if (propAccessors.Length > 0 && propAccessors.All(acc => acc.IsPublic))
-            //        {
-            //            sb.AppendLine(indentation + $"\t// Serializing instance.{prop.Name}");
-            //            if (prop.PropertyType.IsGenericType)
-            //            {
-            //                SerializeGeneric($"instance.{prop.Name}", indentation + "\t", sb, prop.PropertyType);
-            //            }
-            //            else if (prop.PropertyType.IsArray || prop.PropertyType == typeof(ArrayList))
-            //            {
-            //                BisterSerializer.SerializeArray(sb, indentation + '\t', $"instance.{prop.Name}", prop.PropertyType);
-            //            }
-            //            else
-            //            {
-            //                PropertySerializer(indentation + "\t", prop, sb);
-            //            }
-            //        }
-            //    }
-            //}
         }
 
         private static void DeserializeStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

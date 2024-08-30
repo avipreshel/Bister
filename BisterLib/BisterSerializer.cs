@@ -250,6 +250,14 @@ namespace BisterLib
             {
                 SerializePrimitive(sb, indentation, instanceName, objType);
             }
+            else if (objType == typeof(ArrayList))
+            {
+                SerializeArrayList(sb,indentation,instanceName, objType);
+            }
+            else if (objType.IsArray) // types such as int[] or string[]
+            {
+                SerializeSystemArray(sb,indentation,instanceName, objType);
+            }
             else if (objType.IsValueType) // a struct
             {
                 SerializeStruct(sb, indentation,instanceName, objType);
@@ -379,9 +387,9 @@ namespace BisterLib
             DuplicateIfForAllPrimitives(sb, indentation, $"({instanceName} is __pattern__) bw.Write((__pattern__){instanceName});");
         }
 
-        public static void SerializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
+        public static void SerializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
-            Bister.PrintMethodName(sb, indentation, arrayType);
+            Bister.PrintMethodName(sb, indentation, objType);
             sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
             sb.AppendLine(indentation + $"if ((int){instanceName}.Count > 0)");
             sb.AppendLine(indentation + "{");
@@ -410,55 +418,49 @@ namespace BisterLib
             sb.AppendLine(indentation + "}");
         }
 
-        public static void SerializeArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
+
+        private static void SerializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
         {
             Bister.PrintMethodName(sb, indentation, arrayType);
 
-            if (arrayType == typeof(ArrayList))
+            sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Length);");
+            Type arrayItemType = arrayType.GetElementType();
+            if (Bister.IsPrimitive(arrayItemType))
             {
-                SerializeArrayList(sb, indentation, instanceName, arrayType);
+                sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Length ; i++)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write({instanceName}[i]);");
+                sb.AppendLine(indentation + "}");
             }
-            else
+            else if (arrayItemType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Length);");
-                Type arrayItemType = arrayType.GetElementType();
-                if (Bister.IsPrimitive(arrayItemType))
+                sb.AppendLine(indentation + $"for (int i = 0 ;i < {instanceName}.Length ; i++)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tvar item = {instanceName}[i];");
+                WriteEnum(sb, indentation + "\t", "item");
+                sb.AppendLine(indentation + "}");
+            }
+            else if (arrayItemType.IsEnum)
+            {
+                sb.AppendLine(indentation + $"for (int i = 0 ; i < {instanceName}.Length ; i++)");
+                sb.AppendLine(indentation + "{");
+                if (Type.GetTypeCode(arrayItemType) == TypeCode.Int16 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt16)
                 {
-                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tbw.Write({instanceName}[i]);");
-                    sb.AppendLine(indentation + "}");
+                    sb.AppendLine(indentation + $"\tbw.Write((short){instanceName}[i]);");
                 }
-                else if (arrayItemType == typeof(Enum))
+                else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int32 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt32)
                 {
-                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tvar item = {instanceName}[i];");
-                    WriteEnum(sb, indentation + "\t", "item");
-                    sb.AppendLine(indentation + "}");
+                    sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}[i]);");
                 }
-                else if (arrayItemType.IsEnum)
+                else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int64 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt64)
                 {
-                    sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Length;i++)");
-                    sb.AppendLine(indentation + "{");
-                    if (Type.GetTypeCode(arrayItemType) == TypeCode.Int16 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt16)
-                    {
-                        sb.AppendLine(indentation + $"\tbw.Write((short){instanceName}[i]);");
-                    }
-                    else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int32 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt32)
-                    {
-                        sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}[i]);");
-                    }
-                    else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int64 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt64)
-                    {
-                        sb.AppendLine(indentation + $"\tbw.Write((long){instanceName}[i]);");
-                    }
-                    else
-                    {
-                        throw new NotImplementedException();
-                    }
-                    sb.AppendLine(indentation + "}");
+                    sb.AppendLine(indentation + $"\tbw.Write((long){instanceName}[i]);");
                 }
+                else
+                {
+                    throw new NotImplementedException();
+                }
+                sb.AppendLine(indentation + "}");
             }
         }
     }
