@@ -206,5 +206,22 @@ namespace BisterLib.UnitTest
 
             CollectionAssert.AreEqual(blob, copyOfBlob);
         }
+
+        [TestMethod]
+        public void Test_SimpleStruct()
+        {
+            var instance = new Vector() {  X =  1, Y = 2, Z = 3 };
+
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+
+            var copyOfinstance = Bister.Instance.Deserialize<Vector>(blob);
+            Assert.IsNotNull(copyOfinstance);
+
+            var copyOfBlob = Bister.Instance.Serialize(copyOfinstance);
+            CollectionAssert.AreEqual(blob, copyOfBlob);
+        }
+
+        
     }
 }

@@ -14,6 +14,13 @@ namespace BisterLib.UnitTest
         public T Y { get; set; }
     }
 
+    public struct Vector
+    { 
+        public float X { get; set; }
+        public double Y { get; set; }
+        public byte Z { get; set; }
+    }
+
     public enum TestEnum : ushort
     {
         One,Two, Three
