@@ -342,11 +342,12 @@ namespace BisterLib
         public static void SerializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-            sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Count;i++)");
-            sb.AppendLine(indentation + "{");
-            SerializeSystemObject(sb, indentation + "\t", $"{instanceName}[i]");
-            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + $"SerializeArrayList({instanceName},bw);");
+            //sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+            //sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Count;i++)");
+            //sb.AppendLine(indentation + "{");
+            //SerializeSystemObject(sb, indentation + "\t", $"{instanceName}[i]");
+            //sb.AppendLine(indentation + "}");
         }
 
         static void WriteEnum(StringBuilderVerbose sb,string indentation,string instanceName)

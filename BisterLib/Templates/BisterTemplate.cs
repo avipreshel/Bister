@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using BisterLib;
+using System.CodeDom;
 <<<USINGS>>>
 
 namespace GeneratedNS
@@ -208,6 +209,84 @@ ___DESERIALIZER_BODY___
             }
         }
 
+        void DeserializeArrayList(ArrayList instance, int count,BinaryReader br)
+        {
+            for (int i = 0; i < count; i++)
+            {
+                bool isNull = br.ReadBoolean();
+                if (isNull)
+                {
+                    instance.Add(null);
+                }
+                else
+                {
+                    string itemTypeName = br.ReadString();
+                    Type itemType = Type.GetType(itemTypeName);
+                    if (IsPrimitive(itemType))
+                    {
+                        instance.Add(DeserializePrimitive(br, itemType));
+                    }
+                    else if (itemType == typeof(object))
+                    {
+                        instance.Add(new object());
+                    }
+                    else if (itemType == typeof(TimeSpan))
+                    {
+                        instance.Add(TimeSpan.FromTicks(br.ReadInt64()));
+                    }
+                    else if (itemType.IsClass || itemType.IsValueType)
+                    {
+                        instance.Add(Bister.Instance.Deserialize(br, itemType));
+                    }
+                    else
+                    {
+                        throw new NotImplementedException();
+                    }
+                }
+            }
+        }
+
+        void SerializeArrayList(ArrayList instance,BinaryWriter bw)
+        {
+            if (instance == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(instance.Count);
+                foreach (object item in instance)
+                {
+                    if (item == null)
+                    {
+                        bw.Write(true);
+                    }
+                    else
+                    {
+                        bw.Write(false);
+                        Type itemType = item.GetType();
+                        bw.Write(itemType.AssemblyQualifiedName);
+                        if (IsPrimitive(itemType))
+                        {
+                            SerializePrimitive(item, itemType, bw);
+                        }
+                        else if (itemType == typeof(object))
+                        {
+                            // nothing to serialize
+                        }
+                        else if (itemType == typeof(TimeSpan))
+                        {
+                            bw.Write(((TimeSpan)item).Ticks);
+                        }
+                        else
+                        {
+                            Bister.Instance.Serialize(item, bw); // note: universe might collapse here
+                        }
+                    }
+                }
+            }
+        }
         #endregion
     }
 }

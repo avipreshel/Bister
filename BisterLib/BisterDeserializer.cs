@@ -89,12 +89,19 @@ namespace BisterLib
         public static void DeserializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-
-            sb.AppendLine(indentation + $"int capacity = br.ReadInt32();");
-            sb.AppendLine(indentation + $"{instanceName} = new ArrayList(capacity);");
-            sb.AppendLine(indentation + $"for (int i = 0; i< capacity;i++)");
+            if (!instanceName.Contains("."))
+            {
+                sb.AppendLine(indentation + $"ArrayList {instanceName};");
+            }
+            sb.AppendLine(indentation + $"if (br.ReadBoolean())");
             sb.AppendLine(indentation + "{");
-            BisterDeserializer.DeserializeArrayObjectItem(indentation + "\t", sb, instanceName);
+            sb.AppendLine(indentation + $"\t{instanceName} = null;");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
+            sb.AppendLine(indentation + $"\t{instanceName} = new ArrayList(count);");
+            sb.AppendLine(indentation + $"\tDeserializeArrayList({instanceName},count,br);");
             sb.AppendLine(indentation + "}");
         }
 
@@ -184,6 +191,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"\telse if (itemType == typeof(char)) {instanceName}.Add(br.ReadChar());");
             sb.AppendLine(indentation + $"\telse if (itemType == typeof(byte)) {instanceName}.Add(br.ReadByte());");
             sb.AppendLine(indentation + $"\telse if (itemType == typeof(sbyte)) {instanceName}.Add(br.ReadSByte());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(object)) {instanceName}.Add(new object());");
             sb.AppendLine(indentation + $"\telse throw new NotImplementedException();");
             sb.AppendLine(indentation + "}");
         }

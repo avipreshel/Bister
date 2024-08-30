@@ -25,7 +25,7 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithLegacyArray()
             {
-                ArrayDotNet2 = [10, 11, 12]
+                ArrayDotNet2 = [10, null, new object(), new List<int>() { 5, 6 }]
             };
 
             ValidateLogic(instance);
@@ -36,7 +36,7 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithLegacyArray()
             {
-                ArrayDotNet2 = [10, 11, 12]
+                ArrayDotNet2 = [10, null, new object(),new List<int>() { 5,6}]
             };
 
             var blob = Bister.Instance.Serialize(instance);
