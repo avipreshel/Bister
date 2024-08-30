@@ -26,6 +26,12 @@ namespace BisterLib.UnitTest
         One,Two, Three
     }
 
+    public class ClassWithObject
+    { 
+        public object? TheObject { get; set; } = null;
+    }
+
+
     public class ClassWithPrimitivesOnly
     {
         public TestEnum PropTestEnum { get; set; }
