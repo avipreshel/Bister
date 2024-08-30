@@ -226,6 +226,11 @@ ___DESERIALIZER_BODY___
                     {
                         instance.Add(DeserializePrimitive(br, itemType));
                     }
+                    else if (itemType.IsEnum)
+                    {
+                        Type enumPrimitiveType = itemType.GetEnumUnderlyingType();
+                        instance.Add(Enum.ToObject(itemType, DeserializePrimitive(br, enumPrimitiveType)));
+                    }
                     else if (itemType == typeof(object))
                     {
                         instance.Add(new object());
@@ -270,6 +275,11 @@ ___DESERIALIZER_BODY___
                         if (IsPrimitive(itemType))
                         {
                             SerializePrimitive(item, itemType, bw);
+                        }
+                        else if (itemType.IsEnum)
+                        {
+                            Type enumPrimitiveType = itemType.GetEnumUnderlyingType();
+                            SerializePrimitive(item, enumPrimitiveType, bw);
                         }
                         else if (itemType == typeof(object))
                         {
