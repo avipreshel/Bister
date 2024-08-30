@@ -19,6 +19,7 @@ using System.Runtime.InteropServices;
 using System.Numerics;
 using System.Diagnostics;
 using System.Drawing;
+using System.Globalization;
 
 namespace BisterLib
 {
@@ -136,7 +137,7 @@ namespace BisterLib
             }
             else
             {
-                sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}({objType.FullName})");
+                sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}({Bister.GetFriendlyGenericTypeName(objType)})");
             }
         }
 
@@ -199,7 +200,9 @@ namespace BisterLib
 
             if (!string.IsNullOrEmpty(DebugPath))
             {
-                File.WriteAllText(@"c:\temp\serialize.cs", sb.ToString());
+                File.WriteAllText($@"c:\temp\serialize.cs", sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
+                string friendlyFilename = friendlyTypeName.Replace("<","[").Replace(">", "]");
+                File.WriteAllText($@"c:\temp\{friendlyFilename}.cs", sb.ToString());
             }
 
             Type genType = GenerateType(sb.ToString(), serializerTypeName, new List<Type>() { objType, typeof(IBisterGenerated) });

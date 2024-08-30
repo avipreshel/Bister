@@ -298,7 +298,6 @@ namespace BisterLib
         public static void SerializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation, typeof(object));
-            
             sb.AppendLine(indentation + $"if ({instanceName} == null)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(true);");
@@ -307,7 +306,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(false);");
             sb.AppendLine(indentation + $"\tType itemType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"\tbw.Write(itemType.FullName);");
+            sb.AppendLine(indentation + $"\tbw.Write(itemType.AssemblyQualifiedName);");
             sb.AppendLine(indentation + $"\tif (IsPrimitive(itemType))");
             sb.AppendLine(indentation + "\t{");
             sb.AppendLine(indentation + $"\t\tSerializePrimitive({instanceName},itemType,bw);");

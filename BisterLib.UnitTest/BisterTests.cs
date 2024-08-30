@@ -222,6 +222,17 @@ namespace BisterLib.UnitTest
             ValidateLogic(instance);
         }
 
+        [TestMethod]
+        public void Test_ClassWithObjectAsAnotherClass()
+        {
+            ClassWithObject instance = new ClassWithObject()
+            {
+                TheObject = new ClassWithADictStringToInt() {  Prop = Enumerable.Range(1, 1000).Select(i => (i.ToString(), i)).ToDictionary() }
+            };
+
+            ValidateLogic(instance);
+        }
+
 
         /// <summary>
         /// Helper method. This method takes an instance, serialize it to a blob, then de-serialize the blob, which effectively creates a copy of the original
