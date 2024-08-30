@@ -167,7 +167,7 @@ namespace BisterLib.UnitTest
 
 
         [TestMethod]
-        public void Test_ClassWithObject()
+        public void Test_ClassWithObjectString()
         {
             ClassWithObject instance = new ClassWithObject()
             {
@@ -176,6 +176,28 @@ namespace BisterLib.UnitTest
 
             ValidateLogic(instance);
 
+        }
+
+        [TestMethod]
+        public void Test_ClassWithObjectInt()
+        {
+            ClassWithObject instance = new ClassWithObject()
+            {
+                TheObject = 5
+            };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_ClassWithObjectFloat()
+        {
+            ClassWithObject instance = new ClassWithObject()
+            {
+                TheObject = 6f
+            };
+
+            ValidateLogic(instance);
         }
 
 

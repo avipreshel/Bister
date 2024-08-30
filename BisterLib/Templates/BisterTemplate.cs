@@ -122,6 +122,18 @@ ___DESERIALIZER_BODY___
             {
                 return br.ReadChar();
             }
+            else if (objType == typeof(float))
+            {
+                return br.ReadSingle();
+            }
+            else if (objType == typeof(double))
+            {
+                return br.ReadDouble();
+            }
+            else if (objType == typeof(bool))
+            {
+                return br.ReadBoolean();
+            }
             else
             {
                 throw new NotImplementedException($"Unknown type {objType.FullName}");
@@ -177,6 +189,18 @@ ___DESERIALIZER_BODY___
             else if (objType == typeof(char))
             {
                 bw.Write((char)instance);
+            }
+            else if (objType == typeof(float))
+            {
+                bw.Write((float)instance);
+            }
+            else if (objType == typeof(double))
+            {
+                bw.Write((double)instance);
+            }
+            else if (objType == typeof(bool))
+            {
+                bw.Write((bool)instance);
             }
             else
             {
