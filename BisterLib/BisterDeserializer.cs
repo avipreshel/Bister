@@ -207,6 +207,10 @@ namespace BisterLib
             sb.AppendLine(indentation + "\t{");
             sb.AppendLine(indentation + $"\t\t{instanceName} = DeserializePrimitive(br,objType);");
             sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "\telse if (objType == typeof(object))");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + $"\t\t{instanceName} = new object();");
+            sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "\telse");
             sb.AppendLine(indentation + "\t{");
             sb.AppendLine(indentation + $"\t\t{instanceName} = Bister.Instance.Deserialize(br,objType);");

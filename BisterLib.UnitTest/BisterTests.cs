@@ -200,6 +200,28 @@ namespace BisterLib.UnitTest
             ValidateLogic(instance);
         }
 
+        [TestMethod]
+        public void Test_ClassWithObjectNull()
+        {
+            ClassWithObject instance = new ClassWithObject()
+            {
+                TheObject = null
+            };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_ClassWithObjectAsObject()
+        {
+            ClassWithObject instance = new ClassWithObject()
+            {
+                TheObject = new object()
+            };
+
+            ValidateLogic(instance);
+        }
+
 
         /// <summary>
         /// Helper method. This method takes an instance, serialize it to a blob, then de-serialize the blob, which effectively creates a copy of the original
