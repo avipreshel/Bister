@@ -325,6 +325,7 @@ namespace BisterLib
             sbSizeOfObject.Append($"0");
             foreach (var prop in props)
             {
+
                 if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(Decimal))
                 {
                     sbSizeOfObject.Append($"+{Marshal.SizeOf(prop.PropertyType)}");

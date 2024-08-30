@@ -71,6 +71,63 @@ ___DESERIALIZER_BODY___
             return objType.IsPrimitive || objType == typeof(string) || objType == typeof(DateTime) || objType == typeof(decimal);
         }
 
+        object DeserializePrimitive(BinaryReader br,Type objType)
+        {
+            if (objType == typeof(string))
+            {
+                return br.ReadString();
+            }
+            else if (objType == typeof(DateTime))
+            {
+                long dt = br.ReadInt64();
+                return DateTime.FromFileTime(dt);
+            }
+            else if (objType == typeof(decimal))
+            {
+                return br.ReadDecimal();
+            }
+            else if (objType == typeof(int))
+            {
+                return br.ReadInt32();
+            }
+            else if (objType == typeof(uint))
+            {
+                return br.ReadUInt32();
+            }
+            else if (objType == typeof(short))
+            {
+                return br.ReadInt16();
+            }
+            else if (objType == typeof(ushort))
+            {
+                return br.ReadUInt16();
+            }
+            else if (objType == typeof(long))
+            {
+                return br.ReadInt64();
+            }
+            else if (objType == typeof(ulong))
+            {
+                return br.ReadUInt64();
+            }
+            else if (objType == typeof(byte))
+            {
+                return br.ReadByte();
+            }
+            else if (objType == typeof(sbyte))
+            {
+                return br.ReadSByte();
+            }
+            else if (objType == typeof(char))
+            {
+                return br.ReadChar();
+            }
+            else
+            {
+                throw new NotImplementedException($"Unknown type {objType.FullName}");
+            }
+        }
+
         void SerializePrimitive(object instance,Type objType, BinaryWriter bw)
         {
             if (objType == typeof(string))
@@ -116,6 +173,10 @@ ___DESERIALIZER_BODY___
             else if (objType == typeof(sbyte))
             {
                 bw.Write((sbyte)instance);
+            }
+            else if (objType == typeof(char))
+            {
+                bw.Write((char)instance);
             }
             else
             {

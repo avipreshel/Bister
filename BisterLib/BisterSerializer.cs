@@ -221,6 +221,7 @@ namespace BisterLib
                 var props = Bister.GetRelevantProperties(objType);
                 foreach (var prop in props)
                 {
+                    sb.AppendLine(indentation + $"// For each property...");
                     SerializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
                 }
             }
@@ -232,6 +233,7 @@ namespace BisterLib
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
+                sb.AppendLine(indentation + $"// For each property...");
                 SerializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
         }

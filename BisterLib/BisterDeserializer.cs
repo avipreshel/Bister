@@ -200,7 +200,13 @@ namespace BisterLib
             sb.AppendLine(indentation + $"\tstring objTypeName = br.ReadString();");
             sb.AppendLine(indentation + $"\tType objType = Type.GetType(objTypeName);");
             sb.AppendLine(indentation + $"\tif (IsPrimitive(objType))");
-            sb.AppendLine(indentation + $"\t{instanceName} = Bister.Instance.Deserialize(br,objType);");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + $"\t\t{instanceName} = DeserializePrimitive(br,objType);");
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "\telse");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + $"\t\t{instanceName} = Bister.Instance.Deserialize(br,objType);");
+            sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "}");
         }
 
@@ -267,6 +273,7 @@ namespace BisterLib
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
+                sb.AppendLine(indentation + $"// For each property...");
                 DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
         }
@@ -279,6 +286,7 @@ namespace BisterLib
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
+                sb.AppendLine(indentation + $"// For each property...");
                 DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
         }
