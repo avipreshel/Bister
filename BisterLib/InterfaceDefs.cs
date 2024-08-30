@@ -18,6 +18,8 @@ namespace BisterLib
         T Deserialize<T>(byte[] blob);
 
         object Deserialize(byte[] blob,Type objType);
+
+        object Deserialize(BinaryReader br, Type objType);
     }
 
     /// <summary>
@@ -30,6 +32,8 @@ namespace BisterLib
         void SerializeObj(object instance, BinaryWriter bw);
 
         object DeserializeObj(byte[] buffer);
+
+        object DeserializeObj(BinaryReader br);
     }
 
     /// <summary>

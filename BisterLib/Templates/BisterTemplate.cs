@@ -38,6 +38,11 @@ ___DESERIALIZER_BODY___
             Serialize((___TYPE_NAME___)instance, bw);
         }
 
+        public object DeserializeObj(BinaryReader br)
+        {
+            return (object)Deserialize(br);
+        }
+
         public ___TYPE_NAME___ Deserialize(byte[] buffer)
         {
             using (var ms = new MemoryStream(buffer))
@@ -58,5 +63,66 @@ ___DESERIALIZER_BODY___
         {
             return (object)Deserialize(buffer);
         }
+
+        #region Helper method
+
+        bool IsPrimitive(Type objType)
+        {
+            return objType.IsPrimitive || objType == typeof(string) || objType == typeof(DateTime) || objType == typeof(decimal);
+        }
+
+        void SerializePrimitive(object instance,Type objType, BinaryWriter bw)
+        {
+            if (objType == typeof(string))
+            {
+                bw.Write((string)instance);
+            }
+            else if (objType == typeof(DateTime))
+            {
+                bw.Write(((DateTime)instance).ToFileTime());
+            }
+            else if (objType == typeof(decimal))
+            {
+                bw.Write((decimal)instance);
+            }
+            else if (objType == typeof(int))
+            {
+                bw.Write((int)instance);
+            }
+            else if (objType == typeof(uint))
+            {
+                bw.Write((uint)instance);
+            }
+            else if (objType == typeof(short))
+            {
+                bw.Write((short)instance);
+            }
+            else if (objType == typeof(ushort))
+            {
+                bw.Write((ushort)instance);
+            }
+            else if (objType == typeof(long))
+            {
+                bw.Write((long)instance);
+            }
+            else if (objType == typeof(ulong))
+            {
+                bw.Write((ulong)instance);
+            }
+            else if (objType == typeof(byte))
+            {
+                bw.Write((byte)instance);
+            }
+            else if (objType == typeof(sbyte))
+            {
+                bw.Write((sbyte)instance);
+            }
+            else
+            {
+                throw new NotImplementedException($"Unknown type {objType.FullName}");
+            }
+        }
+
+        #endregion
     }
 }

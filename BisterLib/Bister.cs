@@ -105,6 +105,13 @@ namespace BisterLib
             }
         }
 
+
+        public object Deserialize(BinaryReader br, Type objType)
+        {
+            var serializer = GenerateSerializationEngine(objType);
+            return serializer.DeserializeObj(br);
+        }
+
         #endregion
 
         string ReadTemplateFromResource()

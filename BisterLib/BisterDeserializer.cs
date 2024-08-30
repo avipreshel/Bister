@@ -191,9 +191,17 @@ namespace BisterLib
         public static void DeserializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            //sb.AppendLine(indentation + $"{instanceName} = Bister.Instance.Deserialize");
-
-            //object Deserialize(byte[] blob, Type objType);
+            sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = null;");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\tstring objTypeName = br.ReadString();");
+            sb.AppendLine(indentation + $"\tType objType = Type.GetType(objTypeName);");
+            sb.AppendLine(indentation + $"\tif (IsPrimitive(objType))");
+            sb.AppendLine(indentation + $"\t{instanceName} = Bister.Instance.Deserialize(br,objType);");
+            sb.AppendLine(indentation + "}");
         }
 
         public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

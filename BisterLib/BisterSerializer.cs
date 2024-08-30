@@ -306,13 +306,13 @@ namespace BisterLib
             sb.AppendLine(indentation + "\tbw.Write(false);");
             sb.AppendLine(indentation + $"\tType itemType = {instanceName}.GetType();");
             sb.AppendLine(indentation + $"\tbw.Write(itemType.FullName);");
-            sb.AppendLine(indentation + $"\tif (itemType.IsPrimitive || itemType == typeof(string) || itemType == typeof(decimal))");
+            sb.AppendLine(indentation + $"\tif (IsPrimitive(itemType))");
             sb.AppendLine(indentation + "\t{");
-            DuplicateIfForAllPrimitives(sb, indentation + "\t\t", $"(itemType == typeof(__primitive__)) bw.Write((__primitive__){instanceName});");
+            sb.AppendLine(indentation + $"\t\tSerializePrimitive({instanceName},itemType,bw);");
             sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "\telse");
             sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + "\t\tBister.Instance.Serialize(instance,bw);");
+            sb.AppendLine(indentation + $"\t\tBister.Instance.Serialize({instanceName},bw);");
             sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "}");
             
