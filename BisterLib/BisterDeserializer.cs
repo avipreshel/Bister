@@ -191,6 +191,10 @@ namespace BisterLib
         public static void DeserializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
+            if (!instanceName.Contains("."))
+            {
+                sb.AppendLine(indentation + $"object {instanceName};");
+            }
             sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{instanceName} = null;");
