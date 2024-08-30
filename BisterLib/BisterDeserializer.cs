@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Reflection;
 using System.Text;
@@ -9,17 +10,6 @@ namespace BisterLib
 {
     public  static class BisterDeserializer
     {
-        public static void DeserializeObject(string indentation, StringBuilderVerbose sb, string instanceName,Type objType)
-        {
-            Bister.PrintMethodName(sb, indentation, objType);
-            if (Bister.IsPrimitive(objType))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(objType))};");
-            }
-        }
-
-     
-
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
@@ -173,23 +163,38 @@ namespace BisterLib
 
         public static void DeserializeArrayObjectItem(string indentation, StringBuilderVerbose sb, string instanceName)
         {
-            sb.AppendLine(indentation + $"string itemTypeStr = br.ReadString();");
-            sb.AppendLine(indentation + $"Type itemType = Type.GetType(itemTypeStr);");
-            sb.AppendLine(indentation + $"if (itemType == typeof(string)) {instanceName}.Add(br.ReadString());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(decimal)) {instanceName}.Add(br.ReadDecimal());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(bool)) {instanceName}.Add(br.ReadBoolean());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(short)) {instanceName}.Add(br.ReadInt16());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(ushort)) {instanceName}.Add(br.ReadUInt16());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(int)) {instanceName}.Add(br.ReadInt32());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(uint)) {instanceName}.Add(br.ReadUInt32());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(long)) {instanceName}.Add(br.ReadInt64());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(ulong)) {instanceName}.Add(br.ReadUInt64());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(char)) {instanceName}.Add(br.ReadChar());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(byte)) {instanceName}.Add(br.ReadByte());");
-            sb.AppendLine(indentation + $"else if (itemType == typeof(sbyte)) {instanceName}.Add(br.ReadSByte());");
-            sb.AppendLine(indentation + $"else throw new NotImplementedException();");
+            Bister.PrintMethodName(sb, indentation);
+            sb.AppendLine(indentation + $"if (br.ReadBoolean())"); // is null?
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName}.Add(null);");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\tstring itemTypeStr = br.ReadString();");
+            sb.AppendLine(indentation + $"\tType itemType = Type.GetType(itemTypeStr);");
+            sb.AppendLine(indentation + $"\tif (itemType == typeof(string)) {instanceName}.Add(br.ReadString());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(decimal)) {instanceName}.Add(br.ReadDecimal());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(bool)) {instanceName}.Add(br.ReadBoolean());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(short)) {instanceName}.Add(br.ReadInt16());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(ushort)) {instanceName}.Add(br.ReadUInt16());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(int)) {instanceName}.Add(br.ReadInt32());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(uint)) {instanceName}.Add(br.ReadUInt32());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(long)) {instanceName}.Add(br.ReadInt64());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(ulong)) {instanceName}.Add(br.ReadUInt64());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(char)) {instanceName}.Add(br.ReadChar());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(byte)) {instanceName}.Add(br.ReadByte());");
+            sb.AppendLine(indentation + $"\telse if (itemType == typeof(sbyte)) {instanceName}.Add(br.ReadSByte());");
+            sb.AppendLine(indentation + $"\telse throw new NotImplementedException();");
+            sb.AppendLine(indentation + "}");
         }
 
+        public static void DeserializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            //sb.AppendLine(indentation + $"{instanceName} = Bister.Instance.Deserialize");
+
+            //object Deserialize(byte[] blob, Type objType);
+        }
 
         public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
@@ -197,6 +202,10 @@ namespace BisterLib
             if (objType == typeof(Enum)) // Unknown enum
             {
                 DeserializerSystemEnum(sb, indentation, instanceName);
+            }
+            else if (objType == typeof(object))
+            {
+                DeserializeSystemObject(sb, indentation, instanceName);
             }
             else if (objType.IsEnum) // Strongly-defined enum
             {
@@ -373,6 +382,7 @@ namespace BisterLib
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
+                sb.AppendLine(indentation + $"// For each property...");
                 DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
         }

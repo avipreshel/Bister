@@ -12,13 +12,9 @@ namespace BisterLib
 
         byte[] Serialize<T>(T instance);
 
-
-        /// <summary>
-        /// This API should be used when the type of the object is unknown during compile time.
-        /// </summary>
-        /// <param name="instance"></param>
-        /// <returns></returns>
         byte[] Serialize(object instance);
+        void Serialize(object instance,BinaryWriter bw);
+
         T Deserialize<T>(byte[] blob);
 
         object Deserialize(byte[] blob,Type objType);
@@ -29,7 +25,9 @@ namespace BisterLib
     /// </summary>
     public interface IBisterGenerated
     {
-        byte[] SerializeObj(object obj);
+        byte[] SerializeObj(object instance);
+
+        void SerializeObj(object instance, BinaryWriter bw);
 
         object DeserializeObj(byte[] buffer);
     }
@@ -39,7 +37,7 @@ namespace BisterLib
     /// </summary>
     public interface IBisterGenerated<T> : IBisterGenerated
     {
-        byte[] Serialize(T obj);
+        byte[] Serialize(T instance);
 
         T Deserialize(byte[] buffer);
     }

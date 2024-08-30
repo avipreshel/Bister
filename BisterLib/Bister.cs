@@ -18,6 +18,7 @@ using System.Collections;
 using System.Runtime.InteropServices;
 using System.Numerics;
 using System.Diagnostics;
+using System.Drawing;
 
 namespace BisterLib
 {
@@ -81,14 +82,27 @@ namespace BisterLib
             return serializer.Serialize(obj);
         }
 
-        public byte[] Serialize(object obj)
+        public byte[] Serialize(object instance)
         {
-            if (obj == null)
+            if (instance == null)
             {
                 return new byte[0];
             }
-            var serializer = GenerateSerializationEngine(obj.GetType());
-            return serializer.SerializeObj(obj);
+            var serializer = GenerateSerializationEngine(instance.GetType());
+            return serializer.SerializeObj(instance);
+        }
+
+        public void Serialize(object instance, BinaryWriter bw)
+        {
+            if (instance == null)
+            {
+                throw new NotImplementedException();
+            }
+            else
+            {
+                var serializer = GenerateSerializationEngine(instance.GetType());
+                serializer.SerializeObj(instance,bw);
+            }
         }
 
         #endregion
@@ -292,9 +306,6 @@ namespace BisterLib
 
             BisterSerializer.SerializeAnyType(sbSerializerBody, indentation, "instance", objType);
 
-            sbSerializerBody.AppendLine(indentation + "bw.Flush();");
-            sbSerializerBody.AppendLine(indentation + "return ms.ToArray();");
-
             sb.Replace("___SERIALIZER_BODY___", sbSerializerBody.ToString());
 
             
@@ -339,6 +350,10 @@ namespace BisterLib
                 {
                     int size = prop.PropertyType.GenericTypeArguments.Sum(t => t.IsPrimitive ? Marshal.SizeOf(t) : 8);
                     sbSizeOfObject.Append($"+{size}");
+                }
+                else if (prop.PropertyType == typeof(object))
+                {
+                    sbSizeOfObject.Append($"+8");
                 }
                 else
                 {
@@ -428,6 +443,6 @@ namespace BisterLib
             }
         }
 
-       
+        
     }
 }

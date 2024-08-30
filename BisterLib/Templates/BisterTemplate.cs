@@ -10,7 +10,7 @@ namespace GeneratedNS
 {
     internal class ___SERIALIZER_TYPE_NAME___ : IBisterGenerated<___TYPE_NAME___>
     {
-        public byte[] Serialize(___TYPE_NAME___ instance, MemoryStream ms, BinaryWriter bw)
+        public void Serialize(___TYPE_NAME___ instance, BinaryWriter bw)
         {
 ___SERIALIZER_BODY___
         }
@@ -26,9 +26,16 @@ ___DESERIALIZER_BODY___
             {
                 using (var bw = new BinaryWriter(ms))
                 {
-                    return Serialize(instance, ms, bw);
+                    Serialize(instance, bw);
+                    bw.Flush();
+                    return ms.ToArray();
                 }
             }
+        }
+
+        public void SerializeObj(object instance, BinaryWriter bw)
+        {
+            Serialize((___TYPE_NAME___)instance, bw);
         }
 
         public ___TYPE_NAME___ Deserialize(byte[] buffer)
@@ -42,9 +49,9 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        public byte[] SerializeObj(object obj)
+        public byte[] SerializeObj(object instance)
         {
-            return Serialize((___TYPE_NAME___)obj);
+            return Serialize((___TYPE_NAME___)instance);
         }
 
         public object DeserializeObj(byte[] buffer)

@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
@@ -20,11 +21,11 @@ namespace BisterLib
             {
                 if (i == 0)
                 {
-                    sb.AppendLine(indentation + "if " + pattern.Replace("__pattern__", primitives[i]));
+                    sb.AppendLine(indentation + "if " + pattern.Replace("__primitive__", primitives[i]));
                 }
                 else
                 {
-                    sb.AppendLine(indentation + "else if " + pattern.Replace("__pattern__", primitives[i]));
+                    sb.AppendLine(indentation + "else if " + pattern.Replace("__primitive__", primitives[i]));
                 }
             }
             sb.AppendLine(indentation + "else throw new NotImplementedException();");
@@ -255,6 +256,10 @@ namespace BisterLib
             {
                 SerializerSystemEnum(indentation,instanceName,sb);
             }
+            else if (objType == typeof(object))
+            {
+                SerializeSystemObject(sb, indentation, instanceName);
+            }
             else if (objType.IsEnum) // Strongly-defined enum
             {
                 SerializeEnum(sb, indentation,instanceName,objType);
@@ -288,23 +293,38 @@ namespace BisterLib
         /// <param name="sb"></param>
         /// <param name="indentation"></param>
         /// <param name="instanceName"></param>
-        public static void SerializeObject(StringBuilderVerbose sb, string indentation, string instanceName)
+        public static void SerializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
-            sb.AppendLine(indentation + $"Type itemType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"bw.Write(itemType.FullName);");
-            DuplicateIfForAllPrimitives(sb, indentation, $"({instanceName} is __pattern__) bw.Write((__pattern__){instanceName});");
+            Bister.PrintMethodName(sb, indentation, typeof(object));
+            
+            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(true);");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(false);");
+            sb.AppendLine(indentation + $"\tType itemType = {instanceName}.GetType();");
+            sb.AppendLine(indentation + $"\tbw.Write(itemType.FullName);");
+            sb.AppendLine(indentation + $"\tif (itemType.IsPrimitive || itemType == typeof(string) || itemType == typeof(decimal))");
+            sb.AppendLine(indentation + "\t{");
+            DuplicateIfForAllPrimitives(sb, indentation + "\t\t", $"(itemType == typeof(__primitive__)) bw.Write((__primitive__){instanceName});");
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "\telse");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + "\t\tBister.Instance.Serialize(instance,bw);");
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "}");
+            
         }
 
         public static void SerializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
             sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-            sb.AppendLine(indentation + $"if ((int){instanceName}.Count > 0)");
+            sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Count;i++)");
             sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tfor (int i =0;i<{instanceName}.Count;i++)");
-            sb.AppendLine(indentation + "\t{");
-            SerializeObject(sb, indentation + "\t\t", $"{instanceName}[i]");
-            sb.AppendLine(indentation + "\t}");
+            SerializeSystemObject(sb, indentation + "\t", $"{instanceName}[i]");
             sb.AppendLine(indentation + "}");
         }
 
