@@ -73,6 +73,12 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_Null()
+        {
+            ValidateLogic<List<int>?>(null, isExpectingNull: true);
+        }
+
+        [TestMethod]
         public void Test_ClassWithPrimitivesOnly()
         {
             var instance = new ClassWithPrimitivesOnly()
