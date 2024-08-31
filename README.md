@@ -47,8 +47,8 @@ The generated code is fully debug-able and easy to understand.
  
 # Advantage compared Json
 * Better performance (See benchmarks below)
-* Usage of binary means that the serialized class consumes less bytes
-* Ability to handle Enum type, including List<Enum>
+* Ability to handle dynamic types such as System.Object, System.Enum
+* Supports for legacy types such as ArrayList (from Dotnet Fwk 1.x days)
 
 # Disadvantage compared to Json
 The generated binary is not backward compatible, which means that using it in persistency scenarios is risky:
