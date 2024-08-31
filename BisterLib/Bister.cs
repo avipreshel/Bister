@@ -425,7 +425,7 @@ namespace BisterLib
 
         public static bool IsPrimitive(Type type)
         {
-            return type.IsPrimitive || type == typeof(string) || type == typeof(decimal) || type == typeof(DateTime) || type == typeof(TimeSpan);
+            return type.IsPrimitive || type == typeof(decimal);
         }
 
         private static Type GenerateType(string theCode, string expectedTypeName,List<Type> domainDependencies)
@@ -458,6 +458,7 @@ namespace BisterLib
                     MetadataReference.CreateFromFile(typeof(Console).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(MemoryStream).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(BinaryReader).Assembly.Location),
+                    MetadataReference.CreateFromFile(typeof(ReadOnlySpan<>).Assembly.Location),
                     MetadataReference.CreateFromFile(typeof(BinaryWriter).Assembly.Location)
                     //Marshal
                 },

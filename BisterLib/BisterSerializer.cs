@@ -377,74 +377,65 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
             sb.AppendLine(indentation + $"SerializeArrayList({instanceName},bw);");
-            //sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-            //sb.AppendLine(indentation + $"for (int i =0;i<{instanceName}.Count;i++)");
-            //sb.AppendLine(indentation + "{");
-            //SerializeSystemObject(sb, indentation + "\t", $"{instanceName}[i]");
-            //sb.AppendLine(indentation + "}");
         }
 
-        static void WriteEnum(StringBuilderVerbose sb,string indentation,string instanceName)
+        static void SerializeSystemEnum(StringBuilderVerbose sb,string indentation,string instanceName)
         {
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tType instanceType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"\tType instancePrimitiveType = Enum.GetUnderlyingType(instanceType);");
-            sb.AppendLine(indentation + $"\tbw.Write(instanceType.AssemblyQualifiedName);");
-            sb.AppendLine(indentation + $"\tif (instancePrimitiveType == typeof(int)) bw.Write(Convert.ToInt32({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(uint)) bw.Write(Convert.ToUInt32({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(long)) bw.Write(Convert.ToInt64({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(ulong)) bw.Write(Convert.ToUInt64({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(ushort)) bw.Write(Convert.ToUInt16({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(short)) bw.Write(Convert.ToInt16({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(sbyte)) bw.Write(Convert.ToSByte({instanceName}));");
-            sb.AppendLine(indentation + $"\telse if (instancePrimitiveType == typeof(byte)) bw.Write(Convert.ToByte({instanceName}));");
-            sb.AppendLine(indentation + $"\telse throw new NotImplementedException();");
-            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + $"SerializeSystemEnum({instanceName},bw);");
         }
-
 
         private static void SerializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
         {
             Bister.PrintMethodName(sb, indentation, arrayType);
+            int dims = arrayType.GetArrayRank();
 
-            sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Length);");
-            Type arrayItemType = arrayType.GetElementType();
-            if (Bister.IsPrimitive(arrayItemType))
+            if (dims != 1)
             {
-                sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Length ; i++)");
+                throw new NotImplementedException("Only supporting 1D arrays, not support for 2D arrays yet");
+            }
+
+            Type arrayItemType = arrayType.GetElementType();
+            if (arrayItemType == typeof(string))
+            {
+                sb.AppendLine(indentation + $"Serialize({instanceName},bw);");
+            }
+            else if (Bister.IsPrimitive(arrayItemType))
+            {
+                sb.AppendLine(indentation + $"if ({instanceName} == null)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write({instanceName}[i]);");
+                sb.AppendLine(indentation + $"\tbw.Write(true);");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(false);");
+                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
+                sb.AppendLine(indentation + $"\tfor (int i =0;i<{instanceName}.Length;i++) bw.Write({instanceName}[i]);");
                 sb.AppendLine(indentation + "}");
             }
             else if (arrayItemType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"for (int i = 0 ;i < {instanceName}.Length ; i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tvar item = {instanceName}[i];");
-                WriteEnum(sb, indentation + "\t", "item");
-                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + $"Serialize({instanceName},bw);");
             }
             else if (arrayItemType.IsEnum)
             {
-                sb.AppendLine(indentation + $"for (int i = 0 ; i < {instanceName}.Length ; i++)");
+                TypeCode arrayItemTypeCode = Type.GetTypeCode(arrayItemType);
+                sb.AppendLine(indentation + $"if ({instanceName} == null)");
                 sb.AppendLine(indentation + "{");
-                if (Type.GetTypeCode(arrayItemType) == TypeCode.Int16 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt16)
-                {
-                    sb.AppendLine(indentation + $"\tbw.Write((short){instanceName}[i]);");
-                }
-                else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int32 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt32)
-                {
-                    sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}[i]);");
-                }
-                else if (Type.GetTypeCode(arrayItemType) == TypeCode.Int64 || Type.GetTypeCode(arrayItemType) == TypeCode.UInt64)
-                {
-                    sb.AppendLine(indentation + $"\tbw.Write((long){instanceName}[i]);");
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
+                sb.AppendLine(indentation + $"\tbw.Write(true);");
                 sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(false);");
+                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
+                sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + "\t\t" + Bister.BinaryWriterMethod(arrayItemTypeCode, $"{instanceName}[i]") + ";");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                throw new NotImplementedException($"No support yet for serializing {arrayItemType.FullName}[]");
             }
         }
     }

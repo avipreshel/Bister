@@ -70,7 +70,7 @@ namespace BisterLib.UnitTest
         public int[] ArrayPropInt { get; set; } = new int[10];
         public string[] ArrayPropString { get; set; } = new string[10];
         public TestEnum[] ArrayPropTestEnum { get; set; } = new TestEnum[10];
-        public Enum[] ArrayPropEnum { get; set; } = new Enum[10];
+        public Enum[] ArrayPropSystemEnum { get; set; } = new Enum[10];
     }
 
 

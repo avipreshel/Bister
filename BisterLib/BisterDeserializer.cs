@@ -121,66 +121,88 @@ namespace BisterLib
             sb.AppendLine(indentation + "}");
         }
 
-        private static void DeserializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        private static void DeserializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
         {
-            int dims = objType.GetArrayRank();
+            Bister.PrintMethodName(sb, indentation, arrayType);
+            
+            int dims = arrayType.GetArrayRank();
 
-            Type itemType = objType.GetElementType();
-            if (dims == 1) // 1D array
+            if (dims != 1)
             {
-                if (itemType == typeof(Enum))
-                {
+                throw new NotImplementedException("Only supporting 1D arrays, not support for 2D arrays yet");
+            }
 
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
-                    sb.AppendLine(indentation + $"\t{instanceName} = new Enum[count];");
-                    sb.AppendLine(indentation + $"\tfor (int i = 0;i < count;i++)");
-                    sb.AppendLine(indentation + "\t{");
-                    sb.AppendLine(indentation + $"\tstring itemTypeStr = br.ReadString();");
-                    sb.AppendLine(indentation + $"\tType itemType = Type.GetType(itemTypeStr);");
-                    sb.AppendLine(indentation + $"\tType itemTypeNative = Enum.GetUnderlyingType(itemType);");
-                    sb.AppendLine(indentation + $"\t\tif (itemTypeNative == typeof(int)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadInt32());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(uint)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadUInt32());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(short)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadInt16());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(ushort)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadUInt16());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(byte)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadByte());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(sbyte)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadSByte());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(long)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadInt64());");
-                    sb.AppendLine(indentation + $"\t\telse if (itemTypeNative == typeof(ulong)) {instanceName}[i] = (Enum)Enum.ToObject(itemType, br.ReadUInt64());");
-                    sb.AppendLine(indentation + $"\t\telse throw new NotImplementedException();");
-                    sb.AppendLine(indentation + "\t}");
-                    sb.AppendLine(indentation + "}");
+            Type arrayItemType = arrayType.GetElementType();
+            if (arrayItemType == typeof(string))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = DeserializeSystemStringArray(br);");
+            }
+            else if (Bister.IsPrimitive(arrayItemType))
+            {
+                TypeCode arrayItemTypeCode = Type.GetTypeCode(arrayItemType);
+                sb.AppendLine(indentation + $"if (br.ReadBoolean() == false)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType.FullName}[br.ReadInt32()];");
+                switch (arrayItemTypeCode)
+                { 
+                    case TypeCode.Int32:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadInt32();");
+                        break;
+                    case TypeCode.UInt32:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadUInt32();");
+                        break;
+                    case TypeCode.Int16:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadInt16();");
+                        break;
+                    case TypeCode.UInt16:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadUInt16();");
+                        break;
+                    case TypeCode.Int64:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadInt64();");
+                        break;
+                    case TypeCode.UInt64:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadUInt64();");
+                        break;
+                    case TypeCode.Boolean:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadBoolean();");
+                        break;
+                    case TypeCode.Byte:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadByte();");
+                        break;
+                    case TypeCode.SByte:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadSByte();");
+                        break;
+                    case TypeCode.Decimal:
+                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadDecimal();");
+                        break;
+                    default:
+                        throw new NotImplementedException($"Unsupported array type {arrayItemType.FullName}");
                 }
-                else if (itemType.IsEnum)
-                {
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
-                    sb.AppendLine(indentation + $"\t{instanceName} = new {itemType}[count];");
-                    sb.AppendLine(indentation + $"\tfor (int i = 0;i < count;i++)");
-                    sb.AppendLine(indentation + "\t{");
-                    sb.AppendLine(indentation + $"\t\t{instanceName}[i] = ({itemType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(itemType))};");
-                    sb.AppendLine(indentation + "\t}");
-                    sb.AppendLine(indentation + "}");
-                }
-                else if (itemType.IsPrimitive || itemType == typeof(string) || itemType == typeof(decimal))
-                {
-                    sb.AppendLine(indentation + "{");
-                    sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
-                    sb.AppendLine(indentation + $"\t{instanceName} = new {itemType}[count];");
-                    sb.AppendLine(indentation + $"\tfor (int i = 0;i < count;i++)");
-                    sb.AppendLine(indentation + "\t{");
-                    sb.AppendLine(indentation + $"\t\t{instanceName}[i] = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(itemType))};");
-                    sb.AppendLine(indentation + "\t}");
-                    sb.AppendLine(indentation + "}");
-                }
-                else
-                {
-                    throw new NotImplementedException();
-                }
+
+                sb.AppendLine(indentation + "}");
+            }
+            else if (arrayItemType == typeof(Enum))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = DeserializeSystemArrayOfEnums(br);");
+            }
+            else if (arrayItemType.IsEnum)
+            {
+                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = null;");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
+                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = ({arrayItemType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(arrayItemType))};");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
             }
             else
             {
-                throw new NotImplementedException("Only supporting 1D arrays, not support for 2D arrays yet");
+                throw new NotImplementedException($"No support for serializing {arrayItemType.FullName}[]");
             }
         }
 

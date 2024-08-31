@@ -70,6 +70,14 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_ClassWithArrays_allempty()
+        {
+            var instance = new ClassWithArrays();
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
         public void Test_Dictionary_string_to_object()
         {
             var instance = new Dictionary<string,object>()
@@ -100,8 +108,8 @@ namespace BisterLib.UnitTest
         public void Test_ClassWithArrays()
         {
             var instance = new ClassWithArrays()
-            { 
-                ArrayPropEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
+            {
+                ArrayPropSystemEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
                 ArrayPropInt = [1,2,3,4,5],
                 ArrayPropString = ["wow","this","is","cool"],
                 ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three]

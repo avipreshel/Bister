@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using BisterLib;
 using System.CodeDom;
 using System.Reflection;
+using System.Linq;
 <<<USINGS>>>
 
 namespace GeneratedNS
@@ -68,6 +69,168 @@ ___DESERIALIZER_BODY___
 
         #region Helper method
 
+        void Serialize(Enum[] arr, BinaryWriter bw)
+        {
+            if (arr == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(arr.Length);
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    Serialize(arr[i], bw);
+                }
+            }
+        }
+
+        Enum[] DeserializeSystemArrayOfEnums(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+            else
+            {
+                int count = br.ReadInt32();
+                Enum[] arr = new Enum[count];
+                for (int i = 0; i < count; i++)
+                {
+                    arr[i] = DeserializeSystemEnum(br);
+                    
+                }
+                return arr;
+            }
+        }
+
+        void Serialize(string[] arr, BinaryWriter bw)
+        {
+            if (arr == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(arr.Length);
+                for (int i = 0; i < arr.Length; i++)
+                {
+                    if (arr[i] == null)
+                    {
+                        bw.Write(true);
+                    }
+                    else
+                    {
+                        bw.Write(false);
+                        bw.Write(arr[i]);
+                    }
+                }
+            }
+        }
+
+        string[] DeserializeSystemStringArray(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+            else
+            {
+                int count = br.ReadInt32();
+                string[] strArr = new string[count];
+                for (int i = 0; i < count; i++)
+                {
+                    if (br.ReadBoolean() == false)
+                    {
+                        strArr[i] = br.ReadString();
+                    }
+                }
+                return strArr;
+            }
+        }
+
+        Enum DeserializeSystemEnum(BinaryReader br)
+        {
+            if (br.ReadBoolean() == false)
+            {
+                string enumTypeName = br.ReadString();
+                Type enumType = Type.GetType(enumTypeName);
+                TypeCode enumTypeCode = Type.GetTypeCode(Enum.GetUnderlyingType(enumType));
+                switch (enumTypeCode)
+                {
+                    case TypeCode.Int32:
+                        return (Enum)Enum.ToObject(enumType, br.ReadInt32());
+                    case TypeCode.UInt32:
+                        return (Enum)Enum.ToObject(enumType, br.ReadUInt32());
+                    case TypeCode.Int16:
+                        return (Enum)Enum.ToObject(enumType, br.ReadInt16());
+                    case TypeCode.UInt16:
+                        return (Enum)Enum.ToObject(enumType, br.ReadUInt16());
+                    case TypeCode.Int64:
+                        return (Enum)Enum.ToObject(enumType, br.ReadInt64());
+                    case TypeCode.UInt64:
+                        return (Enum)Enum.ToObject(enumType, br.ReadUInt64());
+                    case TypeCode.Byte:
+                        return (Enum)Enum.ToObject(enumType, br.ReadByte());
+                    case TypeCode.SByte:
+                        return (Enum)Enum.ToObject(enumType, br.ReadSByte());
+                    default:
+                        throw new NotImplementedException($"No support for enum type {enumType.FullName}");
+                }
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        void Serialize(Enum item, BinaryWriter bw)
+        {
+            if (item == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                Type enumType = item.GetType();
+                bw.Write(enumType.AssemblyQualifiedName);
+
+                TypeCode enumTypeCode = Type.GetTypeCode(Enum.GetUnderlyingType(enumType));
+                switch (enumTypeCode)
+                {
+                    case TypeCode.Int32:
+                        bw.Write(Convert.ToInt32(item));
+                        break;
+                    case TypeCode.UInt32:
+                        bw.Write(Convert.ToUInt32(item));
+                        break;
+                    case TypeCode.Int16:
+                        bw.Write(Convert.ToInt16(item));
+                        break;
+                    case TypeCode.UInt16:
+                        bw.Write(Convert.ToUInt16(item));
+                        break;
+                    case TypeCode.Int64:
+                        bw.Write(Convert.ToInt64(item));
+                        break;
+                    case TypeCode.UInt64:
+                        bw.Write(Convert.ToUInt64(item));
+                        break;
+                    case TypeCode.Byte:
+                        bw.Write(Convert.ToByte(item));
+                        break;
+                    case TypeCode.SByte:
+                        bw.Write(Convert.ToSByte(item));
+                        break;
+                    default:
+                        throw new NotImplementedException($"Unknown enum typecode {enumTypeCode}");
+                }
+            }
+        }
+
         Exception CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
         {
             Exception ex = (Exception)Activator.CreateInstance(exType);
@@ -87,7 +250,7 @@ ___DESERIALIZER_BODY___
 
         bool IsPrimitive(Type objType)
         {
-            return objType.IsPrimitive || objType == typeof(string) || objType == typeof(DateTime) || objType == typeof(decimal);
+            return objType.IsPrimitive || objType == typeof(DateTime) || objType == typeof(decimal);
         }
 
         object DeserializePrimitive(BinaryReader br,Type objType)
