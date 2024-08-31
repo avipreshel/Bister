@@ -65,7 +65,20 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write(item.Value);");
                 sb.AppendLine(indentation + "}");
             }
-            else
+            else if (Bister.IsPrimitive(keyType)) // key is primitive, value is not
+            {
+                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(item.Key);");
+                SerializeAnyType(sb, indentation, $"item.Value", valType);
+                sb.AppendLine(indentation + "}");
+            }
+            else if (Bister.IsPrimitive(valType)) // key is non-primitive, value is primitive
+            {
+                throw new NotImplementedException();
+            }
+            else // Both non-primitive
             {
                 throw new NotImplementedException();
             }
@@ -298,12 +311,33 @@ namespace BisterLib
             {
                 SerializeStruct(sb, indentation,instanceName, objType);
             }
+            else if (typeof(Exception).IsAssignableFrom(objType)) // is it some kind of Exception?
+            {
+                SerializeException(sb, indentation, instanceName, objType);
+            }
             else // Must be some class..
             {
                 SerializeClass(sb, indentation, instanceName, objType);
             }
         }
 
+        public static void SerializeException(StringBuilderVerbose sb, string indentation, string instanceName,Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, typeof(object));
+            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(true);");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(false);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.GetType().AssemblyQualifiedName);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Source);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Message);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.StackTrace);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.HResult);");
+            sb.AppendLine(indentation + "}");
+        }
 
         /// <summary>
         /// Serialize System.Object

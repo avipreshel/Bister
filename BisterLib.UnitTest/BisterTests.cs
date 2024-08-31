@@ -32,6 +32,50 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_Dictionary_object_to_string()
+        {
+            Dictionary<object, string> instance = new Dictionary<object, string>()
+           {
+               {new object(),"first" },
+               {new Exception(),"second" },
+               {new List<int> {1,2 },"third" },
+               {new ClassWithArrays(),"furth" }
+           };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_Exception()
+        {
+            Exception instance;
+            try
+            {
+                throw new NotImplementedException("I am a test exception");
+            }
+            catch (Exception ex)
+            {
+                instance = ex;
+            }
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_Dictionary_string_to_object()
+        {
+            var instance = new Dictionary<string,object>()
+           {
+               {"first",new object() },
+               {"second",new Exception() },
+               {"third", new List<int> {1,2 } },
+               {"furth",new ClassWithArrays() }
+           };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
         public void Test_WrongTypeDeserialization()
         {
             var instance = new ClassWithLegacyArray()

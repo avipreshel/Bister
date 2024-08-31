@@ -23,10 +23,18 @@ using System.Globalization;
 
 namespace BisterLib
 {
-
+    public static class BisterConsts
+    {
+        public static readonly FieldInfo ExceptionHResult = typeof(Exception).GetField("_HResult", BindingFlags.Instance | BindingFlags.NonPublic);
+        public static readonly FieldInfo ExceptionSource = typeof(Exception).GetField("_source", BindingFlags.Instance | BindingFlags.NonPublic);
+        public static readonly FieldInfo ExceptionMessage = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
+        public static readonly FieldInfo ExceptionStackTrace = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
+    }
 
     public class Bister : IBister
     {
+
+
         static Lazy<IBister> _lazy = new Lazy<IBister>(()=> new Bister());
         public static IBister Instance => _lazy.Value;
 
@@ -178,7 +186,7 @@ namespace BisterLib
             string friendlyTypeName = GetFriendlyGenericTypeName(objType);
             sb.Replace("___TYPE_NAME___", friendlyTypeName);
 
-            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace('.', '_').Replace('<', '_').Replace('>', '_')}";
+            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_')}";
 
             sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
 
@@ -192,7 +200,7 @@ namespace BisterLib
                 sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
             }
 
-            EstimateInstanceSize(sb, GetRelevantProperties(objType));
+            EstimateInstanceSize(sb, objType);
 
             SerializerEntry(sb, objType);
 
@@ -322,61 +330,81 @@ namespace BisterLib
             
         }
 
-        private static void EstimateInstanceSize(StringBuilderVerbose sb, IEnumerable<PropertyInfo> props)
+        /// <summary>
+        /// This requires major overhead to work in recursive manner
+        /// </summary>
+        /// <param name="sb"></param>
+        /// <param name="objType"></param>
+        private static void EstimateInstanceSize(StringBuilderVerbose sb,Type objType)
         {
             var sbSizeOfObject = new StringBuilderVerbose();
             sbSizeOfObject.Append($"0");
-            foreach (var prop in props)
-            {
 
-                if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(Decimal))
+            if (typeof(Exception).IsAssignableFrom(objType))
+            {
+                sbSizeOfObject.Append($"+instance.Message.Length+instance.StackTrace.Length+instance.Source.Length+8");
+            }
+            else
+            {
+                IEnumerable<PropertyInfo> props = GetRelevantProperties(objType);
+
+                foreach (var prop in props)
                 {
-                    sbSizeOfObject.Append($"+{Marshal.SizeOf(prop.PropertyType)}");
-                }
-                else if (prop.PropertyType.IsEnum)
-                {
-                    sbSizeOfObject.Append($"+8");
-                }
-                else if (prop.PropertyType == typeof(string))
-                {
-                    sbSizeOfObject.Append($"+instance.{prop.Name}.Length");
-                }
-                else if (prop.PropertyType == typeof(DateTime))
-                {
-                    sbSizeOfObject.Append($"+8");
-                }
-                else if (prop.PropertyType == typeof(TimeSpan))
-                {
-                    sbSizeOfObject.Append($"+8");
-                }
-                else if (prop.PropertyType.IsArray)
-                {
-                    Type arrayItemType = prop.PropertyType.GetElementType();
-                    if (arrayItemType.IsPrimitive || arrayItemType == typeof(Decimal))
+
+                    if (prop.PropertyType.IsPrimitive || prop.PropertyType == typeof(Decimal))
                     {
-                        sbSizeOfObject.Append($"+instance.{prop.Name}.Length * {Marshal.SizeOf(arrayItemType)}");
+                        sbSizeOfObject.Append($"+{Marshal.SizeOf(prop.PropertyType)}");
+                    }
+                    else if (prop.PropertyType.IsEnum)
+                    {
+                        sbSizeOfObject.Append($"+8");
+                    }
+                    else if (prop.PropertyType == typeof(string))
+                    {
+                        sbSizeOfObject.Append($"+instance.{prop.Name}.Length");
+                    }
+                    else if (prop.PropertyType == typeof(DateTime))
+                    {
+                        sbSizeOfObject.Append($"+8");
+                    }
+                    else if (prop.PropertyType == typeof(TimeSpan))
+                    {
+                        sbSizeOfObject.Append($"+8");
+                    }
+                    else if (prop.PropertyType.IsArray)
+                    {
+                        Type arrayItemType = prop.PropertyType.GetElementType();
+                        if (arrayItemType.IsPrimitive || arrayItemType == typeof(Decimal))
+                        {
+                            sbSizeOfObject.Append($"+instance.{prop.Name}.Length * {Marshal.SizeOf(arrayItemType)}");
+                        }
+                        else
+                        {
+                            sbSizeOfObject.Append($"+instance.{prop.Name}.Length * 8");
+                        }
+                    }
+                    else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
+                    {
+                        int size = prop.PropertyType.GenericTypeArguments.Sum(t => t.IsPrimitive ? Marshal.SizeOf(t) : 8);
+                        sbSizeOfObject.Append($"+{size}");
+                    }
+                    else if (prop.PropertyType == typeof(object))
+                    {
+                        sbSizeOfObject.Append($"+8");
+                    }
+                    else if (typeof(Exception).IsAssignableFrom(prop.PropertyType))
+                    {
+                        sbSizeOfObject.Append($"+8+instance.Message.Length+instance.StackTrace.Length");
                     }
                     else
                     {
-                        sbSizeOfObject.Append($"+instance.{prop.Name}.Length * 8");
+                        sbSizeOfObject.Append($"+8"); // Unknown...
                     }
-                }
-                else if (typeof(IEnumerable).IsAssignableFrom(prop.PropertyType))
-                {
-                    int size = prop.PropertyType.GenericTypeArguments.Sum(t => t.IsPrimitive ? Marshal.SizeOf(t) : 8);
-                    sbSizeOfObject.Append($"+{size}");
-                }
-                else if (prop.PropertyType == typeof(object))
-                {
-                    sbSizeOfObject.Append($"+8");
-                }
-                else
-                {
-                    sbSizeOfObject.Append($"+8"); // Unknown...
-                }
-                // Estimate 8 bytes per property...simple huristic
+                    // Estimate 8 bytes per property...simple huristic
 
+                }
             }
+            
 
             sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"(int)Math.Ceiling(1.5f * ({sbSizeOfObject.ToString()}))");
         }

@@ -27,7 +27,23 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
                 sb.AppendLine(indentation + "}");
             }
-            else
+            else if (Bister.IsPrimitive(keyType)) // key is primitive, value is not
+            {
+                sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
+                sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tvar key = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(keyType))};");
+                sb.AppendLine(indentation + $"\t// *****************************************************");
+                DeserializeAnyType(sb, indentation + "\t", "val", valType);
+                sb.AppendLine(indentation + $"\t// *****************************************************");
+                sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
+                sb.AppendLine(indentation + "}");
+            }
+            else if (Bister.IsPrimitive(valType)) // key is non-primitive, value is primitive
+            {
+                throw new NotImplementedException();
+            }
+            else // Both non-primitive
             {
                 throw new NotImplementedException();
             }
@@ -257,6 +273,10 @@ namespace BisterLib
             {
                 DeserializeStruct(sb, indentation, instanceName, objType);
             }
+            else if (typeof(Exception).IsAssignableFrom(objType)) // is it some kind of Exception?
+            {
+                DeserializeException(sb, indentation, instanceName, objType);
+            }
             else if (objType.IsClass)
             {
                 DeserializeClass(sb, indentation, instanceName, objType);
@@ -265,6 +285,30 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            if (!instanceName.Contains("."))
+            {
+                sb.AppendLine(indentation + $"{objType.FullName} {instanceName};");
+            }
+            sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = null;");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tstring exTypeName = br.ReadString();");
+            sb.AppendLine(indentation + "\tType exType = Type.GetType(exTypeName);");
+            sb.AppendLine(indentation + "\tstring source = br.ReadString();");
+            sb.AppendLine(indentation + "\tstring message = br.ReadString();");
+            sb.AppendLine(indentation + "\tstring stackTrack = br.ReadString();");
+            sb.AppendLine(indentation + "\tint errorCode = br.ReadInt32();");
+            sb.AppendLine(indentation + $"\t{instanceName} = ({objType.FullName})CreateException(exType,source,message,errorCode,stackTrack);");
+            sb.AppendLine(indentation + "}");
+            // CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
         }
 
         private static void DeserializeStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

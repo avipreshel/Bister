@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 using BisterLib;
 using System.CodeDom;
+using System.Reflection;
 <<<USINGS>>>
 
 namespace GeneratedNS
@@ -66,6 +67,16 @@ ___DESERIALIZER_BODY___
         }
 
         #region Helper method
+
+        Exception CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
+        {
+            Exception ex = (Exception)Activator.CreateInstance(exType);
+            BisterConsts.ExceptionHResult.SetValue(ex, unchecked(errorCode));
+            BisterConsts.ExceptionSource.SetValue(ex, unchecked(source));
+            BisterConsts.ExceptionMessage.SetValue(ex, unchecked(message));
+            BisterConsts.ExceptionStackTrace.SetValue(ex, unchecked(stackTrace));
+            return ex;
+        }
 
         bool IsPrimitive(Type objType)
         {
