@@ -332,9 +332,9 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(false);");
             sb.AppendLine(indentation + $"\tbw.Write({instanceName}.GetType().AssemblyQualifiedName);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Source);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Source == null? \"{BisterConsts.NullStr}\" : {instanceName}.Source);");
             sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Message);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.StackTrace);");
+            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.StackTrace == null? \"{BisterConsts.NullStr}\" : {instanceName}.StackTrace);");
             sb.AppendLine(indentation + $"\tbw.Write({instanceName}.HResult);");
             sb.AppendLine(indentation + "}");
         }

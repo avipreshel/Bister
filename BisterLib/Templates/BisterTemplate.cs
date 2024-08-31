@@ -72,9 +72,16 @@ ___DESERIALIZER_BODY___
         {
             Exception ex = (Exception)Activator.CreateInstance(exType);
             BisterConsts.ExceptionHResult.SetValue(ex, unchecked(errorCode));
-            BisterConsts.ExceptionSource.SetValue(ex, unchecked(source));
+            if (source != BisterConsts.NullStr)
+            {
+                BisterConsts.ExceptionSource.SetValue(ex, unchecked(source));
+            }
             BisterConsts.ExceptionMessage.SetValue(ex, unchecked(message));
-            BisterConsts.ExceptionStackTrace.SetValue(ex, unchecked(stackTrace));
+            if (stackTrace != BisterConsts.NullStr)
+            {
+                BisterConsts.ExceptionStackTrace.SetValue(ex, unchecked(stackTrace));
+            }
+            
             return ex;
         }
 

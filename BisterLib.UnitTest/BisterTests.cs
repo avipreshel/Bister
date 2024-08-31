@@ -62,12 +62,20 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_ExceptionWithNullSourceValue()
+        {
+            var instance =  new NotImplementedException("I am a test exception");
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
         public void Test_Dictionary_string_to_object()
         {
             var instance = new Dictionary<string,object>()
            {
                {"first",new object() },
-               {"second",new Exception() },
+               {"second",new NotImplementedException("Was I not implemented?") },
                {"third", new List<int> {1,2 } },
                {"furth",new ClassWithArrays() }
            };

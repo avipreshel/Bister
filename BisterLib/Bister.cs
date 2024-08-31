@@ -29,6 +29,8 @@ namespace BisterLib
         public static readonly FieldInfo ExceptionSource = typeof(Exception).GetField("_source", BindingFlags.Instance | BindingFlags.NonPublic);
         public static readonly FieldInfo ExceptionMessage = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
         public static readonly FieldInfo ExceptionStackTrace = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        public static readonly string NullStr = "_NU_LL_";
     }
 
     public class Bister : IBister
@@ -67,7 +69,7 @@ namespace BisterLib
         {
             try
             {
-                if (blob.Length== 0)
+                if (blob.Length == 0)
                 {
                     return null;
                 }
@@ -342,7 +344,7 @@ namespace BisterLib
 
             if (typeof(Exception).IsAssignableFrom(objType))
             {
-                sbSizeOfObject.Append($"+instance.Message.Length+instance.StackTrace.Length+instance.Source.Length+8");
+                sbSizeOfObject.Append($"+instance.Message.Length+(instance.StackTrace == null? 0 : instance.StackTrace.Length)+(instance.Source == null? 0 : instance.Source.Length)+8");
             }
             else
             {
