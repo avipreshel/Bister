@@ -43,7 +43,9 @@ SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob); // No dum
 The generated code is fully debug-able and easy to understand.
 
 # Unsupported types
-* System.Half (because it's unsupported by Dotnet standard 2.0)
+* System.Half (unsupported by Dotnet standard 2.0)
+* System.DateOnly (unsupported by Dotnet standard 2.0)
+* System.TimeOnly (unsupported by Dotnet standard 2.0)
  
 # Advantage compared Json
 * Better performance (See benchmarks below)
