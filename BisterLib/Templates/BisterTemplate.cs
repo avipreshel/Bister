@@ -7,6 +7,7 @@ using BisterLib;
 using System.CodeDom;
 using System.Reflection;
 using System.Linq;
+using System.Diagnostics;
 <<<USINGS>>>
 
 namespace GeneratedNS
@@ -67,9 +68,11 @@ ___DESERIALIZER_BODY___
             return (object)Deserialize(buffer);
         }
 
-        #region Helper method
+    }
 
-        void Serialize(Enum[] arr, BinaryWriter bw)
+    internal static class GeneratedHelper
+    {
+        public static void Serialize(Enum[] arr, BinaryWriter bw)
         {
             if (arr == null)
             {
@@ -86,7 +89,7 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        Enum[] DeserializeSystemArrayOfEnums(BinaryReader br)
+        public static Enum[] DeserializeSystemArrayOfEnums(BinaryReader br)
         {
             if (br.ReadBoolean() == true)
             {
@@ -99,13 +102,13 @@ ___DESERIALIZER_BODY___
                 for (int i = 0; i < count; i++)
                 {
                     arr[i] = DeserializeSystemEnum(br);
-                    
+
                 }
                 return arr;
             }
         }
 
-        void Serialize(string[] arr, BinaryWriter bw)
+        public static void Serialize(string[] arr, BinaryWriter bw)
         {
             if (arr == null)
             {
@@ -130,7 +133,7 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        string[] DeserializeSystemStringArray(BinaryReader br)
+        public static string[] DeserializeSystemStringArray(BinaryReader br)
         {
             if (br.ReadBoolean() == true)
             {
@@ -151,7 +154,7 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        Enum DeserializeSystemEnum(BinaryReader br)
+        public static Enum DeserializeSystemEnum(BinaryReader br)
         {
             if (br.ReadBoolean() == false)
             {
@@ -186,7 +189,7 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        void Serialize(Enum item, BinaryWriter bw)
+        public static void Serialize(Enum item, BinaryWriter bw)
         {
             if (item == null)
             {
@@ -231,7 +234,20 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        Exception CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
+        public static void Serialize(string item, BinaryWriter bw)
+        {
+            if (item == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(item);
+            }
+        }
+
+        public static Exception CreateException(Type exType, string source, string message, int errorCode, string stackTrace)
         {
             Exception ex = (Exception)Activator.CreateInstance(exType);
             BisterConsts.ExceptionHResult.SetValue(ex, unchecked(errorCode));
@@ -244,16 +260,16 @@ ___DESERIALIZER_BODY___
             {
                 BisterConsts.ExceptionStackTrace.SetValue(ex, unchecked(stackTrace));
             }
-            
+
             return ex;
         }
 
-        bool IsPrimitive(Type objType)
+        public static bool IsPrimitive(Type objType)
         {
             return objType.IsPrimitive || objType == typeof(DateTime) || objType == typeof(decimal);
         }
 
-        object DeserializePrimitive(BinaryReader br,Type objType)
+        public static object DeserializePrimitive(BinaryReader br, Type objType)
         {
             if (objType == typeof(string))
             {
@@ -322,7 +338,7 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        void SerializePrimitive(object instance,Type objType, BinaryWriter bw)
+        public static void SerializePrimitive(object instance, Type objType, BinaryWriter bw)
         {
             if (objType == typeof(string))
             {
@@ -390,8 +406,9 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        void DeserializeArrayList(ArrayList instance, int count,BinaryReader br)
+        public static void DeserializeArrayList(ArrayList instance, int count, BinaryReader br)
         {
+            Debug.Assert(instance != null);
             for (int i = 0; i < count; i++)
             {
                 bool isNull = br.ReadBoolean();
@@ -432,7 +449,7 @@ ___DESERIALIZER_BODY___
             }
         }
 
-        void SerializeArrayList(ArrayList instance,BinaryWriter bw)
+        public static void SerializeArrayList(ArrayList instance, BinaryWriter bw)
         {
             if (instance == null)
             {
@@ -478,6 +495,6 @@ ___DESERIALIZER_BODY___
                 }
             }
         }
-        #endregion
     }
+
 }

@@ -8,7 +8,7 @@ using System.Text;
 
 namespace BisterLib
 {
-    public  static class BisterDeserializer
+    public static class BisterDeserializer
     {
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
@@ -117,7 +117,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
             sb.AppendLine(indentation + $"\t{instanceName} = new ArrayList(count);");
-            sb.AppendLine(indentation + $"\tDeserializeArrayList({instanceName},count,br);");
+            sb.AppendLine(indentation + $"\tGeneratedHelper.DeserializeArrayList({instanceName},count,br);");
             sb.AppendLine(indentation + "}");
         }
 
@@ -135,7 +135,7 @@ namespace BisterLib
             Type arrayItemType = arrayType.GetElementType();
             if (arrayItemType == typeof(string))
             {
-                sb.AppendLine(indentation + $"{instanceName} = DeserializeSystemStringArray(br);");
+                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemStringArray(br);");
             }
             else if (Bister.IsPrimitive(arrayItemType))
             {
@@ -183,7 +183,7 @@ namespace BisterLib
             }
             else if (arrayItemType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"{instanceName} = DeserializeSystemArrayOfEnums(br);");
+                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemArrayOfEnums(br);");
             }
             else if (arrayItemType.IsEnum)
             {
@@ -249,9 +249,9 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\tstring objTypeName = br.ReadString();");
             sb.AppendLine(indentation + $"\tType objType = Type.GetType(objTypeName);");
-            sb.AppendLine(indentation + $"\tif (IsPrimitive(objType))");
+            sb.AppendLine(indentation + $"\tif (GeneratedHelper.IsPrimitive(objType))");
             sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName} = DeserializePrimitive(br,objType);");
+            sb.AppendLine(indentation + $"\t\t{instanceName} = GeneratedHelper.DeserializePrimitive(br,objType);");
             sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "\telse if (objType == typeof(object))");
             sb.AppendLine(indentation + "\t{");
@@ -328,7 +328,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "\tstring message = br.ReadString();");
             sb.AppendLine(indentation + "\tstring stackTrack = br.ReadString();");
             sb.AppendLine(indentation + "\tint errorCode = br.ReadInt32();");
-            sb.AppendLine(indentation + $"\t{instanceName} = ({objType.FullName})CreateException(exType,source,message,errorCode,stackTrack);");
+            sb.AppendLine(indentation + $"\t{instanceName} = ({objType.FullName})GeneratedHelper.CreateException(exType,source,message,errorCode,stackTrack);");
             sb.AppendLine(indentation + "}");
             // CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
         }
