@@ -17,7 +17,7 @@ namespace BisterLib
             string usefulVariableName = Bister.GetUsefulName(instanceName);
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
-            if (Bister.IsPrimitive(keyType) && Bister.IsPrimitive(valType))
+            if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)) && Bister.IsPrimitive(valType))
             {
                 sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
                 sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
@@ -27,7 +27,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
                 sb.AppendLine(indentation + "}");
             }
-            else if (Bister.IsPrimitive(keyType)) // key is primitive, value is not
+            else if (keyType == typeof(string) || Bister.IsPrimitive(keyType)) // key is primitive, value is not
             {
                 sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
                 sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
@@ -53,37 +53,47 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
-            string usefulVariableName = Bister.GetUsefulName(instanceName);
             Type valType = objType.GenericTypeArguments[0];
-            sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
-            sb.AppendLine(indentation + $"{instanceName}.Capacity = count{usefulVariableName};");
+            
             if (valType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tstring itemTypeName = br.ReadString();");
-                sb.AppendLine(indentation + $"\tType enumType{usefulVariableName} =  Type.GetType(itemTypeName);");
-                sb.AppendLine(indentation + $"\tTypeCode enumTypeCode{usefulVariableName} =  Type.GetTypeCode(enumType{usefulVariableName});");
-                sb.AppendLine(indentation + $"\tif (enumTypeCode{usefulVariableName} == TypeCode.Int32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt32()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.UInt32) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadUInt32()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt16()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.UInt16) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadUInt16()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.Int64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadInt64()));");
-                sb.AppendLine(indentation + $"\telse if (enumTypeCode{usefulVariableName} == TypeCode.UInt64) {instanceName}.Add(({valType.Name})Enum.ToObject(enumType{usefulVariableName},br.ReadUInt64()));");
-                sb.AppendLine(indentation + $"\telse throw new NotImplementedException();");
-                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeListOfEnums(br);");
             }
             else if (valType == typeof(object))
             {
                 throw new NotImplementedException();
             }
-            else
+            else if (valType == typeof(string))
             {
-                Type enumPrimitiveType = valType.IsEnum ? valType.GetEnumUnderlyingType() : valType;
-                sb.AppendLine(indentation + $"for (int i = 0; i < count{usefulVariableName}; i++)");
+                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeListString(br);");
+            }
+            else if (valType.IsEnum)
+            {
+                sb.AppendLine(indentation + $"\t{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
+                Type enumPrimitiveType = valType.GetEnumUnderlyingType();
+                sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
                 sb.AppendLine(indentation + "}");
+            }
+            else if (valType.IsPrimitive)
+            {
+                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = null;");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
+                sb.AppendLine(indentation + $"\tfor (int i = 0; i < {instanceName}.Capacity; i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\t{instanceName}.Add(br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))});");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                throw new NotImplementedException($"No support for deserialization of {Bister.GetFriendlyGenericTypeName(objType)}");
             }
         }
        
@@ -105,20 +115,8 @@ namespace BisterLib
         public static void DeserializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            if (!instanceName.Contains("."))
-            {
-                sb.AppendLine(indentation + $"ArrayList {instanceName};");
-            }
-            sb.AppendLine(indentation + $"if (br.ReadBoolean())");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName} = null;");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tint count = br.ReadInt32();");
-            sb.AppendLine(indentation + $"\t{instanceName} = new ArrayList(count);");
-            sb.AppendLine(indentation + $"\tGeneratedHelper.DeserializeArrayList({instanceName},count,br);");
-            sb.AppendLine(indentation + "}");
+            
+            sb.AppendLine(indentation + $"\t{instanceName} = GeneratedHelper.DeserializeArrayList(br);");
         }
 
         private static void DeserializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
@@ -275,6 +273,14 @@ namespace BisterLib
             {
                 DeserializeSystemObject(sb, indentation, instanceName);
             }
+            else if (objType == typeof(DateTime))
+            {
+                DeserializeDateTime(sb, indentation, instanceName);
+            }
+            else if (objType == typeof(TimeSpan))
+            {
+                DeserializeTimeSpan(sb, indentation, instanceName);
+            }
             else if (objType.IsEnum) // Strongly-defined enum
             {
                 DeserializerUserEnum(sb, indentation, instanceName, objType);
@@ -299,6 +305,10 @@ namespace BisterLib
             {
                 DeserializeException(sb, indentation, instanceName, objType);
             }
+            else if (objType == typeof(string))
+            {
+                DeserializeString(sb, indentation, instanceName);
+            }
             else if (objType.IsClass)
             {
                 DeserializeClass(sb, indentation, instanceName, objType);
@@ -307,6 +317,24 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private static void DeserializeTimeSpan(StringBuilderVerbose sb, string indentation, string instanceName)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            sb.AppendLine(indentation + $"{instanceName} = TimeSpan.FromTicks(br.ReadInt64());");
+        }
+
+        private static void DeserializeDateTime(StringBuilderVerbose sb, string indentation, string instanceName)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeDateTime(br);");
+        }
+
+        private static void DeserializeString(StringBuilderVerbose sb, string indentation, string instanceName)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeString(br);");
         }
 
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -355,7 +383,7 @@ namespace BisterLib
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
-                sb.AppendLine(indentation + $"// For each property...");
+                sb.AppendLine(indentation + $"// For each property...{prop.Name}");
                 DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
         }
@@ -368,7 +396,7 @@ namespace BisterLib
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
-                sb.AppendLine(indentation + $"// For each property...");
+                sb.AppendLine(indentation + $"// For each property...{prop.Name}");
                 DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
         }
@@ -410,43 +438,37 @@ namespace BisterLib
             string usefulName = Bister.GetUsefulName(instanceName);
             string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
             
-            if (!instanceName.Contains(".")) // top level instance decleration
-            {
-                sb.AppendLine(indentation + $"{friendlyTypeName} {instanceName};"); 
-            }
-            
-            sb.AppendLine(indentation + $"bool isNull_{usefulName} = br.ReadBoolean();");
-            sb.AppendLine(indentation + $"if (isNull_{usefulName})");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName} = null;");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + $"else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName} = new {friendlyTypeName}();");
             if (objType == typeof(ArrayList))
             {
                 DeserializeArrayList(sb, indentation, instanceName);
             }
             if (objType.IsGenericType)
             {
-                DeserializeGenericClass(sb, indentation + "\t", instanceName, objType);
+                DeserializeGenericClass(sb, indentation , instanceName, objType);
             }
             else
             {
-                DeserializeNonGenericClass(sb, indentation + "\t", instanceName, objType);
+                DeserializeNonGenericClass(sb, indentation , instanceName, objType);
             }
-            sb.AppendLine(indentation + "}");
         }
 
         private static void DeserializeNonGenericClass(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+            sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = null;");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = new {objType.FullName}();");
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
-                sb.AppendLine(indentation + $"// For each property...");
-                DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+                sb.AppendLine(indentation + $"\t// For each property...{prop.Name}");
+                DeserializeAnyType(sb, indentation + "\t", $"{instanceName}.{prop.Name}", prop.PropertyType);
             }
+            sb.AppendLine(indentation + "}");
         }
 
         private static void DeserializeGenericClass(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

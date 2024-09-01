@@ -125,6 +125,11 @@ namespace BisterLib
 
         #endregion
 
+        public static bool IsTopLevelInstanceDecleration(string instanceName)
+        {
+            return !instanceName.Contains(".") && !instanceName.Contains("[");
+        }
+
         string ReadTemplateFromResource()
         {
             string[] resourceNames = Assembly.GetExecutingAssembly().GetManifestResourceNames();
@@ -224,13 +229,16 @@ namespace BisterLib
 
         private static void DeSerializerEntry(StringBuilderVerbose sb, Type objType)
         {
-            var sbSerializer = new StringBuilderVerbose();
+            var sbDeserializer = new StringBuilderVerbose();
+            
             string indentation = "\t\t\t";
 
-            BisterDeserializer.DeserializeAnyType(sbSerializer, indentation, "instance", objType);
+            sbDeserializer.AppendLine(indentation + $"{Bister.GetFriendlyGenericTypeName(objType)} instance;");
 
-            sbSerializer.AppendLine(indentation + "return instance;");
-            sb.Replace("___DESERIALIZER_BODY___", sbSerializer.ToString());
+            BisterDeserializer.DeserializeAnyType(sbDeserializer, indentation, "instance", objType);
+
+            sbDeserializer.AppendLine(indentation + "return instance;");
+            sb.Replace("___DESERIALIZER_BODY___", sbDeserializer.ToString());
         }
 
 

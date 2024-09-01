@@ -21,12 +21,45 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_GenericListOfInt()
+        {
+            var instance = new List<int>() { 1, 2, 3 };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_GenericListOfFloats()
+        {
+            var instance = new List<float>() { 1f, 2f, 3f, 10f };
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_EmptyGenericList()
+        {
+            var instance = new List<float>();
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_NullGenericList()
+        {
+            List<float>? instance = null;
+            ValidateLogic(instance, isExpectingNull : true);
+        }
+
+
+
+        [TestMethod]
         public void Test_ClassWithLegacyArray()
         {
             var instance = new ClassWithLegacyArray()
             {
-                ArrayDotNet2 = [10, null, new object(), new List<int>() { 5, 6 }]
+                ArrayDotNet2 = [10, null, new object(),"hi", new List<int>() { 5, 6 }]
             };
+
+            
 
             ValidateLogic(instance);
         }
@@ -118,12 +151,7 @@ namespace BisterLib.UnitTest
             ValidateLogic(instance);
         }
 
-        [TestMethod]
-        public void Test_GenericListOfPrimitives()
-        {
-            var instance = new List<float>() {  1f,2f,3f,10f};
-            ValidateLogic(instance);
-        }
+       
 
         [TestMethod]
         public void Test_NullObject()
@@ -159,7 +187,7 @@ namespace BisterLib.UnitTest
                 Prop_double = 13.33,
                 Prop_float = 14.44f,
                 Prop_DateTime = DateTime.Now,
-                Prop_TimeSpan = TimeSpan.Zero
+                Prop_TimeSpan = DateTime.Now.TimeOfDay
             };
 
             ValidateLogic(instance);
