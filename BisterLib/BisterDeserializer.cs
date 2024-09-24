@@ -15,6 +15,8 @@ namespace BisterLib
             Bister.PrintMethodName(sb, indentation, objType);
             string niceTypeName = Bister.GetFriendlyGenericTypeName(objType);
             string usefulVariableName = Bister.GetUsefulName(instanceName);
+            Type keyType = objType.GenericTypeArguments[0];
+            Type valType = objType.GenericTypeArguments[1];
 
             sb.AppendLine(indentation + $"if (br.ReadBoolean()) {instanceName} = null;");
             sb.AppendLine(indentation + "else");
@@ -22,15 +24,42 @@ namespace BisterLib
             indentation += "\t";
             sb.AppendLine(indentation + $"{instanceName} = new {niceTypeName}();");
             sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
-            
-            Type keyType = objType.GenericTypeArguments[0];
-            Type valType = objType.GenericTypeArguments[1];
-            if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)) && Bister.IsPrimitive(valType))
+            sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
+            sb.AppendLine(indentation + "{");
+            indentation += "\t";
+
+            if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)))
             {
-                sb.AppendLine(indentation + $"// Key and value are both primitive types");
-                sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tvar key = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(keyType))};");
+                sb.AppendLine(indentation + $"// Key is primitive");
+                sb.AppendLine(indentation + $"var key = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(keyType))};");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"// Key is non-primitive");
+                DeserializeAnyType(sb, indentation, "key", keyType);
+            }
+
+            if ((valType == typeof(string) || Bister.IsPrimitive(valType)))
+            {
+                sb.AppendLine(indentation + $"// Val is primitive");
+                sb.AppendLine(indentation + $"var val = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))};");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"// Val is non-primitive");
+                string niceValTypeName = Bister.GetFriendlyGenericTypeName(valType);
+                DeserializeAnyType(sb, indentation, "val", valType);
+            }
+            sb.AppendLine(indentation + $"{instanceName}.Add(key,val);");
+
+            indentation = indentation.Substring(0, indentation.Length - 1);
+            sb.AppendLine(indentation + "}");
+            indentation = indentation.Substring(0, indentation.Length - 1);
+            sb.AppendLine(indentation + "}");
+
+            
+
+            /*
                 sb.AppendLine(indentation + $"\tvar val = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))};");
                 sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
                 sb.AppendLine(indentation + "}");
@@ -57,6 +86,7 @@ namespace BisterLib
             }
             indentation = indentation.Substring(0, indentation.Length - 1);
             sb.AppendLine(indentation + "}");
+            */
         }
 
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -345,7 +375,7 @@ namespace BisterLib
         private static void DeserializeString(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeString(br);");
+            sb.AppendLine(indentation + $"{instanceName} = br.ReadString();");
         }
 
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

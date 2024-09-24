@@ -66,27 +66,31 @@ namespace BisterLib
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");
             indentation += "\t";
-            // Key and Value are primitive
-            if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)) && Bister.IsPrimitive(valType))
+
+            // Serialize key
+            if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)))
             {
-                sb.AppendLine(indentation + $"// Key and value are both primitive types");
+                sb.AppendLine(indentation + $"// Key is primitive");
                 sb.AppendLine(indentation + $"bw.Write(item.Key);");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"// Key is non-primitive");
+                SerializeAnyType(sb, indentation, $"item.Key", keyType);
+            }
+
+            // Serialize value
+            if ((valType == typeof(string) || Bister.IsPrimitive(valType)))
+            {
+                sb.AppendLine(indentation + $"// Value is primitive");
                 sb.AppendLine(indentation + $"bw.Write(item.Value);");
             }
-            else if (keyType == typeof(string) || Bister.IsPrimitive(keyType)) // key is primitive, value is not
+            else
             {
-                sb.AppendLine(indentation + $"// Key is primitive, value is not");
-                sb.AppendLine(indentation + $"bw.Write(item.Key);");
+                sb.AppendLine(indentation + $"// Value is non-primitive");
                 SerializeAnyType(sb, indentation, $"item.Value", valType);
             }
-            else if (Bister.IsPrimitive(valType)) // key is non-primitive, value is primitive
-            {
-                throw new NotImplementedException();
-            }
-            else // Both non-primitive
-            {
-                throw new NotImplementedException();
-            }
+
             indentation = indentation.Substring(0, indentation.Length-1);
             sb.AppendLine(indentation + "}");
             indentation = indentation.Substring(0, indentation.Length - 1);

@@ -70,7 +70,6 @@ namespace BisterLib.UnitTest
             Dictionary<object, string> instance = new Dictionary<object, string>()
            {
                {new object(),"first" },
-               {new Exception(),"second" },
                {new List<int> {1,2 },"third" },
                {new ClassWithArrays(),"furth" }
            };

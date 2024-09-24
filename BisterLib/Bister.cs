@@ -20,6 +20,7 @@ using System.Numerics;
 using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
+using System.ComponentModel.Design;
 
 namespace BisterLib
 {
@@ -353,6 +354,12 @@ namespace BisterLib
             if (typeof(Exception).IsAssignableFrom(objType))
             {
                 sbSizeOfObject.Append($"+instance.Message.Length+(instance.StackTrace == null? 0 : instance.StackTrace.Length)+(instance.Source == null? 0 : instance.Source.Length)+8");
+            }
+            else if (typeof(IDictionary).IsAssignableFrom(objType))
+            {
+                Type keyType = objType.GenericTypeArguments[0];
+                Type valType = objType.GenericTypeArguments[1];
+                sbSizeOfObject.Append($"+instance.Count * 32");
             }
             else
             {
