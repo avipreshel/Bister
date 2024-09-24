@@ -457,6 +457,10 @@ namespace GeneratedNS
                     {
                         array.Add(DeserializePrimitive(br, itemType));
                     }
+                    else if (itemType == typeof(string))
+                    {
+                        array.Add(br.ReadString());
+                    }
                     else if (itemType.IsEnum)
                     {
                         Type enumPrimitiveType = itemType.GetEnumUnderlyingType();

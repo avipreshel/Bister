@@ -56,7 +56,7 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithLegacyArray()
             {
-                ArrayDotNet2 = [10, null, new object(),"hi", new List<int>() { 5, 6 }]
+                LegacyArray = [10, null, new object(),"hi", new List<int>() { 5, 6 }]
             };
 
             
@@ -129,7 +129,7 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithLegacyArray()
             {
-                ArrayDotNet2 = [10, null, new object(),new List<int>() { 5,6 },"hello", TestEnum.Two, TestEnum.Three]
+                LegacyArray = [10, null, new object(),new List<int>() { 5,6 },"hello", TestEnum.Two, TestEnum.Three]
             };
 
             var blob = Bister.Instance.Serialize(instance);

@@ -62,7 +62,7 @@ namespace BisterLib.UnitTest
 
     public class ClassWithLegacyArray
     {
-        public ArrayList ArrayDotNet2 { get; set; } = new ArrayList();
+        public ArrayList LegacyArray { get; set; } = new ArrayList();
     }
 
     public class ClassWithArrays

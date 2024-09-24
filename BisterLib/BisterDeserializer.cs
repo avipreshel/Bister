@@ -116,7 +116,7 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation);
             
-            sb.AppendLine(indentation + $"\t{instanceName} = GeneratedHelper.DeserializeArrayList(br);");
+            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeArrayList(br);");
         }
 
         private static void DeserializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
