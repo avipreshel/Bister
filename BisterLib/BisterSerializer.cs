@@ -144,19 +144,7 @@ namespace BisterLib
         public static void SerializerSystemEnum(string indentation, string instanceName, StringBuilderVerbose sb)
         {
             // Since we can't know the actual Enum during run time, so we need to do magic
-            sb.AppendLine(indentation + $"Type enumType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"Type enumNativeType = {instanceName}.GetType()!.GetEnumUnderlyingType()!;");
-            sb.AppendLine(indentation + $"object numericVal = enumType!.GetField(\"value__\")!.GetValue({instanceName})!;");
-            sb.AppendLine(indentation + $"bw.Write(enumType!.AssemblyQualifiedName!);");
-            sb.AppendLine(indentation + $"if (enumNativeType == typeof(byte)) bw.Write((byte)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(sbyte)) bw.Write((sbyte)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(short)) bw.Write((short)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(int)) bw.Write((int)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(long)) bw.Write((long)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ushort)) bw.Write((short)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(uint)) bw.Write((int)numericVal);");
-            sb.AppendLine(indentation + $"else if (enumNativeType == typeof(ulong)) bw.Write((long)numericVal);");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to serialize {instanceName}\");");
+            sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
         }
 
 

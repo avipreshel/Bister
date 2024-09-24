@@ -35,7 +35,8 @@ namespace BisterLib
             }
             else
             {
-                sb.AppendLine(indentation + $"// Key is non-primitive");
+                string niceKeyTypeName = Bister.GetFriendlyGenericTypeName(keyType);
+                sb.AppendLine(indentation + $"{niceKeyTypeName} key;");
                 DeserializeAnyType(sb, indentation, "key", keyType);
             }
 
@@ -57,36 +58,6 @@ namespace BisterLib
             indentation = indentation.Substring(0, indentation.Length - 1);
             sb.AppendLine(indentation + "}");
 
-            
-
-            /*
-                sb.AppendLine(indentation + $"\tvar val = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))};");
-                sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
-                sb.AppendLine(indentation + "}");
-            }
-            else if (keyType == typeof(string) || Bister.IsPrimitive(keyType)) // key is primitive, value is not
-            {
-                sb.AppendLine(indentation + $"// Key is primitive, value is not");
-                sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t// Deserialize key");
-                sb.AppendLine(indentation + $"\tvar key = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(keyType))};");
-                sb.AppendLine(indentation + $"\t// Deserialize Value");
-                DeserializeAnyType(sb, indentation + "\t", "val", valType); 
-                sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
-                sb.AppendLine(indentation + "}");
-            }
-            else if (Bister.IsPrimitive(valType)) // key is non-primitive, value is primitive
-            {
-                throw new NotImplementedException();
-            }
-            else // Both non-primitive
-            {
-                throw new NotImplementedException();
-            }
-            indentation = indentation.Substring(0, indentation.Length - 1);
-            sb.AppendLine(indentation + "}");
-            */
         }
 
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
