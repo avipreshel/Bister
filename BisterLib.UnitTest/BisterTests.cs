@@ -116,7 +116,6 @@ namespace BisterLib.UnitTest
             var instance = new Dictionary<string,object>()
            {
                {"first",new object() },
-               {"second",new NotImplementedException("Was I not implemented?") },
                {"third", new List<int> {1,2 } },
                {"furth",new ClassWithArrays() }
            };

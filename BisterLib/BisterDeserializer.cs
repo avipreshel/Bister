@@ -13,13 +13,21 @@ namespace BisterLib
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-
+            string niceTypeName = Bister.GetFriendlyGenericTypeName(objType);
             string usefulVariableName = Bister.GetUsefulName(instanceName);
+
+            sb.AppendLine(indentation + $"if (br.ReadBoolean()) {instanceName} = null;");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            indentation += "\t";
+            sb.AppendLine(indentation + $"{instanceName} = new {niceTypeName}();");
+            sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
+            
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
             if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)) && Bister.IsPrimitive(valType))
             {
-                sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
+                sb.AppendLine(indentation + $"// Key and value are both primitive types");
                 sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\tvar key = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(keyType))};");
@@ -29,13 +37,13 @@ namespace BisterLib
             }
             else if (keyType == typeof(string) || Bister.IsPrimitive(keyType)) // key is primitive, value is not
             {
-                sb.AppendLine(indentation + $"int count{usefulVariableName} = br.ReadInt32();");
+                sb.AppendLine(indentation + $"// Key is primitive, value is not");
                 sb.AppendLine(indentation + $"for (int i =0; i<count{usefulVariableName};i++)");
                 sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t// Deserialize key");
                 sb.AppendLine(indentation + $"\tvar key = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(keyType))};");
-                sb.AppendLine(indentation + $"\t// *****************************************************");
-                DeserializeAnyType(sb, indentation + "\t", "val", valType);
-                sb.AppendLine(indentation + $"\t// *****************************************************");
+                sb.AppendLine(indentation + $"\t// Deserialize Value");
+                DeserializeAnyType(sb, indentation + "\t", "val", valType); 
                 sb.AppendLine(indentation + $"\t{instanceName}.Add(key,val);");
                 sb.AppendLine(indentation + "}");
             }
@@ -47,6 +55,8 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+            indentation = indentation.Substring(0, indentation.Length - 1);
+            sb.AppendLine(indentation + "}");
         }
 
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -239,6 +249,7 @@ namespace BisterLib
             {
                 sb.AppendLine(indentation + $"object {instanceName};");
             }
+
             sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{instanceName} = null;");

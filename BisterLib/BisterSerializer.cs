@@ -57,23 +57,27 @@ namespace BisterLib
 
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
+            sb.AppendLine(indentation + $"if ({instanceName} == null) bw.Write(true);");
+            sb.AppendLine(indentation + $"else");
+            sb.AppendLine(indentation + "{");
+            indentation += "\t";
+            sb.AppendLine(indentation + $"bw.Write(false);");
+            sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
+            sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
+            sb.AppendLine(indentation + "{");
+            indentation += "\t";
+            // Key and Value are primitive
             if ((keyType == typeof(string) || Bister.IsPrimitive(keyType)) && Bister.IsPrimitive(valType))
             {
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(item.Key);");
-                sb.AppendLine(indentation + $"\tbw.Write(item.Value);");
-                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + $"// Key and value are both primitive types");
+                sb.AppendLine(indentation + $"bw.Write(item.Key);");
+                sb.AppendLine(indentation + $"bw.Write(item.Value);");
             }
             else if (keyType == typeof(string) || Bister.IsPrimitive(keyType)) // key is primitive, value is not
             {
-                sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
-                sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(item.Key);");
+                sb.AppendLine(indentation + $"// Key is primitive, value is not");
+                sb.AppendLine(indentation + $"bw.Write(item.Key);");
                 SerializeAnyType(sb, indentation, $"item.Value", valType);
-                sb.AppendLine(indentation + "}");
             }
             else if (Bister.IsPrimitive(valType)) // key is non-primitive, value is primitive
             {
@@ -83,6 +87,10 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+            indentation = indentation.Substring(0, indentation.Length-1);
+            sb.AppendLine(indentation + "}");
+            indentation = indentation.Substring(0, indentation.Length - 1);
+            sb.AppendLine(indentation + "}");
         }
 
         public static void SerializeGenericList(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
