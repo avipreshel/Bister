@@ -49,6 +49,7 @@ namespace BisterLib
             {
                 sb.AppendLine(indentation + $"// Val is non-primitive");
                 string niceValTypeName = Bister.GetFriendlyGenericTypeName(valType);
+                sb.AppendLine(indentation + $"{niceValTypeName} val;");
                 DeserializeAnyType(sb, indentation, "val", valType);
             }
             sb.AppendLine(indentation + $"{instanceName}.Add(key,val);");
@@ -110,17 +111,7 @@ namespace BisterLib
        
         public static void DeserializerSystemEnum(StringBuilderVerbose sb, string indentation, string instanceName)
         {
-            sb.AppendLine(indentation + $"string enumTypeStr = br.ReadString();");
-            sb.AppendLine(indentation + $"Type enumType =Type.GetType(enumTypeStr);");
-            sb.AppendLine(indentation + $"{instanceName} = (Enum)Activator.CreateInstance(enumType)!;");
-            sb.AppendLine(indentation + $"var enumInstanceType = enumType.GetEnumUnderlyingType();");
-            sb.AppendLine(indentation + $"object enumVal;");
-            sb.AppendLine(indentation + $"if (enumInstanceType == typeof(byte)) enumVal = br.ReadByte();");
-            sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(short)) enumVal = br.ReadInt16();");
-            sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(int)) enumVal = br.ReadInt32();");
-            sb.AppendLine(indentation + $"else if (enumInstanceType == typeof(long)) enumVal = br.ReadInt64();");
-            sb.AppendLine(indentation + $"else throw new Exception(\"Failed to read {instanceName} \");");
-            sb.AppendLine(indentation + $"enumType.GetField(\"value__\")!.SetValue({instanceName}, enumVal);");
+            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemEnum(br);");
         }
 
         public static void DeserializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName)
@@ -246,11 +237,6 @@ namespace BisterLib
         public static void DeserializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            if (!instanceName.Contains("."))
-            {
-                sb.AppendLine(indentation + $"object {instanceName};");
-            }
-
             sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{instanceName} = null;");
