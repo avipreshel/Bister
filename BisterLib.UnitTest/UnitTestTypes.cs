@@ -26,6 +26,11 @@ namespace BisterLib.UnitTest
         One,Two, Three
     }
 
+    public enum TestEnum2 : ushort
+    {
+        Four,Five,Six
+    }
+
     public class ClassWithObject
     { 
         public object? TheObject { get; set; } = null;

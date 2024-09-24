@@ -136,6 +136,19 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_DynamicTypeDictionary()
+        {
+            var instance = new Dictionary<Enum, object>();
+            instance.Add(TestEnum.One, 1);
+            instance.Add(TestEnum.Two, "2");
+            instance.Add(TestEnum2.Five, 5f);
+
+            var blob = Bister.Instance.Serialize(instance);
+            Assert.IsNotNull(blob);
+            Assert.ThrowsException<Exception>(() => Bister.Instance.Deserialize<ClassWithArrays>(blob));
+        }
+
+        [TestMethod]
         public void Test_ClassWithArrays()
         {
             var instance = new ClassWithArrays()
