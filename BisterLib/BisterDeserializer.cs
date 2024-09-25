@@ -65,6 +65,12 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
+            sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = null;");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
             Type valType = objType.GenericTypeArguments[0];
             
             if (valType == typeof(Enum))
@@ -81,7 +87,7 @@ namespace BisterLib
             }
             else if (valType.IsEnum)
             {
-                sb.AppendLine(indentation + $"\t{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
+                sb.AppendLine(indentation + $"{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
                 Type enumPrimitiveType = valType.GetEnumUnderlyingType();
                 sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
                 sb.AppendLine(indentation + "{");
@@ -90,23 +96,17 @@ namespace BisterLib
             }
             else if (valType.IsPrimitive)
             {
-                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = null;");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\t{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
                 sb.AppendLine(indentation + $"\tfor (int i = 0; i < {instanceName}.Capacity; i++)");
                 sb.AppendLine(indentation + "\t{");
                 sb.AppendLine(indentation + $"\t\t{instanceName}.Add(br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))});");
                 sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
             }
             else
             {
                 throw new NotImplementedException($"No support for deserialization of {Bister.GetFriendlyGenericTypeName(objType)}");
             }
+            sb.AppendLine(indentation + "}");
         }
        
         public static void DeserializerSystemEnum(StringBuilderVerbose sb, string indentation, string instanceName)
