@@ -273,11 +273,14 @@ namespace BisterLib.UnitTest
 
 
         [TestMethod]
-        public void Test_ClassWithObjectString()
+        [DataRow("hello I am object string")]
+        [DataRow(1)]
+        [DataRow(98213.1f)]
+        public void Test_ClassWithObject(object payload)
         {
             ClassWithObject instance = new ClassWithObject()
             {
-                TheObject = "hello I am object"
+                TheObject = payload
             };
 
             ValidateLogic(instance);

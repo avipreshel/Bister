@@ -154,6 +154,27 @@ namespace GeneratedNS
             }
         }
 
+        public static void Serialize(object item, BinaryWriter bw)
+        {
+            if (item == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                Type objType = item.GetType();
+                if (IsPrimitive(objType))
+                {
+                    SerializePrimitive(item, objType, bw);
+                }
+                else
+                {
+                    Bister.Instance.Serialize(item, bw);
+                }
+            }
+        }
+
         public static void Serialize(Enum item, BinaryWriter bw)
         {
             if (item == null)
@@ -277,7 +298,7 @@ namespace GeneratedNS
 
         public static bool IsPrimitive(Type objType)
         {
-            return objType.IsPrimitive || objType == typeof(DateTime) || objType == typeof(decimal);
+            return objType.IsPrimitive || objType == typeof(DateTime) || objType == typeof(decimal) || objType == typeof(string);
         }
 
         public static object DeserializePrimitive(BinaryReader br, Type objType)
