@@ -233,24 +233,6 @@ namespace GeneratedNS
             }
         }
 
-        public static List<string> DeserializeListString(BinaryReader br)
-        {
-            if (br.ReadBoolean() == true)
-            {
-                return null;
-            }
-            else
-            {
-                int count = br.ReadInt32();
-                List<string> list = new List<string>(count);
-                for (int i =0; i < count; i++)
-                {
-                    list.Add(DeserializeString(br));
-                }
-                return list;
-            }
-        }
-
         public static void Serialize(string item, BinaryWriter bw)
         {
             if (item == null)

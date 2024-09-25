@@ -72,10 +72,12 @@ namespace BisterLib
             sb.AppendLine(indentation + "else");
             sb.AppendLine(indentation + "{");
             Type valType = objType.GenericTypeArguments[0];
-            
+            sb.AppendLine(indentation + $"\t{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
+            sb.AppendLine(indentation + $"\tfor (int i = 0; i < {instanceName}.Capacity; i++)");
+            sb.AppendLine(indentation + "\t{");
             if (valType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeListOfEnums(br);");
+                sb.AppendLine(indentation + $"\t\t{instanceName} = GeneratedHelper.DeserializeListOfEnums(br);");
             }
             else if (valType == typeof(object))
             {
@@ -83,29 +85,23 @@ namespace BisterLib
             }
             else if (valType == typeof(string))
             {
-                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeListString(br);");
+                sb.AppendLine(indentation + $"\t\t{instanceName}.Add(br.ReadString());");
             }
             else if (valType.IsEnum)
             {
-                sb.AppendLine(indentation + $"{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
                 Type enumPrimitiveType = valType.GetEnumUnderlyingType();
-                sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName}.Add(({valType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
-                sb.AppendLine(indentation + "}");
+
+                sb.AppendLine(indentation + $"\t\t{instanceName}.Add(({valType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
             }
             else if (valType.IsPrimitive)
             {
-                sb.AppendLine(indentation + $"\t{instanceName} = new List<{valType.FullName}>(br.ReadInt32());");
-                sb.AppendLine(indentation + $"\tfor (int i = 0; i < {instanceName}.Capacity; i++)");
-                sb.AppendLine(indentation + "\t{");
                 sb.AppendLine(indentation + $"\t\t{instanceName}.Add(br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))});");
-                sb.AppendLine(indentation + "\t}");
             }
             else
             {
                 throw new NotImplementedException($"No support for deserialization of {Bister.GetFriendlyGenericTypeName(objType)}");
             }
+            sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "}");
         }
        

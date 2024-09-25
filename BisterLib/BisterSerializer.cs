@@ -101,34 +101,40 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
+            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(true);");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(false);");
+            sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Count);");
+            sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
+            sb.AppendLine(indentation + "\t{");
+
             Type valType = objType.GenericTypeArguments[0];
-            if (valType == typeof(Enum) || valType == typeof(object) || valType == typeof(string)) 
+            if (valType == typeof(Enum) || valType == typeof(object)) 
             {
                 sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
             }
             else
             {
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + "\tbw.Write(true);");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + "\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Count);");
-                sb.AppendLine(indentation + $"\tforeach (var item in {instanceName})");
-                sb.AppendLine(indentation + "\t{");
                 SerializeGenericItem("item", indentation + "\t\t", valType, sb);
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
             }
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "}");
         }
 
         public static void SerializeGenericItem(string instanceName, string indentation, Type objType, StringBuilderVerbose sb)
         {
+            Bister.PrintMethodName(sb, indentation, objType);
             if (Bister.IsPrimitive(objType))
             {
-                sb.AppendLine(indentation + $"bw.Write(({objType}){instanceName});");
+                sb.AppendLine(indentation + $"bw.Write(({objType}){instanceName});"); // TBD can remove cast?
+            }
+            else if (objType == typeof(string))
+            {
+                sb.AppendLine(indentation + $"bw.Write({instanceName});"); // TBD can remove cast?
             }
             else if (objType.IsEnum && objType != typeof(Enum))
             {
