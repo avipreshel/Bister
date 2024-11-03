@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BisterUnitTestTypes;
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
@@ -21,15 +22,7 @@ namespace BisterLib.UnitTest
         public byte Z { get; set; }
     }
 
-    public enum TestEnum : ushort
-    {
-        One,Two, Three
-    }
-
-    public enum TestEnum2 : ushort
-    {
-        Four,Five,Six
-    }
+   
 
     public class ClassWithObject
     { 

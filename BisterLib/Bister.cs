@@ -443,16 +443,87 @@ namespace BisterLib
             return type.IsPrimitive || type == typeof(decimal);
         }
 
-        private static Type GenerateType(string theCode, string expectedTypeName,List<Type> domainDependencies)
+        public static List<Assembly> GetDependentAssemblies(Type type)
+        {
+            var assemblies = new List<Assembly>();
+            var visitedAssemblies = new HashSet<Assembly>();
+
+            void AddAssembly(Assembly assembly)
+            {
+                if (assembly != null && visitedAssemblies.Add(assembly))
+                {
+                    assemblies.Add(assembly);
+                    foreach (var referencedAssembly in assembly.GetReferencedAssemblies())
+                    {
+                        AddAssembly(Assembly.Load(referencedAssembly));
+                    }
+                }
+            }
+
+            AddAssembly(type.Assembly);
+            return assemblies;
+        }
+
+        public static List<Type> GetDependentTypes(Type type)
+        {
+            var dependentTypes = new List<Type>();
+            var visitedTypes = new HashSet<Type>();
+
+            void AddType(Type t)
+            {
+                if (t.IsGenericType)
+                {
+                    foreach (var gt in t.GetGenericArguments())
+                    {
+                        AddType(gt);
+                    }
+                }
+                else if (t != null && visitedTypes.Add(t) && !t.FullName.StartsWith("System"))
+                {
+                    if (t != type)
+                    {
+                        dependentTypes.Add(t);
+                    }
+                    
+                    foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                    {
+                        AddType(field.FieldType);
+                    }
+                    foreach (var property in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                    {
+                        AddType(property.PropertyType);
+                    }
+                    foreach (var method in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                    {
+                        AddType(method.ReturnType);
+                        foreach (var parameter in method.GetParameters())
+                        {
+                            AddType(parameter.ParameterType);
+                        }
+                    }
+                }
+            }
+
+            AddType(type);
+            return dependentTypes;
+        }
+
+        private static Type GenerateType(string theCode, string expectedTypeName, List<Type> domainDependencies)
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(theCode);
-            
-            if (domainDependencies==null)
+
+            if (domainDependencies == null)
             {
                 domainDependencies = new List<Type>();
             }
 
-            var dependencyFiles = domainDependencies.Select(t => MetadataReference.CreateFromFile(t.Assembly.Location)).ToList();
+            var subDependencies = GetDependentTypes(domainDependencies.First());
+            domainDependencies.AddRange(subDependencies);
+
+            var dependencyFiles = domainDependencies
+                .Select(t => MetadataReference.CreateFromFile(t.Assembly.Location))
+                .Distinct()
+                .ToList();
 
             // Compile the syntax tree into an assembly
             CSharpCompilation compilation = CSharpCompilation.Create(
@@ -483,7 +554,7 @@ namespace BisterLib
                     platform: Platform.X64
                 ))
                 .AddReferences(dependencyFiles);
-            
+
             using (var ms = new MemoryStream())
             {
                 EmitResult result = compilation.Emit(ms);

@@ -1,4 +1,5 @@
 using BisterLib;
+using BisterUnitTestTypes;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 
