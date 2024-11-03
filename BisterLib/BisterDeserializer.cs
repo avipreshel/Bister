@@ -373,7 +373,7 @@ namespace BisterLib
         private static void DeserializeNonGenericStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"{objType} {instanceName} = new {objType}();");
+            sb.AppendLine(indentation + $"{instanceName} = new {objType}();");
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
