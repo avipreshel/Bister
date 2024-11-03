@@ -328,7 +328,7 @@ namespace BisterLib
         private static void DeserializeString(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"{instanceName} = br.ReadString();");
+            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeString(br);");
         }
 
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
