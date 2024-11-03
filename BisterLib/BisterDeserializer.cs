@@ -334,10 +334,6 @@ namespace BisterLib
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation);
-            if (!instanceName.Contains("."))
-            {
-                sb.AppendLine(indentation + $"{objType.FullName} {instanceName};");
-            }
             sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{instanceName} = null;");
