@@ -125,10 +125,7 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_WrongTypeDeserialization()
         {
-            var instance = new ClassWithLegacyArray()
-            {
-                LegacyArray = [10, null, new object(),new List<int>() { 5,6 },"hello", TestEnum.Two, TestEnum.Three]
-            };
+            var instance = new Vector<float>() {  X  = 1, Y = 2};
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
