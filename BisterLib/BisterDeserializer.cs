@@ -386,7 +386,7 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
             string friendlyTypename = Bister.GetFriendlyGenericTypeName(objType);
-            sb.AppendLine(indentation + $"{friendlyTypename} {instanceName} = new {friendlyTypename}();");
+            sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypename}();");
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {

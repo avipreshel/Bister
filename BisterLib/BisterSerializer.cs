@@ -337,13 +337,13 @@ namespace BisterLib
 
         private static void SerializeString(StringBuilderVerbose sb, string indentation, string instanceName)
         {
-            Bister.PrintMethodName(sb, indentation, typeof(object));
+            Bister.PrintMethodName(sb, indentation, typeof(string));
             sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
         }
 
         public static void SerializeException(StringBuilderVerbose sb, string indentation, string instanceName,Type objType)
         {
-            Bister.PrintMethodName(sb, indentation, typeof(object));
+            Bister.PrintMethodName(sb, indentation, objType);
             sb.AppendLine(indentation + $"if ({instanceName} == null)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(true);");
