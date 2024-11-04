@@ -160,7 +160,15 @@ namespace BisterLib.UnitTest
             ValidateLogic(instance);
         }
 
-       
+        [TestMethod]
+        public void Test_SystemType()
+        {
+            Type instance = typeof(TestEnum);
+
+            ValidateLogic(instance);
+        }
+
+
 
         [TestMethod]
         public void Test_NullObject()

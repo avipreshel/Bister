@@ -275,6 +275,10 @@ namespace BisterLib
             {
                 DeserializeTimeSpan(sb, indentation, instanceName);
             }
+            else if (objType == typeof(Type))
+            {
+                DeserializeSystemType(sb, indentation, instanceName, objType);
+            }
             else if (objType.IsEnum) // Strongly-defined enum
             {
                 DeserializerUserEnum(sb, indentation, instanceName, objType);
@@ -311,6 +315,12 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private static void DeserializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemType(br);");
         }
 
         private static void DeserializeTimeSpan(StringBuilderVerbose sb, string indentation, string instanceName)

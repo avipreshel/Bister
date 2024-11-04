@@ -285,6 +285,10 @@ namespace BisterLib
             {
                 SerializeTimeSpan(sb, indentation, instanceName);
             }
+            else if (objType == typeof(Type))
+            {
+                SerializeSystemType(sb, indentation, instanceName, objType);
+            }
             else if (objType.IsEnum) // Strongly-defined enum
             {
                 SerializeEnum(sb, indentation,instanceName,objType);
@@ -321,6 +325,12 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private static void SerializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
         }
 
         private static void SerializeTimeSpan(StringBuilderVerbose sb, string indentation, string instanceName)

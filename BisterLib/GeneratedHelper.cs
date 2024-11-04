@@ -19,6 +19,16 @@ namespace GeneratedNS
             return fileTime == 0 ? new DateTime(0) : DateTime.FromFileTime(fileTime);
         }
 
+        public static void Serialize(Type type, BinaryWriter bw)
+        {
+            bw.Write(type.AssemblyQualifiedName);
+        }
+
+        public static Type DeserializeSystemType(BinaryReader br)
+        {
+            return Type.GetType(br.ReadString());
+        }
+
         public static void Serialize(IEnumerable<Enum> arr, BinaryWriter bw)
         {
             if (arr == null)
