@@ -256,7 +256,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "}");
         }
 
-        public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType,bool isStructField = false)
         {
             Bister.PrintMethodName(sb, indentation, objType);
             if (objType == typeof(Enum)) // Unknown enum
@@ -285,7 +285,7 @@ namespace BisterLib
             }
             else if (Bister.IsPrimitive(objType)) // Native type
             {
-                DeserializePrimitive(sb, indentation, instanceName, objType);
+                DeserializePrimitive(sb, indentation, instanceName, objType, isStructField);
             }
             else if (objType == typeof(ArrayList))
             {
@@ -379,13 +379,15 @@ namespace BisterLib
         private static void DeserializeNonGenericStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"{instanceName} = new {objType}();");
+            sb.AppendLine(indentation + $"{instanceName} = new {objType}()");
+            sb.AppendLine(indentation + "{");
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
-                sb.AppendLine(indentation + $"// For each property...{prop.Name}");
-                DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+                sb.AppendLine(indentation + $"\t// For each property of {prop.Name}");
+                DeserializeAnyType(sb, indentation + "\t", $"{prop.Name}", prop.PropertyType, isStructField : true);
             }
+            sb.AppendLine(indentation + "};");
         }
 
         private static void DeserializeGenericStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -401,22 +403,23 @@ namespace BisterLib
             }
         }
 
-        private static void DeserializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        private static void DeserializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType, bool isStructField = false)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+            char lineEnd = isStructField ? ',' : ';';
             if (objType.IsPrimitive || objType == typeof(string) || objType == typeof(decimal))
             {
-                sb.AppendLine(indentation + $"{instanceName} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(objType))};");
+                sb.AppendLine(indentation + $"{instanceName} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(objType))}{lineEnd}");
             }
             else if (objType == typeof(DateTime))
             {
                 
-                sb.AppendLine(indentation + $"{instanceName} = DateTime.FromFileTime(br.ReadInt64());");
+                sb.AppendLine(indentation + $"{instanceName} = DateTime.FromFileTime(br.ReadInt64()){lineEnd}");
             }
             else if (objType == typeof(TimeSpan))
             {
                 
-                sb.AppendLine(indentation + $"{instanceName} = TimeSpan.FromTicks(br.ReadInt64());");
+                sb.AppendLine(indentation + $"{instanceName} = TimeSpan.FromTicks(br.ReadInt64()){lineEnd}");
             }
             else
             {

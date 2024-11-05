@@ -9,20 +9,15 @@ using System.Threading.Tasks;
 
 namespace BisterLib.UnitTest
 {
-    public struct Vector<T> where T : struct
-    {
-        public T X {  get; set; }
-        public T Y { get; set; }
-    }
 
-    public struct Vector
+    
+
+    public class SomeInheritedFromGeneric : SomeGenericClass<ClassWithVector>
     { 
-        public float X { get; set; }
-        public double Y { get; set; }
-        public byte Z { get; set; }
+        public string SomeField {  get; set; } = string.Empty;
     }
 
-   
+
 
     public class ClassWithObject
     { 
