@@ -171,7 +171,7 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_SomeInheritedFromGeneric()
         {
-            var instance = new SomeInheritedFromGeneric() {  SomeField = "wow", GenericVal = new ClassWithVector() {  Vec = new Vector() {  X = 1, Y = 2, Z = 3} } };
+            var instance = new SomeInheritedFromGeneric() {  SomeField = "wow", GenericVal = new ClassWithVector() {  Vec = new Vector<float>() {  X = 1, Y = 2} } };
             ValidateLogic(instance);
         }
 

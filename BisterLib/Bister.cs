@@ -21,6 +21,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Globalization;
 using System.ComponentModel.Design;
+using static System.Runtime.CompilerServices.RuntimeHelpers;
 
 namespace BisterLib
 {
@@ -198,15 +199,7 @@ namespace BisterLib
 
             sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
 
-            // If the user is trying to generate serializer for generic type, no need to have any "using"
-            if (objType.Namespace.StartsWith("System"))
-            {
-                sb.Replace("<<<USINGS>>>", string.Empty);
-            }
-            else
-            {
-                sb.Replace("<<<USINGS>>>", $"using {objType.Namespace};");
-            }
+            
 
             EstimateInstanceSize(sb, objType);
 
@@ -214,14 +207,9 @@ namespace BisterLib
 
             DeSerializerEntry(sb, objType);
 
-            if (!string.IsNullOrEmpty(DebugPath))
-            {
-                File.WriteAllText($@"c:\temp\serialize.cs", sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
-                string friendlyFilename = friendlyTypeName.Replace("<","[").Replace(">", "]");
-                File.WriteAllText($@"c:\temp\{friendlyFilename}.cs", sb.ToString());
-            }
+           
 
-            Type genType = GenerateType(sb.ToString(), serializerTypeName, new List<Type>() { objType, typeof(IBisterGenerated) });
+            Type genType = GenerateType(sb, serializerTypeName, new List<Type>() { objType, typeof(IBisterGenerated) });
 
             var serializer = (IBisterGenerated)Activator.CreateInstance(genType);
             _typeToSerializer[objType] = serializer;
@@ -466,11 +454,24 @@ namespace BisterLib
 
         public static List<Type> GetDependentTypes(Type type)
         {
-            var dependentTypes = new List<Type>();
+            var dependentTypes = new HashSet<Type>();
             var visitedTypes = new HashSet<Type>();
 
             void AddType(Type t)
             {
+                if (visitedTypes.Contains(t))
+                    return;
+                
+                visitedTypes.Add(t);
+
+                if (t.FullName.StartsWith("System"))
+                    return;
+
+                if (t != type)
+                {
+                    dependentTypes.Add(t);
+                }
+
                 if (t.IsGenericType)
                 {
                     foreach (var gt in t.GetGenericArguments())
@@ -478,13 +479,8 @@ namespace BisterLib
                         AddType(gt);
                     }
                 }
-                else if (t != null && visitedTypes.Add(t) && !t.FullName.StartsWith("System"))
+                else
                 {
-                    if (t != type)
-                    {
-                        dependentTypes.Add(t);
-                    }
-                    
                     foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
                     {
                         AddType(field.FieldType);
@@ -505,20 +501,52 @@ namespace BisterLib
             }
 
             AddType(type);
-            return dependentTypes;
+            return dependentTypes.ToList();
         }
 
-        private static Type GenerateType(string theCode, string expectedTypeName, List<Type> domainDependencies)
+        private Type GenerateType(StringBuilderVerbose sb, string expectedTypeName, List<Type> domainDependencies)
         {
-            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(theCode);
+            var objType = domainDependencies.First();
+            
 
             if (domainDependencies == null)
             {
                 domainDependencies = new List<Type>();
             }
 
-            var subDependencies = GetDependentTypes(domainDependencies.First());
+            var subDependencies = GetDependentTypes(objType)
+                .Distinct();
+            
             domainDependencies.AddRange(subDependencies);
+
+            // If the user is trying to generate serializer for generic type, no need to have any "using"
+            if (objType.Namespace.StartsWith("System"))
+            {
+                sb.Replace("<<<USINGS>>>", string.Empty);
+            }
+            else
+            {
+                StringBuilder sbUsings = new StringBuilder();
+                sbUsings.AppendLine($"using {objType.Namespace};");
+                foreach (var ns in subDependencies.Select(t => t.Namespace).Distinct())
+                {
+                    if (ns != objType.Namespace)
+                    {
+                        sbUsings.AppendLine($"using {ns};");
+                    }
+                    
+                }
+                sb.Replace("<<<USINGS>>>", sbUsings.ToString());
+            }
+
+            if (!string.IsNullOrEmpty(DebugPath))
+            {
+                File.WriteAllText($@"c:\temp\serialize.cs", sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
+                string friendlyFilename = expectedTypeName.Replace("<", "[").Replace(">", "]");
+                File.WriteAllText($@"c:\temp\{friendlyFilename}.cs", sb.ToString());
+            }
+
+            SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sb.ToString());
 
             var dependencyFiles = domainDependencies
                 .Select(t => MetadataReference.CreateFromFile(t.Assembly.Location))
@@ -561,7 +589,7 @@ namespace BisterLib
 
                 if (!result.Success)
                 {
-                    throw new Exception("CODEGEN ERROR:\n" + result.Diagnostics.First().ToString());
+                    throw new Exception($"CODEGEN ERROR for {expectedTypeName}:\n" + result.Diagnostics.First().ToString());
                 }
 
                 ms.Seek(0, SeekOrigin.Begin);

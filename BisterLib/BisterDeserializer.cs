@@ -394,13 +394,15 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
             string friendlyTypename = Bister.GetFriendlyGenericTypeName(objType);
-            sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypename}();");
+            sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypename}()");
+            sb.AppendLine(indentation + "{");
             var props = Bister.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
-                sb.AppendLine(indentation + $"// For each property...{prop.Name}");
-                DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+                sb.AppendLine(indentation + $"\t// For each property...{prop.Name}");
+                DeserializeAnyType(sb, indentation + "\t", $"{prop.Name}", prop.PropertyType, isStructField: true);
             }
+            sb.AppendLine(indentation + "};");
         }
 
         private static void DeserializePrimitive(StringBuilderVerbose sb, string indentation, string instanceName, Type objType, bool isStructField = false)

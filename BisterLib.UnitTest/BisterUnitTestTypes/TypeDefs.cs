@@ -30,6 +30,6 @@
 
     public class ClassWithVector
     {
-        public Vector Vec { get; set; }
+        public Vector<float> Vec { get; set; }
     }
 }
