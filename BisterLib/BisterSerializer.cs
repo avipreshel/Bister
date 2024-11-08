@@ -383,6 +383,7 @@ namespace BisterLib
         private static void SerializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
         {
             Bister.PrintMethodName(sb, indentation, arrayType);
+            
             int dims = arrayType.GetArrayRank();
 
             if (dims != 1)
@@ -391,48 +392,7 @@ namespace BisterLib
             }
 
             Type arrayItemType = arrayType.GetElementType();
-            if (arrayItemType == typeof(string))
-            {
-                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
-            }
-            else if (Bister.IsPrimitive(arrayItemType))
-            {
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(true);");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
-                sb.AppendLine(indentation + $"\tfor (int i =0;i<{instanceName}.Length;i++) bw.Write({instanceName}[i]);");
-                sb.AppendLine(indentation + "}");
-            }
-            else if (arrayItemType == typeof(Enum))
-            {
-                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
-            }
-            else if (arrayItemType.IsEnum)
-            {
-                TypeCode arrayItemTypeCode = Type.GetTypeCode(arrayItemType);
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(true);");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
-                sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + "\t\t" + Bister.BinaryWriterMethod(arrayItemTypeCode, $"{instanceName}[i]") + ";");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
-            else
-            {
-                throw new NotImplementedException($"No support yet for serializing {arrayItemType.FullName}[]");
-            }
+            sb.AppendLine(indentation + $"StaticHelper.SerializeArray<{arrayItemType.FullName}>({instanceName},bw);");
         }
     }
 }

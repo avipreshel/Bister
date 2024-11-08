@@ -3,6 +3,7 @@ using BisterLib;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
@@ -130,6 +131,49 @@ namespace GeneratedNS
                     arr.Add(DeserializeSystemEnum(br));
                 }
                 return arr;
+            }
+        }
+
+        public static void SerializeArray<T>(T[] arr, BinaryWriter bw)
+        {
+            if (arr == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(arr.Length);
+                Type itemType = typeof(T);
+                if (StaticHelper.IsPrimitive(itemType))
+                {
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        StaticHelper.SerializePrimitive(arr[i], itemType, bw);
+                    }
+                }
+                else if (itemType == typeof(Enum))
+                {
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        StaticHelper.Serialize(arr[i] as Enum, bw);
+                    }
+                }
+                else if (itemType.IsEnum)
+                {
+                    TypeCode itemTypeCode = Type.GetTypeCode(itemType);
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        SerializeUserEnum(arr[i], itemTypeCode, bw);
+                    }
+                }
+                else
+                {
+                    for (int i = 0; i < arr.Length; i++)
+                    {
+                        Bister.Instance.Serialize(arr[i], bw);
+                    }
+                }
             }
         }
 
@@ -379,7 +423,14 @@ namespace GeneratedNS
         {
             if (objType == typeof(string))
             {
-                return br.ReadString();
+                if (br.ReadBoolean() == false)
+                {
+                    return br.ReadString();
+                }
+                else
+                {
+                    return null;
+                }
             }
             else if (objType == typeof(DateTime))
             {
@@ -444,11 +495,55 @@ namespace GeneratedNS
             }
         }
 
+        
+        public static void SerializeUserEnum(object instance, TypeCode typeCode, BinaryWriter bw)
+        {
+            switch (typeCode)
+            {
+                case TypeCode.Int32:
+                    bw.Write((int)instance);
+                    break;
+                case TypeCode.UInt32:
+                    bw.Write((uint)instance);
+                    break;
+                case TypeCode.Int16:
+                    bw.Write((short)instance);
+                    break;
+                case TypeCode.UInt16:
+                    bw.Write((ushort)instance);
+                    break;
+                case TypeCode.Int64:
+                    bw.Write((long)instance);
+                    break;
+                case TypeCode.UInt64:
+                    bw.Write((ulong)instance);
+                    break;
+                case TypeCode.Byte:
+                    bw.Write((byte)instance);
+                    break;
+                case TypeCode.SByte:
+                    bw.Write((sbyte)instance);
+                    break;
+                default:
+                    throw new NotImplementedException($"Unknown enum type {typeCode} for {instance}");
+
+            }
+        }
+
         public static void SerializePrimitive(object instance, Type objType, BinaryWriter bw)
         {
             if (objType == typeof(string))
             {
-                bw.Write((string)instance);
+                if (instance == null)
+                {
+                    bw.Write(true);
+                }
+                else
+                {
+                    bw.Write(false);
+                    bw.Write((string)instance);
+                }
+                
             }
             else if (objType == typeof(DateTime))
             {
@@ -530,7 +625,7 @@ namespace GeneratedNS
                 {
                     string itemTypeName = br.ReadString();
                     Type itemType = Type.GetType(itemTypeName);
-                    if (IsPrimitive(itemType))
+                    if (StaticHelper.IsPrimitive(itemType))
                     {
                         array.Add(DeserializePrimitive(br, itemType));
                     }
@@ -586,7 +681,7 @@ namespace GeneratedNS
                         bw.Write(false);
                         Type itemType = item.GetType();
                         bw.Write(GetFQTypeName(itemType));
-                        if (IsPrimitive(itemType))
+                        if (StaticHelper.IsPrimitive(itemType))
                         {
                             SerializePrimitive(item, itemType, bw);
                         }
