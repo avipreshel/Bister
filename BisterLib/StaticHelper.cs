@@ -240,6 +240,32 @@ namespace GeneratedNS
             }
         }
 
+        public static object DeserializeSystemObject(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+            else
+            {
+                string objTypeName = br.ReadString();
+                Type objType = Type.GetType(objTypeName);
+                if (StaticHelper.IsPrimitive(objType))
+                {
+                    return StaticHelper.DeserializePrimitive(br,objType);
+                }
+                else if (objType == typeof(object))
+                {
+                    return new object();
+                }
+                else
+                {
+                    return Bister.Instance.Deserialize(br, objType);
+                }
+            }
+          
+        }
+
         public static void Serialize(Enum item, BinaryWriter bw)
         {
             if (item == null)

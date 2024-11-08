@@ -233,27 +233,7 @@ namespace BisterLib
         public static void DeserializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName} = null;");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tstring objTypeName = br.ReadString();");
-            sb.AppendLine(indentation + $"\tType objType = Type.GetType(objTypeName);");
-            sb.AppendLine(indentation + $"\tif (StaticHelper.IsPrimitive(objType))");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName} = StaticHelper.DeserializePrimitive(br,objType);");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "\telse if (objType == typeof(object))");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName} = new object();");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "\telse");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName} = Bister.Instance.Deserialize(br,objType);");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemObject(br);");
         }
 
         public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType,bool isStructField = false)
