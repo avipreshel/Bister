@@ -344,21 +344,7 @@ namespace BisterLib
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"if (br.ReadBoolean() == true)");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName} = null;");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tstring exTypeName = br.ReadString();");
-            sb.AppendLine(indentation + "\tType exType = Type.GetType(exTypeName);");
-            sb.AppendLine(indentation + "\tstring source = br.ReadString();");
-            sb.AppendLine(indentation + "\tstring message = br.ReadString();");
-            sb.AppendLine(indentation + "\tstring stackTrack = br.ReadString();");
-            sb.AppendLine(indentation + "\tint errorCode = br.ReadInt32();");
-            sb.AppendLine(indentation + $"\t{instanceName} = ({objType.FullName})StaticHelper.CreateException(exType,source,message,errorCode,stackTrack);");
-            sb.AppendLine(indentation + "}");
-            // CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
+            sb.AppendLine(indentation + $"{instanceName} = ({objType.FullName})StaticHelper.DeserializeException(br);");
         }
 
         private static void DeserializeStruct(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

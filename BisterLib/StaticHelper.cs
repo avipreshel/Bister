@@ -13,15 +13,65 @@ namespace GeneratedNS
 {
     public static class StaticHelper
     {
+        public static string GetFQTypeName(Type type)
+        {
+            return $"{type.FullName},{type.Assembly.GetName().Name}";
+        }
         public static DateTime DeserializeDateTime(BinaryReader br)
         {
             long fileTime = br.ReadInt64();
             return fileTime == 0 ? new DateTime(0) : DateTime.FromFileTime(fileTime);
         }
 
+        public static void Serialize(Exception ex, BinaryWriter bw)
+        {
+            if (ex == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(GetFQTypeName(ex.GetType()));
+                bw.Write(ex.Source == null ? BisterConsts.NullStr : ex.Source);
+                bw.Write(ex.Message);
+                bw.Write(ex.StackTrace == null ? BisterConsts.NullStr : ex.StackTrace);
+                bw.Write(ex.HResult);
+            }
+        }
+
+        public static Exception DeserializeException(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+            
+            string exTypeName = br.ReadString();
+            Type exType = Type.GetType(exTypeName);
+            string source = br.ReadString();
+            string message = br.ReadString();
+            string stackTrace = br.ReadString();
+            int errorCode = br.ReadInt32();
+            
+            Exception ex = (Exception)Activator.CreateInstance(exType);
+            BisterConsts.ExceptionHResult.SetValue(ex, unchecked(errorCode));
+            if (source != BisterConsts.NullStr)
+            {
+                BisterConsts.ExceptionSource.SetValue(ex, unchecked(source));
+            }
+            BisterConsts.ExceptionMessage.SetValue(ex, unchecked(message));
+            if (stackTrace != BisterConsts.NullStr)
+            {
+                BisterConsts.ExceptionStackTrace.SetValue(ex, unchecked(stackTrace));
+            }
+
+            return ex;
+        }
+
         public static void Serialize(Type type, BinaryWriter bw)
         {
-            bw.Write(type.AssemblyQualifiedName);
+            bw.Write(GetFQTypeName(type));
         }
 
         public static Type DeserializeSystemType(BinaryReader br)
@@ -195,7 +245,7 @@ namespace GeneratedNS
             {
                 bw.Write(false);
                 Type enumType = item.GetType();
-                bw.Write(enumType.AssemblyQualifiedName);
+                bw.Write(GetFQTypeName(enumType));
 
                 TypeCode enumTypeCode = Type.GetTypeCode(Enum.GetUnderlyingType(enumType));
                 switch (enumTypeCode)
@@ -287,23 +337,6 @@ namespace GeneratedNS
             {
                 return br.ReadString();
             }
-        }
-
-        public static Exception CreateException(Type exType, string source, string message, int errorCode, string stackTrace)
-        {
-            Exception ex = (Exception)Activator.CreateInstance(exType);
-            BisterConsts.ExceptionHResult.SetValue(ex, unchecked(errorCode));
-            if (source != BisterConsts.NullStr)
-            {
-                BisterConsts.ExceptionSource.SetValue(ex, unchecked(source));
-            }
-            BisterConsts.ExceptionMessage.SetValue(ex, unchecked(message));
-            if (stackTrace != BisterConsts.NullStr)
-            {
-                BisterConsts.ExceptionStackTrace.SetValue(ex, unchecked(stackTrace));
-            }
-
-            return ex;
         }
 
         public static bool IsPrimitive(Type objType)
@@ -521,7 +554,7 @@ namespace GeneratedNS
                     {
                         bw.Write(false);
                         Type itemType = item.GetType();
-                        bw.Write(itemType.AssemblyQualifiedName);
+                        bw.Write(GetFQTypeName(itemType));
                         if (IsPrimitive(itemType))
                         {
                             SerializePrimitive(item, itemType, bw);

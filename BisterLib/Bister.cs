@@ -22,6 +22,7 @@ using System.Drawing;
 using System.Globalization;
 using System.ComponentModel.Design;
 using static System.Runtime.CompilerServices.RuntimeHelpers;
+using GeneratedNS;
 
 namespace BisterLib
 {

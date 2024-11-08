@@ -354,19 +354,7 @@ namespace BisterLib
         public static void SerializeException(StringBuilderVerbose sb, string indentation, string instanceName,Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"if ({instanceName} == null)");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(true);");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(false);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.GetType().AssemblyQualifiedName);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Source == null? \"{BisterConsts.NullStr}\" : {instanceName}.Source);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.Message);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.StackTrace == null? \"{BisterConsts.NullStr}\" : {instanceName}.StackTrace);");
-            sb.AppendLine(indentation + $"\tbw.Write({instanceName}.HResult);");
-            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
         }
 
         /// <summary>
@@ -386,7 +374,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(false);");
             sb.AppendLine(indentation + $"\tType itemType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"\tbw.Write(itemType.AssemblyQualifiedName);");
+            sb.AppendLine(indentation + $"\tbw.Write(StaticHelper.GetFQTypeName(itemType));");
             sb.AppendLine(indentation + $"\tif (StaticHelper.IsPrimitive(itemType))");
             sb.AppendLine(indentation + "\t{");
             sb.AppendLine(indentation + $"\t\tStaticHelper.SerializePrimitive({instanceName},itemType,bw);");
