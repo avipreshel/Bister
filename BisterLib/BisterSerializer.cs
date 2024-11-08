@@ -115,7 +115,7 @@ namespace BisterLib
             Type valType = objType.GenericTypeArguments[0];
             if (valType == typeof(Enum) || valType == typeof(object)) 
             {
-                sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
+                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
             else
             {
@@ -150,7 +150,7 @@ namespace BisterLib
         public static void SerializerSystemEnum(string indentation, string instanceName, StringBuilderVerbose sb)
         {
             // Since we can't know the actual Enum during run time, so we need to do magic
-            sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
+            sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
         }
 
 
@@ -330,7 +330,7 @@ namespace BisterLib
         private static void SerializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
+            sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
         }
 
         private static void SerializeTimeSpan(StringBuilderVerbose sb, string indentation, string instanceName)
@@ -348,7 +348,7 @@ namespace BisterLib
         private static void SerializeString(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation, typeof(string));
-            sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
+            sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
         }
 
         public static void SerializeException(StringBuilderVerbose sb, string indentation, string instanceName,Type objType)
@@ -387,9 +387,9 @@ namespace BisterLib
             sb.AppendLine(indentation + "\tbw.Write(false);");
             sb.AppendLine(indentation + $"\tType itemType = {instanceName}.GetType();");
             sb.AppendLine(indentation + $"\tbw.Write(itemType.AssemblyQualifiedName);");
-            sb.AppendLine(indentation + $"\tif (GeneratedHelper.IsPrimitive(itemType))");
+            sb.AppendLine(indentation + $"\tif (StaticHelper.IsPrimitive(itemType))");
             sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\tGeneratedHelper.SerializePrimitive({instanceName},itemType,bw);");
+            sb.AppendLine(indentation + $"\t\tStaticHelper.SerializePrimitive({instanceName},itemType,bw);");
             sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "\telse if (itemType == typeof(object))");
             sb.AppendLine(indentation + "\t{");
@@ -406,12 +406,12 @@ namespace BisterLib
         public static void SerializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"GeneratedHelper.SerializeArrayList({instanceName},bw);");
+            sb.AppendLine(indentation + $"StaticHelper.SerializeArrayList({instanceName},bw);");
         }
 
         static void SerializeSystemEnum(StringBuilderVerbose sb,string indentation,string instanceName)
         {
-            sb.AppendLine(indentation + $"GeneratedHelper.SerializeSystemEnum({instanceName},bw);");
+            sb.AppendLine(indentation + $"StaticHelper.SerializeSystemEnum({instanceName},bw);");
         }
 
         private static void SerializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
@@ -427,7 +427,7 @@ namespace BisterLib
             Type arrayItemType = arrayType.GetElementType();
             if (arrayItemType == typeof(string))
             {
-                sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
+                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
             else if (Bister.IsPrimitive(arrayItemType))
             {
@@ -444,7 +444,7 @@ namespace BisterLib
             }
             else if (arrayItemType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"GeneratedHelper.Serialize({instanceName},bw);");
+                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
             else if (arrayItemType.IsEnum)
             {

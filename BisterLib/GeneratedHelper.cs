@@ -1,4 +1,4 @@
-﻿#pragma warning disable CS8321 // GeneratedHelper will be used only by the generated code, so the compiler gives false-error which we are supressing 
+﻿#pragma warning disable CS8321 // StaticHelper will be used only by the generated code, so the compiler gives false-error which we are supressing 
 using BisterLib;
 using System;
 using System.Collections;
@@ -11,7 +11,7 @@ using System.Text;
 
 namespace GeneratedNS
 {
-    public static class GeneratedHelper
+    public static class StaticHelper
     {
         public static DateTime DeserializeDateTime(BinaryReader br)
         {

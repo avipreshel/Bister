@@ -77,7 +77,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "\t{");
             if (valType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"\t\t{instanceName} = GeneratedHelper.DeserializeListOfEnums(br);");
+                sb.AppendLine(indentation + $"\t\t{instanceName} = StaticHelper.DeserializeListOfEnums(br);");
             }
             else if (valType == typeof(object))
             {
@@ -107,14 +107,14 @@ namespace BisterLib
        
         public static void DeserializerSystemEnum(StringBuilderVerbose sb, string indentation, string instanceName)
         {
-            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemEnum(br);");
+            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemEnum(br);");
         }
 
         public static void DeserializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
             
-            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeArrayList(br);");
+            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeArrayList(br);");
         }
 
         private static void DeserializeSystemArray(StringBuilderVerbose sb, string indentation, string instanceName, Type arrayType)
@@ -131,7 +131,7 @@ namespace BisterLib
             Type arrayItemType = arrayType.GetElementType();
             if (arrayItemType == typeof(string))
             {
-                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemStringArray(br);");
+                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemStringArray(br);");
             }
             else if (Bister.IsPrimitive(arrayItemType))
             {
@@ -179,7 +179,7 @@ namespace BisterLib
             }
             else if (arrayItemType == typeof(Enum))
             {
-                sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemArrayOfEnums(br);");
+                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemArrayOfEnums(br);");
             }
             else if (arrayItemType.IsEnum)
             {
@@ -241,9 +241,9 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\tstring objTypeName = br.ReadString();");
             sb.AppendLine(indentation + $"\tType objType = Type.GetType(objTypeName);");
-            sb.AppendLine(indentation + $"\tif (GeneratedHelper.IsPrimitive(objType))");
+            sb.AppendLine(indentation + $"\tif (StaticHelper.IsPrimitive(objType))");
             sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName} = GeneratedHelper.DeserializePrimitive(br,objType);");
+            sb.AppendLine(indentation + $"\t\t{instanceName} = StaticHelper.DeserializePrimitive(br,objType);");
             sb.AppendLine(indentation + "\t}");
             sb.AppendLine(indentation + "\telse if (objType == typeof(object))");
             sb.AppendLine(indentation + "\t{");
@@ -320,7 +320,7 @@ namespace BisterLib
         private static void DeserializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeSystemType(br);");
+            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemType(br);");
         }
 
         private static void DeserializeTimeSpan(StringBuilderVerbose sb, string indentation, string instanceName)
@@ -332,13 +332,13 @@ namespace BisterLib
         private static void DeserializeDateTime(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeDateTime(br);");
+            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeDateTime(br);");
         }
 
         private static void DeserializeString(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"{instanceName} = GeneratedHelper.DeserializeString(br);");
+            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeString(br);");
         }
 
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -356,7 +356,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "\tstring message = br.ReadString();");
             sb.AppendLine(indentation + "\tstring stackTrack = br.ReadString();");
             sb.AppendLine(indentation + "\tint errorCode = br.ReadInt32();");
-            sb.AppendLine(indentation + $"\t{instanceName} = ({objType.FullName})GeneratedHelper.CreateException(exType,source,message,errorCode,stackTrack);");
+            sb.AppendLine(indentation + $"\t{instanceName} = ({objType.FullName})StaticHelper.CreateException(exType,source,message,errorCode,stackTrack);");
             sb.AppendLine(indentation + "}");
             // CreateException(Type exType,string source, string message,int errorCode,string stackTrace)
         }

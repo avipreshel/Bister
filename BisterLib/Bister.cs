@@ -461,8 +461,16 @@ namespace BisterLib
             {
                 if (visitedTypes.Contains(t))
                     return;
-                
+
                 visitedTypes.Add(t);
+
+                if (t.IsGenericType)
+                {
+                    foreach (var gt in t.GetGenericArguments())
+                    {
+                        AddType(gt);
+                    }
+                }
 
                 if (t.FullName.StartsWith("System"))
                     return;
@@ -472,30 +480,21 @@ namespace BisterLib
                     dependentTypes.Add(t);
                 }
 
-                if (t.IsGenericType)
+
+                foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
                 {
-                    foreach (var gt in t.GetGenericArguments())
-                    {
-                        AddType(gt);
-                    }
+                    AddType(field.FieldType);
                 }
-                else
+                foreach (var property in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
                 {
-                    foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                    AddType(property.PropertyType);
+                }
+                foreach (var method in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
+                {
+                    AddType(method.ReturnType);
+                    foreach (var parameter in method.GetParameters())
                     {
-                        AddType(field.FieldType);
-                    }
-                    foreach (var property in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                    {
-                        AddType(property.PropertyType);
-                    }
-                    foreach (var method in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                    {
-                        AddType(method.ReturnType);
-                        foreach (var parameter in method.GetParameters())
-                        {
-                            AddType(parameter.ParameterType);
-                        }
+                        AddType(parameter.ParameterType);
                     }
                 }
             }
