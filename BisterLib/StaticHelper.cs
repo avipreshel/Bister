@@ -224,9 +224,14 @@ namespace GeneratedNS
             {
                 bw.Write(false);
                 Type objType = item.GetType();
-                if (IsPrimitive(objType))
+                bw.Write(StaticHelper.GetFQTypeName(objType));
+                if (StaticHelper.IsPrimitive(objType))
                 {
-                    SerializePrimitive(item, objType, bw);
+                    StaticHelper.SerializePrimitive(item, objType, bw);
+                }
+                else if (objType == typeof(object))
+                {
+                    // Do nothing
                 }
                 else
                 {

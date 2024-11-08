@@ -366,29 +366,7 @@ namespace BisterLib
         public static void SerializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation, typeof(object));
-            sb.AppendLine(indentation + $"if ({instanceName} == null)");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(true);");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(false);");
-            sb.AppendLine(indentation + $"\tType itemType = {instanceName}.GetType();");
-            sb.AppendLine(indentation + $"\tbw.Write(StaticHelper.GetFQTypeName(itemType));");
-            sb.AppendLine(indentation + $"\tif (StaticHelper.IsPrimitive(itemType))");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\tStaticHelper.SerializePrimitive({instanceName},itemType,bw);");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "\telse if (itemType == typeof(object))");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t//Do Nothing :) We already know it's an object, so deserializer will just create an instance of object...");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "\telse");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\tBister.Instance.Serialize({instanceName},bw);");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "}");
-            
+            sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
         }
 
         public static void SerializeArrayList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
