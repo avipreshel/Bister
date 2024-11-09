@@ -19,5 +19,7 @@ namespace BisterBenchmarks
         public Enum[] ArrayPropSystemEnum { get; set; } = new Enum[10];
         public DateTime[] ArrayPropDateTime { get; set; } = new DateTime[10];
         public TimeSpan[] ArrayPropTimeSpan { get; set; } = new TimeSpan[10];
+        public Dictionary<string, float> DicStr2Float { get; set; } = new Dictionary<string, float>();
+        public List<DateTime> ListDT { get; set; } = new List<DateTime>();
     }
 }

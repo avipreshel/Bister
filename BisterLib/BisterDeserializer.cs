@@ -97,6 +97,11 @@ namespace BisterLib
             {
                 sb.AppendLine(indentation + $"\t\t{instanceName}.Add(br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))});");
             }
+            else if (valType == typeof(DateTime))
+            {
+                
+                sb.AppendLine(indentation + $"\t\t{instanceName}.Add(DateTime.FromBinary(br.ReadInt64()));");
+            }
             else
             {
                 throw new NotImplementedException($"No support for deserialization of {Bister.GetFriendlyGenericTypeName(objType)}");

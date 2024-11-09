@@ -1,6 +1,8 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using BisterLib;
+using Microsoft.Diagnostics.Runtime;
+using System.Collections.Generic;
 using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -12,8 +14,13 @@ namespace BisterBenchmarks
 {
     public class EnumTypeNameConverter : JsonConverter<Enum>
     {
-        public override Enum Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override Enum? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            if (reader.TokenType == JsonTokenType.Null)
+            {
+                return null;
+            }
+
             using (JsonDocument doc = JsonDocument.ParseValue(ref reader))
             {
                 var typeName = doc.RootElement.GetProperty("$type").GetString()!;
@@ -25,8 +32,15 @@ namespace BisterBenchmarks
 
         public override void Write(Utf8JsonWriter writer, Enum value, JsonSerializerOptions options)
         {
+            if (value == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+
             writer.WriteStartObject();
-            writer.WriteString("$type", value.GetType().AssemblyQualifiedName);
+            var varType = value.GetType();
+            writer.WriteString("$type", $"{value.GetType().FullName},{varType.Assembly.GetName().Name}");
             writer.WriteString("Value", value.ToString());
             writer.WriteEndObject();
         }
@@ -34,8 +48,13 @@ namespace BisterBenchmarks
 
     public class SystemObjectConverter : JsonConverter<object>
     {
-        public override object Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+        public override object? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
         {
+            if (reader.TokenType == JsonTokenType.Null)
+            {
+                return null;
+            }
+
             using (JsonDocument doc = JsonDocument.ParseValue(ref reader))
             {
                 var typeName = doc.RootElement.GetProperty("$type").GetString()!;
@@ -46,9 +65,15 @@ namespace BisterBenchmarks
 
         public override void Write(Utf8JsonWriter writer, object value, JsonSerializerOptions options)
         {
+            if (value == null)
+            {
+                writer.WriteNullValue();
+                return;
+            }
+
             writer.WriteStartObject();
             var varType = value.GetType();
-            writer.WriteString("$type", $"{value.GetType().FullName},{varType.Assembly.GetName().Name}");
+            writer.WriteString("$type", $"{varType.FullName},{varType.Assembly.GetName().Name}");
             foreach (var property in value.GetType().GetProperties())
             {
                 writer.WritePropertyName(property.Name);
@@ -76,10 +101,12 @@ namespace BisterBenchmarks
             {
                 ArrayPropSystemEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
                 ArrayPropInt = [1, 2, 3, 4, 5],
-                ArrayPropString = ["wow", "this", "is","very", "cool"],
+                ArrayPropString = ["wow", "this", "is", "very", "cool"],
                 ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
                 ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)],
-                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay]
+                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay],
+                DicStr2Float = Enumerable.Range(0, 1000).ToDictionary(i => i.ToString(), i => (float)i),
+                ListDT = Enumerable.Range(0, 1000).Select(i=>DateTime.FromFileTime(i)).ToList()
             };
             
             _instanceAsJson = System.Text.Json.JsonSerializer.Serialize(_instance, _jsonSettings);
@@ -112,18 +139,6 @@ namespace BisterBenchmarks
 
         static void Main(string[] args)
         {
-            var _instance = new ClassWithArrays()
-            {
-                ArrayPropSystemEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
-                ArrayPropInt = [1, 2, 3, 4, 5],
-                ArrayPropString = ["wow", "this", "is", "very", "cool"],
-                ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
-                ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)],
-                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay]
-            };
-
-            var _instanceAsJson = System.Text.Json.JsonSerializer.Serialize(_instance);
-
             _ = BenchmarkRunner.Run<Program>();
         }
     }

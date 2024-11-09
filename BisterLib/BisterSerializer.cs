@@ -141,6 +141,10 @@ namespace BisterLib
                 Type enumNativeType = objType.GetEnumUnderlyingType();
                 SerializeGenericItem(instanceName, indentation, enumNativeType, sb);
             }
+            else if (objType == typeof(DateTime))
+            {
+                sb.AppendLine(indentation + $"bw.Write({instanceName}.ToBinary());"); // TBD can remove cast?
+            }
             else
             {
                 throw new NotImplementedException($"Unable to create serialize code for {instanceName} of type {objType}");
