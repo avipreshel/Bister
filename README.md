@@ -60,16 +60,48 @@ The generated code is fully debug-able and easy to understand.
 # Benchmarks
 Done on a class that contains Dictionary<string,float> and List<string> fields.
 
-BenchmarkDotNet v0.13.12, Windows 10 (10.0.19045.4170/22H2/2022Update)
+BenchmarkDotNet v0.14.0, Windows 10 (10.0.19045.4170/22H2/2022Update)
 Intel Core i7-6800K CPU 3.40GHz (Skylake), 1 CPU, 12 logical and 6 physical cores
-.NET SDK 8.0.303
-  [Host]     : .NET 8.0.7 (8.0.724.31311), X64 RyuJIT AVX2 [AttachedDebugger]
-  DefaultJob : .NET 8.0.7 (8.0.724.31311), X64 RyuJIT AVX2
+.NET SDK 8.0.403
+  [Host]     : .NET 8.0.10 (8.0.1024.46610), X64 RyuJIT AVX2
+  DefaultJob : .NET 8.0.10 (8.0.1024.46610), X64 RyuJIT AVX2
 
 
-| Method            | Mean      | Error    | StdDev   | Gen0   | Gen1   | Allocated |
-|------------------ |----------:|---------:|---------:|-------:|-------:|----------:|
-| JsonSerialize     | 381.68 ns | 7.473 ns | 8.897 ns | 0.0138 |      - |     112 B |
-| BisterSerialize   |  95.85 ns | 1.975 ns | 3.407 ns | 0.0254 |      - |     200 B |
-| JsonDeserialize   | 465.82 ns | 1.752 ns | 1.639 ns | 0.0091 |      - |      72 B |
-| BisterDeserialize | 153.64 ns | 2.520 ns | 2.234 ns | 0.0937 | 0.0002 |     736 B |
+| Method                    | Mean     | Error   | StdDev  | Gen0    | Gen1    | Gen2    | Allocated |
+|-------------------------- |---------:|--------:|--------:|--------:|--------:|--------:|----------:|
+| SystemTextJsonSerialize   | 322.8 us | 6.14 us | 6.57 us | 19.5313 | 19.5313 | 19.5313 |  92.88 KB |
+| SystemTextJsonDeserialize | 368.8 us | 5.93 us | 5.55 us | 19.5313 |  3.9063 |       - | 151.36 KB |
+| BisterSerialize           | 128.9 us | 2.06 us | 1.83 us |  8.0566 |  0.4883 |       - |  62.68 KB |
+| BisterDeserialize         | 184.4 us | 3.52 us | 4.05 us | 18.3105 |  4.3945 |       - | 141.96 KB |
+
+Class under test:
+```cs
+public enum TestEnum : ushort
+{
+    One, Two, Three
+}
+
+public class ClassWithArrays
+{
+    public int[] ArrayPropInt { get; set; } = new int[10];
+    public string[] ArrayPropString { get; set; } = new string[10];
+    public TestEnum[] ArrayPropTestEnum { get; set; } = new TestEnum[10];
+    public Enum[] ArrayPropSystemEnum { get; set; } = new Enum[10];
+    public DateTime[] ArrayPropDateTime { get; set; } = new DateTime[10];
+    public TimeSpan[] ArrayPropTimeSpan { get; set; } = new TimeSpan[10];
+    public Dictionary<string, float> DicStr2Float { get; set; } = new Dictionary<string, float>();
+    public List<DateTime> ListDT { get; set; } = new List<DateTime>();
+}
+
+instance = new ClassWithArrays()
+{
+    ArrayPropSystemEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
+    ArrayPropInt = [1, 2, 3, 4, 5],
+    ArrayPropString = ["wow", "this", "is", "very", "cool"],
+    ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
+    ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)],
+    ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay],
+    DicStr2Float = Enumerable.Range(0, 1000).ToDictionary(i => i.ToString(), i => (float)i),
+    ListDT = Enumerable.Range(0, 1000).Select(i=>DateTime.FromFileTime(i)).ToList()
+};
+```
