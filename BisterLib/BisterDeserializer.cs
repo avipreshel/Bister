@@ -196,6 +196,21 @@ namespace BisterLib
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
+            else if (arrayItemType == typeof(DateTime))
+            {
+                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = null;");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
+                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = DateTime.FromBinary(br.ReadInt64());");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
+            }
             else
             {
                 throw new NotImplementedException($"No support for serializing {arrayItemType.FullName}[]");
