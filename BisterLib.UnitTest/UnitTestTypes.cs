@@ -65,6 +65,7 @@ namespace BisterLib.UnitTest
         public TestEnum[] ArrayPropTestEnum { get; set; } = new TestEnum[10];
         public Enum[] ArrayPropSystemEnum { get; set; } = new Enum[10];
         public DateTime[] ArrayPropDateTime { get; set; } = new DateTime[10];
+        public TimeSpan[] ArrayPropTimeSpan { get; set; } = new TimeSpan[10];
     }
 
 

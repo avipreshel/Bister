@@ -155,7 +155,9 @@ namespace BisterLib.UnitTest
                 ArrayPropInt = [1,2,3,4,5],
                 ArrayPropString = ["wow","this","is","cool"],
                 ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
-                ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)]
+                ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)],
+                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay ]
+
             };
 
             ValidateLogic(instance);
