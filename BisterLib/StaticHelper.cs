@@ -134,49 +134,6 @@ namespace GeneratedNS
             }
         }
 
-        public static void SerializeArray<T>(T[] arr, BinaryWriter bw)
-        {
-            if (arr == null)
-            {
-                bw.Write(true);
-            }
-            else
-            {
-                bw.Write(false);
-                bw.Write(arr.Length);
-                Type itemType = typeof(T);
-                if (StaticHelper.IsPrimitive(itemType))
-                {
-                    for (int i = 0; i < arr.Length; i++)
-                    {
-                        StaticHelper.SerializePrimitive(arr[i], itemType, bw);
-                    }
-                }
-                else if (itemType == typeof(Enum))
-                {
-                    for (int i = 0; i < arr.Length; i++)
-                    {
-                        StaticHelper.Serialize(arr[i] as Enum, bw);
-                    }
-                }
-                else if (itemType.IsEnum)
-                {
-                    TypeCode itemTypeCode = Type.GetTypeCode(itemType);
-                    for (int i = 0; i < arr.Length; i++)
-                    {
-                        SerializeUserEnum(arr[i], itemTypeCode, bw);
-                    }
-                }
-                else
-                {
-                    for (int i = 0; i < arr.Length; i++)
-                    {
-                        Bister.Instance.Serialize(arr[i], bw);
-                    }
-                }
-            }
-        }
-
         public static void Serialize(string[] arr, BinaryWriter bw)
         {
             if (arr == null)
