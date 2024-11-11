@@ -289,14 +289,11 @@ namespace BisterLib.UnitTest
 
 
         [TestMethod]
-        [DataRow("hello I am object string")]
-        [DataRow(1)]
-        [DataRow(98213.1f)]
-        public void Test_ClassWithObject(object payload)
+        public void Test_ClassWithObject()
         {
             ClassWithObject instance = new ClassWithObject()
             {
-                TheObject = payload
+                TheObject = new ClassWithADictStringToInt() { Prop = new Dictionary<string, int>() { { "a", 1 }, { "b", 2 }, { "c", 3 } } }
             };
 
             ValidateLogic(instance);
