@@ -346,7 +346,7 @@ namespace BisterLib
         private static void SerializeDateTime(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"bw.Write({instanceName}.ToFileTime());");
+            sb.AppendLine(indentation + $"bw.Write({instanceName}.ToBinary());");
         }
 
         private static void SerializeString(StringBuilderVerbose sb, string indentation, string instanceName)

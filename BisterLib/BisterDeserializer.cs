@@ -347,7 +347,7 @@ namespace BisterLib
         private static void DeserializeDateTime(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeDateTime(br);");
+            sb.AppendLine(indentation + $"{instanceName} = DateTime.FromBinary(br.ReadInt64());");
         }
 
         private static void DeserializeString(StringBuilderVerbose sb, string indentation, string instanceName)
