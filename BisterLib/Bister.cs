@@ -33,7 +33,7 @@ namespace BisterLib
         public static readonly FieldInfo ExceptionMessage = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
         public static readonly FieldInfo ExceptionStackTrace = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
 
-        public static readonly string NullStr = "_NU_LL_";
+        public static readonly string NullStr = "_NUL_";
     }
 
     public class Bister : IBister
