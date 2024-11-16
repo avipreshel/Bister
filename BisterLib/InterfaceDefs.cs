@@ -22,27 +22,9 @@ namespace BisterLib
         object Deserialize(BinaryReader br, Type objType);
     }
 
-    /// <summary>
-    /// This interface is needed just so we can cache all the generated serializers
-    /// </summary>
     public interface IBisterGenerated
     {
-        byte[] SerializeObj(object instance);
-
-        void SerializeObj(object instance, BinaryWriter bw);
-
-        object DeserializeObj(byte[] buffer);
-
-        object DeserializeObj(BinaryReader br);
-    }
-
-    /// <summary>
-    /// This interface will be implemented by the generated serializers
-    /// </summary>
-    public interface IBisterGenerated<T> : IBisterGenerated
-    {
-        byte[] Serialize(T instance);
-
-        T Deserialize(byte[] buffer);
+        void Serialize(object instanceX, BinaryWriter bw);
+        object Deserialize(BinaryReader br);
     }
 }

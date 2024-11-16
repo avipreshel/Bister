@@ -72,12 +72,15 @@ namespace BisterLib
         {
             try
             {
-                if (blob.Length == 0)
-                {
-                    return null;
-                }
                 IBisterGenerated serializer = GenerateSerializationEngine(objType);
-                return serializer.DeserializeObj(blob);
+
+                using (MemoryStream stream = new MemoryStream(blob))
+                {
+                    using (BinaryReader reader = new BinaryReader(stream))
+                    {
+                        return serializer.Deserialize(reader);
+                    }
+                }
             }
             catch (EndOfStreamException ex)
             {
@@ -87,35 +90,57 @@ namespace BisterLib
 
         public T Deserialize<T>(byte[] blob)
         {
+            Type objType = ReadTypeFromBlob(blob);
             return (T)Deserialize(blob, typeof(T));
         }
 
-        public byte[] Serialize<T>(T obj)
+        public byte[] Serialize<T>(T instance)
         {
-            var serializer = (IBisterGenerated<T>)GenerateSerializationEngine(typeof(T));
-            return serializer.Serialize(obj);
+            var serializer = GenerateSerializationEngine(typeof(T));
+
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    serializer.Serialize(instance, bw);
+                    bw.Flush();
+                    return ms.ToArray();
+                }
+            }
         }
 
         public byte[] Serialize(object instance)
         {
             if (instance == null)
             {
-                return new byte[0];
+                throw new Exception("instance is null. Bister cannot serialize anonymous null object as the concrete type is unknown");
             }
-            var serializer = GenerateSerializationEngine(instance.GetType());
-            return serializer.SerializeObj(instance);
+            else
+            {
+                var serializer = GenerateSerializationEngine(instance.GetType());
+
+                using (var ms = new MemoryStream())
+                {
+                    using (var bw = new BinaryWriter(ms))
+                    {
+                        serializer.Serialize(instance, bw);
+                        bw.Flush();
+                        return ms.ToArray();
+                    }
+                }
+            }
         }
 
         public void Serialize(object instance, BinaryWriter bw)
         {
             if (instance == null)
             {
-                throw new NotImplementedException();
+                throw new Exception("instance is null. Bister cannot serialize anonymous null object as the concrete type is unknown");
             }
             else
             {
                 var serializer = GenerateSerializationEngine(instance.GetType());
-                serializer.SerializeObj(instance,bw);
+                serializer.Serialize(instance, bw);
             }
         }
 
@@ -123,7 +148,7 @@ namespace BisterLib
         public object Deserialize(BinaryReader br, Type objType)
         {
             var serializer = GenerateSerializationEngine(objType);
-            return serializer.DeserializeObj(br);
+            return serializer.Deserialize(br);
         }
 
         #endregion
@@ -199,8 +224,6 @@ namespace BisterLib
             string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_')}";
 
             sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
-
-            
 
             EstimateInstanceSize(sb, objType);
 
