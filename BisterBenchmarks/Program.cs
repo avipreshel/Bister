@@ -1,6 +1,7 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using BisterLib;
+using FastSerialization;
 using Microsoft.Diagnostics.Runtime;
 using System.Collections.Generic;
 using System.Runtime.Intrinsics.Arm;
@@ -12,6 +13,29 @@ using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace BisterBenchmarks
 {
+    interface Interface<T>
+    {
+        T DoSomething(T val);
+    }
+
+    class IntA : Interface<int>
+    {
+        public int DoSomething(int val)
+        {
+            Console.WriteLine("IntA");
+            return val;
+        }
+    }
+    class IntB : Interface<float>
+    {
+        public float DoSomething(float val)
+        {
+            Console.WriteLine("IntB");
+            return val;
+        }
+    }
+
+
     public class EnumTypeNameConverter : JsonConverter<Enum>
     {
         public override Enum? Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
@@ -139,7 +163,21 @@ namespace BisterBenchmarks
 
         static void Main(string[] args)
         {
+            Serialize<int>(1);
+            Serialize<float>(2f);
+
             _ = BenchmarkRunner.Run<Program>();
+        }
+
+        static void Serialize<T>(T val)
+        {
+            Dictionary<Type, object> dict = new Dictionary<Type, object>();
+            dict.Add(typeof(Interface<int>), new IntA());
+            dict.Add(typeof(Interface<float>), new IntB());
+
+            Interface<T> serializer = (Interface<T>)dict[typeof(Interface<T>)];
+            serializer.DoSomething(val);
+
         }
     }
 }
