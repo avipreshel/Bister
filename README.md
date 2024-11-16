@@ -28,6 +28,8 @@ byte[] blob = Bister.Instance.Serialize<SomeClass>(instance); // Dump will happe
 SomeClass instanceCopy = Bister.Instance.Deserialize<SomeClass>(blob); // No dump here, as class was already generated in previous call to Serialize<SomeClass>
 ```
 
+![Illustration for trivial struct](Illustration.jpg)
+
 # How does it work
 * It uses run time reflection to discover the incoming type, and then performs following steps
   1. Discover all the Public property fields that have a public get & set accessors
