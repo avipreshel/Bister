@@ -130,7 +130,7 @@ namespace BisterLib.UnitTest
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
-            Assert.ThrowsException<Exception>(() => Bister.Instance.Deserialize<ClassWithArrays>(blob));
+            Assert.ThrowsException<EndOfStreamException>(() => Bister.Instance.Deserialize<ClassWithArrays>(blob));
         }
 
         [TestMethod]
@@ -143,7 +143,7 @@ namespace BisterLib.UnitTest
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
-            Assert.ThrowsException<Exception>(() => Bister.Instance.Deserialize<ClassWithArrays>(blob));
+            Assert.ThrowsException<EndOfStreamException>(() => Bister.Instance.Deserialize<ClassWithArrays>(blob));
         }
 
         [TestMethod]

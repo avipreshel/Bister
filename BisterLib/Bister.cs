@@ -57,36 +57,34 @@ namespace BisterLib
 
         #region IBister
 
-        public object Deserialize(byte[] blob, Type objType)
+        public object Deserialize(BinaryReader br, Type objType)
         {
-            try
-            {
-                IBisterGenerated serializer = GenerateSerializationEngine(objType);
-
-                using (MemoryStream stream = new MemoryStream(blob))
-                {
-                    using (BinaryReader reader = new BinaryReader(stream))
-                    {
-                        return serializer.Deserialize(reader);
-                    }
-                }
-            }
-            catch (EndOfStreamException ex)
-            {
-                throw new Exception($"Failed to deserialize. Buffer contains data which does not match the expected type {objType}", ex);
-            }
+            var serializer = GenerateSerializationEngine(objType);
+            return serializer.Deserialize(br);
         }
-
+        
         public T Deserialize<T>(byte[] blob)
         {
             return (T)Deserialize(blob, typeof(T));
         }
 
+        public object Deserialize(byte[] blob, Type objType)
+        {
+            using (MemoryStream stream = new MemoryStream(blob))
+            {
+                using (BinaryReader br = new BinaryReader(stream))
+                {
+                    return Deserialize(br, objType);
+                }
+            }
+        }
+
+        
+
         public byte[] Serialize<T>(T instance)
         {
             return Serialize(instance, typeof(T));
         }
-
 
         public byte[] Serialize(object instance, Type objType)
         {
@@ -104,13 +102,6 @@ namespace BisterLib
         {
             var serializer = GenerateSerializationEngine(objType);
             serializer.Serialize(instance, bw);
-        }
-
-
-        public object Deserialize(BinaryReader br, Type objType)
-        {
-            var serializer = GenerateSerializationEngine(objType);
-            return serializer.Deserialize(br);
         }
 
         #endregion
