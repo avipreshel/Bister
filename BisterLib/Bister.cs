@@ -90,7 +90,6 @@ namespace BisterLib
 
         public T Deserialize<T>(byte[] blob)
         {
-            Type objType = ReadTypeFromBlob(blob);
             return (T)Deserialize(blob, typeof(T));
         }
 

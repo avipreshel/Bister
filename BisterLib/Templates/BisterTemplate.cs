@@ -16,7 +16,6 @@ namespace GeneratedNS
     {
         public void Serialize(object instanceX, BinaryWriter bw)
         {
-            bw.Write("___TYPE_NAME___");
             if (instanceX == null)
             {
                 bw.Write(true);
@@ -29,7 +28,6 @@ namespace GeneratedNS
 
         public object Deserialize(BinaryReader br)
         {
-            _ = br.ReadString(); // Read type and ignore it
 ___DESERIALIZER_BODY___
         }
 
