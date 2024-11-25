@@ -97,6 +97,42 @@ namespace GeneratedNS
             }
         }
 
+        public static void Serialize(IEnumerable<object> arr, BinaryWriter bw)
+        {
+            if (arr == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(arr.Count());
+                foreach (var item in arr)
+                {
+                    Serialize(item, bw);
+                }
+            }
+        }
+
+        public static object[] DeserializeSystemArrayOfObjects(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+            else
+            {
+                int count = br.ReadInt32();
+                var arr = new object[count];
+                for (int i = 0; i < count; i++)
+                {
+                    arr[i] = DeserializeSystemObject(br);
+
+                }
+                return arr;
+            }
+        }
+
         public static Enum[] DeserializeSystemArrayOfEnums(BinaryReader br)
         {
             if (br.ReadBoolean() == true)

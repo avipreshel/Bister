@@ -152,12 +152,14 @@ namespace BisterLib.UnitTest
             var instance = new ClassWithArrays()
             {
                 ArrayPropSystemEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
-                ArrayPropInt = [1,2,3,4,5],
-                ArrayPropString = ["wow","this","is","cool"],
+                ArrayPropInt = [1, 2, 3, 4, 5],
+                ArrayPropString = ["wow", "this", "is", "cool"],
                 ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
                 ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)],
-                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay ]
-
+                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay],
+                ArrayPropSByte = [1, 2, 3, 4],
+                ArrayPropDouble = [6.4, 9.4, 1.1, -99.223, Math.E, Math.PI],
+                ArraySystemObjects = [1, 2.2f, DateTime.UtcNow, TimeSpan.Zero, TestEnum.One, TestEnum.Three]
             };
 
             ValidateLogic(instance);

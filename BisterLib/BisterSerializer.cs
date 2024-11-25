@@ -414,7 +414,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write(byteSpan);");
                 sb.AppendLine(indentation + "}");
             }
-            else if (arrayItemType == typeof(Enum))
+            else if (arrayItemType == typeof(Enum) || arrayItemType == typeof(object))
             {
                 sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
@@ -467,7 +467,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
-            else
+            else 
             {
                 throw new NotImplementedException($"No support yet for serializing {arrayItemType.FullName}[]");
             }

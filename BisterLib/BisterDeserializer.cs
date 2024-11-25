@@ -197,9 +197,13 @@ namespace BisterLib
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
+            else if (arrayItemType == typeof(object))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemArrayOfObjects(br);");
+            }
             else
             {
-                throw new NotImplementedException($"No support for serializing {arrayItemType.FullName}[]");
+                throw new NotImplementedException($"No support for deserializing {arrayItemType.FullName}[]");
             }
         }
 

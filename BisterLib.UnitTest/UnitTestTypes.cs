@@ -1,4 +1,5 @@
 ﻿using BisterUnitTestTypes;
+using Newtonsoft.Json.Serialization;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -60,6 +61,9 @@ namespace BisterLib.UnitTest
 
     public class ClassWithArrays
     {
+        public sbyte[] ArrayPropSByte { get; set; } = new sbyte[10];
+        public double[] ArrayPropDouble { get; set; } = new double[10];
+        public object[] ArraySystemObjects { get; set; } = new object[10];
         public int[] ArrayPropInt { get; set; } = new int[10];
         public string[] ArrayPropString { get; set; } = new string[10];
         public TestEnum[] ArrayPropTestEnum { get; set; } = new TestEnum[10];
