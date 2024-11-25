@@ -23,7 +23,7 @@ namespace GeneratedNS
             }
             
             var instance = (___TYPE_NAME___)instanceX;
-            ___SERIALIZER_BODY___
+___SERIALIZER_BODY___
         }
 
         public object Deserialize(BinaryReader br)
