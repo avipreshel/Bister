@@ -54,18 +54,6 @@ namespace BisterLib
 
         private Bister() { }
 
-        Type ReadTypeFromBlob(byte[] buffer)
-        {
-            using (MemoryStream stream = new MemoryStream(buffer))
-            {
-                using (BinaryReader reader = new BinaryReader(stream))
-                {
-                    string typeName = reader.ReadString();
-                    return Type.GetType(typeName);
-                }
-            }
-        }
-
         #region IBister
 
         public object Deserialize(byte[] blob, Type objType)
