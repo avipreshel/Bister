@@ -40,10 +40,11 @@ namespace BisterLib
     {
 
 
-        static Lazy<IBister> _lazy = new Lazy<IBister>(()=> new Bister());
+        static Lazy<IBister> _lazy = new Lazy<IBister>(() => new Bister());
         public static IBister Instance => _lazy.Value;
 
         Dictionary<Type, IBisterGenerated> _typeToSerializer = new Dictionary<Type, IBisterGenerated>();
+        Dictionary<Type, int> _typeToMaxSize = new Dictionary<Type, int>();
 
         /// <summary>
         /// If not empty, will dump the latest serialization class into the path, e.g. c:\temp\gen.cs
@@ -83,52 +84,31 @@ namespace BisterLib
 
         public byte[] Serialize<T>(T instance)
         {
-            var serializer = GenerateSerializationEngine(typeof(T));
-
             using (var ms = new MemoryStream())
             {
                 using (var bw = new BinaryWriter(ms))
                 {
-                    serializer.Serialize(instance, bw);
-                    bw.Flush();
+                    return Serialize(instance, typeof(T));
+                }
+            }
+        }
+
+        public byte[] Serialize(object instance, Type objType)
+        {
+            using (var ms = new MemoryStream())
+            {
+                using (var bw = new BinaryWriter(ms))
+                {
+                    Serialize(instance, objType, bw);
                     return ms.ToArray();
                 }
             }
         }
 
-        public byte[] Serialize(object instance)
+        public void Serialize(object instance, Type objType, BinaryWriter bw)
         {
-            if (instance == null)
-            {
-                throw new Exception("instance is null. Bister cannot serialize anonymous null object as the concrete type is unknown");
-            }
-            else
-            {
-                var serializer = GenerateSerializationEngine(instance.GetType());
-
-                using (var ms = new MemoryStream())
-                {
-                    using (var bw = new BinaryWriter(ms))
-                    {
-                        serializer.Serialize(instance, bw);
-                        bw.Flush();
-                        return ms.ToArray();
-                    }
-                }
-            }
-        }
-
-        public void Serialize(object instance, BinaryWriter bw)
-        {
-            if (instance == null)
-            {
-                throw new Exception("instance is null. Bister cannot serialize anonymous null object as the concrete type is unknown");
-            }
-            else
-            {
-                var serializer = GenerateSerializationEngine(instance.GetType());
-                serializer.Serialize(instance, bw);
-            }
+            var serializer = GenerateSerializationEngine(objType);
+            serializer.Serialize(instance, bw);
         }
 
 

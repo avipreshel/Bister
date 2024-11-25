@@ -12,9 +12,9 @@ namespace BisterLib
 
         byte[] Serialize<T>(T instance);
 
-        byte[] Serialize(object instance);
+        byte[] Serialize(object instance,Type objType);
 
-        void Serialize(object instance,BinaryWriter bw);
+        void Serialize(object instance, Type objType,BinaryWriter bw);
 
         T Deserialize<T>(byte[] blob);
 

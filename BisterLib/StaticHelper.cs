@@ -272,7 +272,7 @@ namespace GeneratedNS
                 }
                 else
                 {
-                    Bister.Instance.Serialize(item, bw);
+                    Bister.Instance.Serialize(item, objType,bw);
                 }
             }
         }
@@ -697,7 +697,7 @@ namespace GeneratedNS
                         }
                         else
                         {
-                            Bister.Instance.Serialize(item, bw); // note: universe might collapse here
+                            Bister.Instance.Serialize(item, itemType, bw); // note: universe might collapse here
                         }
                     }
                 }
