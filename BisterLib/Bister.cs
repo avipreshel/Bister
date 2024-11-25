@@ -84,14 +84,9 @@ namespace BisterLib
 
         public byte[] Serialize<T>(T instance)
         {
-            using (var ms = new MemoryStream())
-            {
-                using (var bw = new BinaryWriter(ms))
-                {
-                    return Serialize(instance, typeof(T));
-                }
-            }
+            return Serialize(instance, typeof(T));
         }
+
 
         public byte[] Serialize(object instance, Type objType)
         {
