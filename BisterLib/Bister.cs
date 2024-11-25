@@ -88,12 +88,18 @@ namespace BisterLib
 
         public byte[] Serialize(object instance, Type objType)
         {
-            using (var ms = new MemoryStream())
+            var serializer = GenerateSerializationEngine(objType);
+            int size = 1024;
+            _typeToMaxSize.TryGetValue(objType, out size);
+
+            using (var ms = new MemoryStream(size))
             {
                 using (var bw = new BinaryWriter(ms))
                 {
-                    Serialize(instance, objType, bw);
-                    return ms.ToArray();
+                    serializer.Serialize(instance, bw);
+                    byte[] blob = ms.ToArray();
+                    _typeToMaxSize[objType] = Math.Max(size, blob.Length);
+                    return blob;
                 }
             }
         }
