@@ -71,10 +71,10 @@ Intel Core i7-6800K CPU 3.40GHz (Skylake), 1 CPU, 12 logical and 6 physical core
 
 | Method                    | Mean     | Error   | StdDev  | Gen0    | Gen1    | Gen2    | Allocated |
 |-------------------------- |---------:|--------:|--------:|--------:|--------:|--------:|----------:|
-| SystemTextJsonSerialize   | 320.2 us | 6.00 us | 5.62 us | 18.5547 | 18.5547 | 18.5547 |  92.86 KB |
-| SystemTextJsonDeserialize | 357.9 us | 7.06 us | 6.26 us | 19.5313 |  3.9063 |       - | 151.36 KB |
-| BisterSerialize           | 126.5 us | 1.62 us | 1.43 us |  6.3477 |  0.2441 |       - |  49.78 KB |
-| BisterDeserialize         | 180.9 us | 3.46 us | 2.89 us | 18.3105 |  4.3945 |       - |    142 KB |
+| SystemTextJsonSerialize   | 309.5 us | 4.81 us | 4.26 us | 19.5313 | 19.5313 | 19.5313 |  92.88 KB |
+| SystemTextJsonDeserialize | 366.1 us | 4.09 us | 3.63 us | 19.5313 |  3.9063 |       - | 151.36 KB |
+| BisterSerialize           | 120.9 us | 2.40 us | 2.76 us |  4.3945 |  0.2441 |       - |  33.75 KB |
+| BisterDeserialize         | 182.9 us | 3.53 us | 4.21 us | 18.3105 |  4.3945 |       - |    142 KB |
 
 Class under test:
 ```cs
