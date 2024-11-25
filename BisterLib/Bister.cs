@@ -23,6 +23,7 @@ using System.Globalization;
 using System.ComponentModel.Design;
 using static System.Runtime.CompilerServices.RuntimeHelpers;
 using GeneratedNS;
+using System.Collections.Concurrent;
 
 namespace BisterLib
 {
@@ -43,8 +44,8 @@ namespace BisterLib
         static Lazy<IBister> _lazy = new Lazy<IBister>(() => new Bister());
         public static IBister Instance => _lazy.Value;
 
-        Dictionary<Type, IBisterGenerated> _typeToSerializer = new Dictionary<Type, IBisterGenerated>();
-        Dictionary<Type, int> _typeToMaxSize = new Dictionary<Type, int>();
+        ConcurrentDictionary<Type, IBisterGenerated> _typeToSerializer = new ConcurrentDictionary<Type, IBisterGenerated>();
+        ConcurrentDictionary<Type, int> _typeToMaxSize = new ConcurrentDictionary<Type, int>();
 
         /// <summary>
         /// If not empty, will dump the latest serialization class into the path, e.g. c:\temp\gen.cs
