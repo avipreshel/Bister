@@ -7,6 +7,7 @@ using System.Data;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Security.Authentication;
 using System.Text;
 
@@ -408,8 +409,9 @@ namespace BisterLib
                 sb.AppendLine(indentation + "else");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
-                sb.AppendLine(indentation + $"\tfor (int i =0;i<{instanceName}.Length;i++) bw.Write({instanceName}[i]);");
+                sb.AppendLine(indentation + $"\tReadOnlySpan<byte> byteSpan = MemoryMarshal.AsBytes<{arrayItemType.FullName}>({instanceName});");
+                sb.AppendLine(indentation + $"\tbw.Write((int)byteSpan.Length);");
+                sb.AppendLine(indentation + $"\tbw.Write(byteSpan);");
                 sb.AppendLine(indentation + "}");
             }
             else if (arrayItemType == typeof(Enum))

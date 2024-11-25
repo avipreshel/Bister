@@ -143,43 +143,9 @@ namespace BisterLib
                 TypeCode arrayItemTypeCode = Type.GetTypeCode(arrayItemType);
                 sb.AppendLine(indentation + $"if (br.ReadBoolean() == false)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType.FullName}[br.ReadInt32()];");
-                switch (arrayItemTypeCode)
-                {
-                    case TypeCode.Int32:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadInt32();");
-                        break;
-                    case TypeCode.UInt32:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadUInt32();");
-                        break;
-                    case TypeCode.Int16:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadInt16();");
-                        break;
-                    case TypeCode.UInt16:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadUInt16();");
-                        break;
-                    case TypeCode.Int64:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadInt64();");
-                        break;
-                    case TypeCode.UInt64:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadUInt64();");
-                        break;
-                    case TypeCode.Boolean:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadBoolean();");
-                        break;
-                    case TypeCode.Byte:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadByte();");
-                        break;
-                    case TypeCode.SByte:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadSByte();");
-                        break;
-                    case TypeCode.Decimal:
-                        sb.AppendLine(indentation + $"\tfor (int i = 0; i< {instanceName}.Length;i++) {instanceName}[i] = br.ReadDecimal();");
-                        break;
-                    default:
-                        throw new NotImplementedException($"Unsupported array type {arrayItemType.FullName}");
-                }
-
+                sb.AppendLine(indentation + "\tint length = br.ReadInt32();");
+                sb.AppendLine(indentation + "\tbyte[] blob = br.ReadBytes(length);");
+                sb.AppendLine(indentation + $"\t{instanceName} = MemoryMarshal.Cast<byte, {arrayItemType.FullName}>(blob).ToArray();");
                 sb.AppendLine(indentation + "}");
             }
             else if (arrayItemType == typeof(Enum))
