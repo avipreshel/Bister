@@ -1,7 +1,9 @@
 ﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
+using BinaryPack;
 using BisterLib;
 using FastSerialization;
+using MessagePack;
 using Microsoft.Diagnostics.Runtime;
 using System.Collections.Generic;
 using System.Runtime.Intrinsics.Arm;
@@ -110,9 +112,11 @@ namespace BisterBenchmarks
     [MemoryDiagnoser]
     public class Program
     {
-        ClassWithArrays _instance;
+        SimpleClass _instance;
         string _instanceAsJson;
         byte[] _instanceAsBister;
+        byte[] _instanceAsBinaryPack;
+        byte[] _instanceAsMessagePack;
         JsonSerializerOptions _jsonSettings;
         public Program()
         {
@@ -121,20 +125,53 @@ namespace BisterBenchmarks
                  Converters = { new SystemObjectConverter(), new EnumTypeNameConverter() }
             };
 
-            _instance = new ClassWithArrays()
+            //_instance = new ClassWithArrays()
+            //{
+            //    ArrayPropInt = Enumerable.Range(0, 1000).Select(i=>i).ToArray(),
+            //    ArrayPropString = Enumerable.Range(0, 1000).Select(i => $"Number{i}").ToArray(),
+            //    ArrayPropTestEnum = Enumerable.Range(0, 1000).Select(i => (TestEnum)(i % 3)).ToArray(),
+            //    ArrayPropDateTime = Enumerable.Range(0, 1000).Select(i => DateTime.Now.AddMinutes(i)).ToArray(),
+            //    ArrayPropTimeSpan = Enumerable.Range(0, 1000).Select(i => TimeSpan.FromDays(i)).ToArray(),
+            //    DicStr2Float = Enumerable.Range(0, 1000).ToDictionary(i => i.ToString(), i => (float)i),
+            //    ListDT = Enumerable.Range(0, 1000).Select(i=>DateTime.FromFileTime(i).ToString()).ToList()
+            //};
+
+            _instance = new SimpleClass()
             {
-                ArrayPropSystemEnum = [TestEnum.Three, TestEnum.Two, TestEnum.One],
-                ArrayPropInt = [1, 2, 3, 4, 5],
-                ArrayPropString = ["wow", "this", "is", "very", "cool"],
-                ArrayPropTestEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
-                ArrayPropDateTime = [new DateTime(), DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue, DateTime.FromOADate(0), DateTime.FromFileTime(0), DateTime.FromBinary(0), DateTime.FromBinary(123)],
-                ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay],
-                DicStr2Float = Enumerable.Range(0, 1000).ToDictionary(i => i.ToString(), i => (float)i),
-                ListDT = Enumerable.Range(0, 1000).Select(i=>DateTime.FromFileTime(i)).ToList()
+                ArrayPropInt = Enumerable.Range(0, 100).Select(i => i).ToArray(),
+                ArrayPropString = Enumerable.Range(0, 100).Select(i => $"Number{i}").ToArray(),
+                DicStr2Float = Enumerable.Range(0, 100).ToDictionary(i => i.ToString(), i => (float)i),
+                ListOfStrings = Enumerable.Range(0, 100).Select(i => i.ToString()).ToList(),
             };
-            
+
             _instanceAsJson = System.Text.Json.JsonSerializer.Serialize(_instance, _jsonSettings);
             _instanceAsBister = Bister.Instance.Serialize(_instance);
+            _instanceAsBinaryPack = BinaryConverter.Serialize(_instance);
+            _instanceAsMessagePack = MessagePackSerializer.Serialize(_instance);
+        }
+
+        [Benchmark]
+        public byte[] MessagePack_Serialize()
+        {
+            return MessagePackSerializer.Serialize(_instance);
+        }
+
+        [Benchmark]
+        public SimpleClass MessagePack_Deserialize()
+        {
+            return MessagePackSerializer.Deserialize<SimpleClass>(_instanceAsMessagePack);
+        }
+
+        [Benchmark]
+        public byte[] BinaryPack_Serialize()
+        {
+            return BinaryConverter.Serialize(_instance);
+        }
+
+        [Benchmark]
+        public SimpleClass BinaryPack_Deserialize()
+        {
+            return BinaryConverter.Deserialize<SimpleClass>(_instanceAsBinaryPack);
         }
 
         [Benchmark]
@@ -144,9 +181,9 @@ namespace BisterBenchmarks
         }
 
         [Benchmark]
-        public ClassWithArrays? SystemTextJsonDeserialize()
+        public SimpleClass? SystemTextJsonDeserialize()
         {
-            return System.Text.Json.JsonSerializer.Deserialize<ClassWithArrays>(_instanceAsJson, _jsonSettings);
+            return System.Text.Json.JsonSerializer.Deserialize<SimpleClass>(_instanceAsJson, _jsonSettings);
         }
 
         [Benchmark]
@@ -156,15 +193,26 @@ namespace BisterBenchmarks
         }
 
         [Benchmark]
-        public ClassWithArrays? BisterDeserialize()
+        public SimpleClass? BisterDeserialize()
         {
-            return Bister.Instance.Deserialize<ClassWithArrays>(_instanceAsBister);
+            return Bister.Instance.Deserialize<SimpleClass>(_instanceAsBister);
         }
 
         static void Main(string[] args)
         {
-            Serialize<int>(1);
-            Serialize<float>(2f);
+            var _instance = new SimpleClass()
+            {
+                ArrayPropInt = Enumerable.Range(0, 100).Select(i => i).ToArray(),
+                ArrayPropString = Enumerable.Range(0, 100).Select(i => $"Number{i}").ToArray(),
+                DicStr2Float = Enumerable.Range(0, 100).ToDictionary(i => i.ToString(), i => (float)i),
+                ListOfStrings = Enumerable.Range(0, 100).Select(i => i.ToString()).ToList(),
+            };
+
+            do
+            {
+                var blob = Bister.Instance.Serialize(_instance);
+                _ = Bister.Instance.Deserialize<SimpleClass>(blob);
+            } while (true);
 
             _ = BenchmarkRunner.Run<Program>();
         }
@@ -181,3 +229,4 @@ namespace BisterBenchmarks
         }
     }
 }
+;

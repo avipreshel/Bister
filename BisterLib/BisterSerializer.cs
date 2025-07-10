@@ -13,6 +13,8 @@ using System.Text;
 
 namespace BisterLib
 {
+    
+
     public static class BisterSerializer
     {
         public static void DuplicateIfForAllPrimitives(StringBuilderVerbose sb, string indentation, string pattern)
@@ -331,6 +333,7 @@ namespace BisterLib
                 throw new NotImplementedException();
             }
         }
+
 
         private static void SerializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
