@@ -24,6 +24,7 @@ using System.ComponentModel.Design;
 using static System.Runtime.CompilerServices.RuntimeHelpers;
 using GeneratedNS;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 
 namespace BisterLib
 {
@@ -52,7 +53,7 @@ namespace BisterLib
         /// </summary>
         public string DebugPath { get; set; } = string.Empty;
 
-        public bool IsDebug => string.IsNullOrEmpty(DebugPath);
+        public bool IsDebug => !string.IsNullOrEmpty(DebugPath);
 
         private Bister() { }
 
@@ -112,6 +113,21 @@ namespace BisterLib
         }
 
         #endregion
+
+        public static bool TestGenericType(Type objType,Type genericType)
+        {
+            return genericType.IsAssignableFrom(objType) || objType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericType);
+        }
+
+        public static void IncreaseIndent(ref string indent)
+        {
+            indent = indent + "\t";
+        }
+
+        public static void DecreaseIndent(ref string indent)
+        {
+            indent = indent.Substring(0,indent.Length-1);
+        }
 
         public static bool IsTopLevelInstanceDecleration(string instanceName)
         {
@@ -407,7 +423,30 @@ namespace BisterLib
         /// <returns></returns>
         public static IEnumerable<PropertyInfo> GetRelevantProperties(Type objType)
         {
-            return objType.GetProperties().Where(prop => prop.GetAccessors().Length > 0 && prop.GetAccessors().All(acc => acc.IsPublic)).ToList();
+            foreach (var prop in objType.GetProperties())
+            {
+                if (!prop.CanRead || !prop.CanWrite)
+                    continue;
+
+                if (!prop.GetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                    continue;
+
+                if (!prop.SetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                    continue;
+
+                if (prop.PropertyType.FullName.StartsWith("System.Action") || prop.PropertyType.FullName.StartsWith("System.Func"))
+                    continue;
+
+                if (prop.Name == "Item" && prop.GetIndexParameters().Length > 0)
+                    continue;
+
+                yield return prop;
+            }
+        }
+
+        public static bool IsImplementingIEnumerable(Type objType)
+        {
+            return typeof(IEnumerable).IsAssignableFrom(objType);
         }
 
         public static bool IsPrimitive(Type type)
@@ -522,9 +561,9 @@ namespace BisterLib
                 sb.Replace("<<<USINGS>>>", sbUsings.ToString());
             }
 
-            if (!string.IsNullOrEmpty(DebugPath))
+            if (IsDebug)
             {
-                File.WriteAllText($@"c:\temp\serialize.cs", sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
+                File.WriteAllText($@"c:\temp\bister.cs", sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
                 string friendlyFilename = expectedTypeName.Replace("<", "[").Replace(">", "]");
                 File.WriteAllText($@"c:\temp\{friendlyFilename}.cs", sb.ToString());
             }
@@ -561,7 +600,7 @@ namespace BisterLib
                 },
                 new CSharpCompilationOptions(
                     outputKind: OutputKind.DynamicallyLinkedLibrary,
-                    optimizationLevel: string.IsNullOrEmpty(Bister.Instance.DebugPath) ? OptimizationLevel.Release : OptimizationLevel.Debug,
+                    optimizationLevel: Bister.Instance.IsDebug ? OptimizationLevel.Release : OptimizationLevel.Debug,
                     platform: Platform.X64
                 ))
                 .AddReferences(dependencyFiles);
@@ -572,10 +611,19 @@ namespace BisterLib
 
                 if (!result.Success)
                 {
-                    throw new Exception($"CODEGEN ERROR for {expectedTypeName}:\n" + result.Diagnostics.First().ToString());
+                    StringBuilder sbErrors = new StringBuilder();
+                    foreach (var error in result.Diagnostics)
+                    {
+                        sbErrors.AppendLine($"{error}");
+                    }
+                    File.WriteAllText(@"c:\temp\bister.cs", sb.ToString());
+                    File.AppendAllText(@"c:\temp\bister.cs",Environment.NewLine + sbErrors.ToString());
+                    
+                    throw new Exception($"CODEGEN ERROR {sbErrors}");
                 }
+               
 
-                ms.Seek(0, SeekOrigin.Begin);
+                    ms.Seek(0, SeekOrigin.Begin);
                 Assembly assembly = Assembly.Load(ms.ToArray());
 
                 // Instantiate the class using reflection

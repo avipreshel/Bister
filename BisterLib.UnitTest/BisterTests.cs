@@ -2,6 +2,7 @@ using BisterLib;
 using BisterUnitTestTypes;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
+using System.Text.Json;
 
 namespace BisterLib.UnitTest
 {
@@ -120,6 +121,7 @@ namespace BisterLib.UnitTest
                {"furth",new ClassWithArrays() }
            };
 
+            Bister.Instance.DebugPath = @"c:\temp";
             ValidateLogic(instance);
         }
 
@@ -364,7 +366,7 @@ namespace BisterLib.UnitTest
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="instance"></param>
-        public void ValidateLogic<T>(T instance, bool isExpectingNull = false)
+        public void ValidateLogic<T>(T instance, bool isExpectingNull = false, bool compareJson = true)
         {
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
@@ -383,6 +385,14 @@ namespace BisterLib.UnitTest
                 Assert.IsNotNull(copyOfBlob);
 
                 CollectionAssert.AreEqual(blob, copyOfBlob);
+
+                if (compareJson)
+                {
+                    string jsonOriginal = JsonSerializer.Serialize(instance);
+                    string jsonCopy = JsonSerializer.Serialize(copyOfinstance);
+                    
+                    Assert.AreEqual(jsonOriginal, jsonCopy,"Json comparison failed");
+                }
             }
             
         }

@@ -409,7 +409,7 @@ namespace GeneratedNS
 
         public static bool IsPrimitive(Type objType)
         {
-            return objType.IsPrimitive || objType == typeof(DateTime) || objType == typeof(decimal) || objType == typeof(string);
+            return objType.IsPrimitive || objType == typeof(decimal);
         }
 
         public static object DeserializePrimitive(BinaryReader br, Type objType)
