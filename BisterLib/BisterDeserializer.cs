@@ -210,68 +210,57 @@ namespace BisterLib
             sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemObject(br);");
         }
 
-        public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType,bool isStructField = false)
+        public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType, bool isStructField = false)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            if (objType == typeof(Enum)) // Unknown enum
+
+            switch (objType)
             {
-                DeserializerSystemEnum(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(object))
-            {
-                DeserializeSystemObject(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(Guid))
-            {
-                DeserializeGuid(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(DateTime))
-            {
-                DeserializeDateTime(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(TimeSpan))
-            {
-                DeserializeTimeSpan(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(Type))
-            {
-                DeserializeSystemType(sb, indentation, instanceName, objType);
-            }
-            else if (objType.IsEnum) // Strongly-defined enum
-            {
-                DeserializerUserEnum(sb, indentation, instanceName, objType);
-            }
-            else if (Bister.IsPrimitive(objType)) // Native type
-            {
-                DeserializePrimitive(sb, indentation, instanceName, objType, isStructField);
-            }
-            else if (objType == typeof(ArrayList))
-            {
-                DeserializeArrayList(sb,indentation,instanceName);
-            }
-            else if (objType.IsArray) // such as int[5] or string[,]
-            {
-                DeserializeSystemArray(sb, indentation, instanceName, objType);
-            }
-            else if (objType.IsValueType) // a struct
-            {
-                DeserializeStruct(sb, indentation, instanceName, objType);
-            }
-            else if (typeof(Exception).IsAssignableFrom(objType)) // is it some kind of Exception?
-            {
-                DeserializeException(sb, indentation, instanceName, objType);
-            }
-            else if (objType == typeof(string))
-            {
-                DeserializeString(sb, indentation, instanceName);
-            }
-            else if (objType.IsClass)
-            {
-                DeserializeClass(sb, indentation, instanceName, objType);
-            }
-            else
-            {
-                throw new NotImplementedException();
+                case Type t when t == typeof(string):
+                    DeserializeString(sb, indentation, instanceName);
+                    break;
+                case Type t when Bister.IsPrimitive(t):
+                    DeserializePrimitive(sb, indentation, instanceName, objType, isStructField);
+                    break;
+                case Type t when t == typeof(DateTime):
+                    DeserializeDateTime(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(TimeSpan):
+                    DeserializeTimeSpan(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(Enum):
+                    DeserializerSystemEnum(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(object):
+                    DeserializeSystemObject(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(Guid):
+                    DeserializeGuid(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(Type):
+                    DeserializeSystemType(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsEnum:
+                    DeserializerUserEnum(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t == typeof(ArrayList):
+                    DeserializeArrayList(sb, indentation, instanceName);
+                    break;
+                case Type t when t.IsArray:
+                    DeserializeSystemArray(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsValueType:
+                    DeserializeStruct(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when typeof(Exception).IsAssignableFrom(t):
+                    DeserializeException(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsClass:
+                    DeserializeClass(sb, indentation, instanceName, objType);
+                    break;
+                default:
+                    throw new NotImplementedException($"No support for {objType}");
+
             }
         }
 
