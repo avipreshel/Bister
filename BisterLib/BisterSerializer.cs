@@ -66,8 +66,8 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
 
             Bister.IncreaseIndent(ref indentation);
-            SerializeGenericItem("item.Key", indentation, keyType, sb);
-            SerializeGenericItem("item.Value", indentation, valType, sb);
+            SerializeAnyType(sb, indentation, "item.Key", keyType);
+            SerializeAnyType(sb, indentation, "item.Value", valType);
             Bister.DecreaseIndent(ref indentation);
 
             sb.AppendLine(indentation + "}");
@@ -82,35 +82,9 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
             Type valType = objType.GenericTypeArguments[0];
             Bister.IncreaseIndent(ref indentation);
-            SerializeGenericItem("item", indentation, valType, sb);
+            SerializeAnyType(sb,indentation,"item",valType);
             Bister.DecreaseIndent(ref indentation);
             sb.AppendLine(indentation + "}");
-        }
-
-        public static void SerializeGenericItem(string instanceName, string indentation, Type objType, StringBuilderVerbose sb)
-        {
-            Bister.PrintMethodName(sb, indentation, objType);
-            if (Bister.IsPrimitive(objType))
-            {
-                sb.AppendLine(indentation + $"bw.Write({instanceName});");
-            }
-            else if (objType == typeof(string) || objType == typeof(object))
-            {
-                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);"); 
-            }
-            else if (objType.IsEnum && objType != typeof(Enum))
-            {
-                Type enumNativeType = objType.GetEnumUnderlyingType();
-                SerializeGenericItem(instanceName, indentation, enumNativeType, sb);
-            }
-            else if (objType == typeof(DateTime))
-            {
-                sb.AppendLine(indentation + $"bw.Write({instanceName}.ToBinary());"); // TBD can remove cast?
-            }
-            else
-            {
-                throw new NotImplementedException($"Unable to create serialize code for {instanceName} of type {objType}");
-            }
         }
 
         public static void SerializerSystemEnum(string indentation, string instanceName, StringBuilderVerbose sb)

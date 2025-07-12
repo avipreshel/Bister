@@ -2,7 +2,6 @@ using BisterLib;
 using BisterUnitTestTypes;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
-using System.Text.Json;
 
 namespace BisterLib.UnitTest
 {
@@ -138,10 +137,12 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_DynamicTypeDictionary()
         {
-            var instance = new Dictionary<Enum, object>();
-            instance.Add(TestEnum.One, 1);
-            instance.Add(TestEnum.Two, "2");
-            instance.Add(TestEnum2.Five, 5f);
+            var instance = new Dictionary<Enum, object>
+            {
+                { TestEnum.One, 1 },
+                { TestEnum.Two, "2" },
+                { TestEnum2.Five, 5f }
+            };
 
             var blob = Bister.Instance.Serialize(instance);
             Assert.IsNotNull(blob);
@@ -388,8 +389,8 @@ namespace BisterLib.UnitTest
 
                 if (compareJson)
                 {
-                    string jsonOriginal = JsonSerializer.Serialize(instance);
-                    string jsonCopy = JsonSerializer.Serialize(copyOfinstance);
+                    string jsonOriginal = Newtonsoft.Json.JsonConvert.SerializeObject(instance);
+                    string jsonCopy = Newtonsoft.Json.JsonConvert.SerializeObject(copyOfinstance);
                     
                     Assert.AreEqual(jsonOriginal, jsonCopy,"Json comparison failed");
                 }

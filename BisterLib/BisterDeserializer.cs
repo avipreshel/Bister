@@ -10,28 +10,6 @@ namespace BisterLib
 {
     public static class BisterDeserializer
     {
-        public static void DeserializeGenericItem(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
-        {
-            Bister.PrintMethodName(sb, indentation, objType);
-
-            if (Bister.IsPrimitive(objType))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = br.{Bister.BinaryReaderMethod(Type.GetTypeCode(objType))};");
-            }
-            else if (objType == typeof(string))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeString(br);");
-            }
-            else if (objType == typeof(object))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemObject(br);");
-            }
-            else
-            {
-                throw new NotImplementedException();
-            }
-        }
-
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
@@ -46,8 +24,8 @@ namespace BisterLib
 
             Bister.IncreaseIndent(ref indentation);
 
-            DeserializeGenericItem(sb, indentation, "var key",keyType);
-            DeserializeGenericItem(sb, indentation, "var val", valType);
+            DeserializeAnyType(sb, indentation, "var key",keyType);
+            DeserializeAnyType(sb, indentation, "var val", valType);
             
             sb.AppendLine(indentation + $"{instanceName}.Add(key,val);");
 
