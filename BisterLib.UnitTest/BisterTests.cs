@@ -72,7 +72,8 @@ namespace BisterLib.UnitTest
            {
                {new object(),"first" },
                {new List<int> {1,2 },"third" },
-               {new ClassWithArrays(),"furth" }
+               {new ClassWithArrays(),"furth" },
+               {1,string.Empty }
            };
 
             ValidateLogic(instance);
@@ -106,6 +107,7 @@ namespace BisterLib.UnitTest
         public void Test_ClassWithArrays_allempty()
         {
             var instance = new ClassWithArrays();
+
 
             ValidateLogic(instance);
         }
@@ -171,7 +173,7 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_SystemType()
         {
-            Type instance = typeof(TestEnum);
+            Type instance = typeof(Type);
 
             ValidateLogic(instance);
         }
@@ -323,6 +325,14 @@ namespace BisterLib.UnitTest
             {
                 TheObject = 6f
             };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_GUID()
+        {
+            Guid instance = Guid.NewGuid();
 
             ValidateLogic(instance);
         }

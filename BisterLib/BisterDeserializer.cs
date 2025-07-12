@@ -221,6 +221,10 @@ namespace BisterLib
             {
                 DeserializeSystemObject(sb, indentation, instanceName);
             }
+            else if (objType == typeof(Guid))
+            {
+                DeserializeGuid(sb, indentation, instanceName);
+            }
             else if (objType == typeof(DateTime))
             {
                 DeserializeDateTime(sb, indentation, instanceName);
@@ -269,6 +273,12 @@ namespace BisterLib
             {
                 throw new NotImplementedException();
             }
+        }
+
+        private static void DeserializeGuid(StringBuilderVerbose sb, string indentation, string instanceName)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            sb.AppendLine(indentation + $"{instanceName} = new Guid(br.ReadBytes(16));");
         }
 
         private static void DeserializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

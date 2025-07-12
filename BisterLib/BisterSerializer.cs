@@ -87,7 +87,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "}");
         }
 
-        public static void SerializerSystemEnum(string indentation, string instanceName, StringBuilderVerbose sb)
+        public static void SerializerSystemEnum(StringBuilderVerbose sb, string indentation, string instanceName)
         {
             // Since we can't know the actual Enum during run time, so we need to do magic
             sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
@@ -200,64 +200,62 @@ namespace BisterLib
         public static void SerializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName,Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            if (objType == typeof(Enum)) // Unknown enum
+
+
+            switch (objType)
             {
-                SerializerSystemEnum(indentation,instanceName,sb);
-            }
-            else if (objType == typeof(object))
-            {
-                SerializeSystemObject(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(DateTime))
-            {
-                SerializeDateTime(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(TimeSpan))
-            {
-                SerializeTimeSpan(sb, indentation, instanceName);
-            }
-            else if (objType == typeof(Type))
-            {
-                SerializeSystemType(sb, indentation, instanceName, objType);
-            }
-            else if (objType.IsEnum) // Strongly-defined enum
-            {
-                SerializeEnum(sb, indentation,instanceName,objType);
-            }
-            else if (Bister.IsPrimitive(objType)) // Native type
-            {
-                SerializePrimitive(sb, indentation, instanceName, objType);
-            }
-            else if (objType == typeof(ArrayList))
-            {
-                SerializeArrayList(sb,indentation,instanceName, objType);
-            }
-            else if (objType.IsArray) // types such as int[] or string[]
-            {
-                SerializeSystemArray(sb,indentation,instanceName, objType);
-            }
-            else if (objType.IsValueType) // a struct
-            {
-                SerializeStruct(sb, indentation,instanceName, objType);
-            }
-            else if (typeof(Exception).IsAssignableFrom(objType)) // is it some kind of Exception?
-            {
-                SerializeException(sb, indentation, instanceName, objType);
-            }
-            else if (objType == typeof(string))
-            {
-                SerializeString(sb, indentation, instanceName);
-            }
-            else if (objType.IsClass)
-            {
-                SerializeClass(sb, indentation, instanceName, objType);
-            }
-            else 
-            {
-                throw new NotImplementedException();
+                case Type t when t == typeof(string):
+                    SerializeString(sb, indentation, instanceName);
+                    break;
+                case Type t when t.IsEnum:
+                    SerializeEnum(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when Bister.IsPrimitive(t):
+                    SerializePrimitive(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t == typeof(ArrayList):
+                    SerializeArrayList(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t == typeof(Enum):
+                    SerializerSystemEnum(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(object):
+                    SerializeSystemObject(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(DateTime):
+                    SerializeDateTime(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(TimeSpan):
+                    SerializeTimeSpan(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(Type):
+                    SerializeSystemType(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t == typeof(Guid):
+                    SerializeGuid(sb, indentation, instanceName);
+                    break;
+                case Type t when t.IsArray:
+                    SerializeSystemArray(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsValueType:
+                    SerializeStruct(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when typeof(Exception).IsAssignableFrom(t):
+                    SerializeException(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsClass:
+                    SerializeClass(sb, indentation, instanceName, objType);
+                    break;
+                default:
+                    throw new Exception($"Cannot serialize {objType}");
             }
         }
 
+        private static void SerializeGuid(StringBuilderVerbose sb, string indentation, string instanceName)
+        {
+            Bister.PrintMethodName(sb, indentation);
+            sb.AppendLine(indentation + $"bw.Write({instanceName}.ToByteArray());");
+        }
 
         private static void SerializeSystemType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
