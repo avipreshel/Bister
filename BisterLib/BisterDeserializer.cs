@@ -83,9 +83,10 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
 
             Bister.IncreaseIndent(ref indentation);
-
-            DeserializeAnyType(sb, indentation, "var key", keyType);
-            DeserializeAnyType(sb, indentation, "var val", valType);
+            sb.AppendLine(indentation + $"{niceKeyTypeName} key;");
+            sb.AppendLine(indentation + $"{niceValueTypeName} val;");
+            DeserializeAnyType(sb, indentation, "key", keyType);
+            DeserializeAnyType(sb, indentation, "val", valType);
 
             sb.AppendLine(indentation + $"{instanceName}.Add(key,val);");
 
@@ -229,8 +230,12 @@ namespace BisterLib
 
             string niceKeyTypeName = Bister.GetFriendlyGenericTypeName(keyType);
             string niceValueTypeName = Bister.GetFriendlyGenericTypeName(valType);
-            DeserializeAnyType(sb, indentation, $"var {usefulName}_key", keyType);
-            DeserializeAnyType(sb, indentation, $"var {usefulName}_val", valType);
+
+            sb.AppendLine(indentation + $"{niceKeyTypeName} {usefulName}_key;");
+            sb.AppendLine(indentation + $"{niceValueTypeName} {usefulName}_val;");
+
+            DeserializeAnyType(sb, indentation, $"{usefulName}_key", keyType);
+            DeserializeAnyType(sb, indentation, $"{usefulName}_val", valType);
             sb.AppendLine(indentation + $"{instanceName} = new KeyValuePair<{niceKeyTypeName},{niceValueTypeName}>({usefulName}_key,{usefulName}_val);");
         }
 

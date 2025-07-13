@@ -104,6 +104,22 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_KeyValuePair()
+        {
+            var instance = new KeyValuePair<Enum,object>(TestEnum.One, TestEnum.Two);
+
+            ValidateLogic(instance);
+
+            instance = new KeyValuePair<Enum, object>(TestEnum.Two, "Hellow");
+
+            ValidateLogic(instance);
+
+            var instance2 = new KeyValuePair<Enum, Dictionary<string,int>>(TestEnum.Two, new Dictionary<string, int>() { { "one", 1 }, { "two", 2 } });
+
+            ValidateLogic(instance2);
+        }
+
+        [TestMethod]
         public void Test_ClassWithArrays_allempty()
         {
             var instance = new ClassWithArrays();

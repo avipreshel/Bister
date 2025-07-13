@@ -617,13 +617,13 @@ namespace BisterLib
                         sbErrors.AppendLine($"{error}");
                     }
                     File.WriteAllText(@"c:\temp\bister.cs", sb.ToString());
-                    File.AppendAllText(@"c:\temp\bister.cs",Environment.NewLine + sbErrors.ToString());
-                    
+                    File.AppendAllText(@"c:\temp\bister.cs", Environment.NewLine + sbErrors.ToString());
+
                     throw new Exception($"CODEGEN ERROR {sbErrors}");
                 }
-               
 
-                    ms.Seek(0, SeekOrigin.Begin);
+
+                ms.Seek(0, SeekOrigin.Begin);
                 Assembly assembly = Assembly.Load(ms.ToArray());
 
                 // Instantiate the class using reflection
