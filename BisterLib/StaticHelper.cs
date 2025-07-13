@@ -97,6 +97,70 @@ namespace GeneratedNS
             }
         }
 
+        public static void Serialize(IEnumerable<DateTime> arr, BinaryWriter bw)
+        {
+            if (arr == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(arr.Count());
+                foreach (var item in arr)
+                {
+                    bw.Write(item.ToBinary());
+                }
+            }
+        }
+
+        public static void Serialize(IEnumerable<TimeSpan> arr, BinaryWriter bw)
+        {
+            if (arr == null)
+            {
+                bw.Write(true);
+            }
+            else
+            {
+                bw.Write(false);
+                bw.Write(arr.Count());
+                foreach (var item in arr)
+                {
+                    bw.Write(item.Ticks);
+                }
+            }
+        }
+
+        public static DateTime[] DeSerializeDateTimeArr(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+
+            var arr = new DateTime[br.ReadInt32()];
+            for (int i=0;i<arr.Length;i++)
+            {
+                arr[i] = DateTime.FromBinary(br.ReadInt64());
+            }
+            return arr;
+        }
+
+        public static TimeSpan[] DeSerializeTimeSpanArr(BinaryReader br)
+        {
+            if (br.ReadBoolean() == true)
+            {
+                return null;
+            }
+
+            var arr = new TimeSpan[br.ReadInt32()];
+            for (int i = 0; i < arr.Length; i++)
+            {
+                arr[i] = TimeSpan.FromTicks(br.ReadInt64());
+            }
+            return arr;
+        }
+
         public static void Serialize(IEnumerable<object> arr, BinaryWriter bw)
         {
             if (arr == null)

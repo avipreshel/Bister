@@ -1,5 +1,17 @@
-﻿namespace BisterUnitTestTypes
+﻿using System.Security.Cryptography.X509Certificates;
+
+namespace BisterUnitTestTypes
 {
+    public class TestException : Exception
+    { 
+        public string SomeField { get; set; }
+
+        public TestException() : base() 
+        {
+            SomeField = "wow";
+        }
+    }
+
     public enum TestEnum : ushort
     {
         One, Two, Three

@@ -85,7 +85,7 @@ namespace BisterLib.UnitTest
             Exception instance;
             try
             {
-                throw new NotImplementedException("I am a test exception");
+                throw new TestException();
             }
             catch (Exception ex)
             {

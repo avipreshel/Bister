@@ -10,6 +10,63 @@ namespace BisterLib
 {
     public static class BisterDeserializer
     {
+        public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType, bool isStructField = false)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+
+            switch (objType)
+            {
+                case Type t when t == typeof(string):
+                    DeserializeString(sb, indentation, instanceName);
+                    break;
+                case Type t when Bister.IsPrimitive(t):
+                    DeserializePrimitive(sb, indentation, instanceName, objType, isStructField);
+                    break;
+                case Type t when t == typeof(DateTime):
+                    DeserializeDateTime(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(TimeSpan):
+                    DeserializeTimeSpan(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(Enum):
+                    DeserializerSystemEnum(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(object):
+                    DeserializeSystemObject(sb, indentation, instanceName);
+                    break;
+                case Type t when t == typeof(Guid):
+                    DeserializeGuid(sb, indentation, instanceName);
+                    break;
+                case Type t when t.IsGenericType && t.GetGenericTypeDefinition() == typeof(KeyValuePair<,>):
+                    DeserializeKeyValuePair(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t == typeof(Type):
+                    DeserializeSystemType(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsEnum:
+                    DeserializerUserEnum(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t == typeof(ArrayList):
+                    DeserializeArrayList(sb, indentation, instanceName);
+                    break;
+                case Type t when t.IsArray:
+                    DeserializeSystemArray(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsValueType:
+                    DeserializeStruct(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when typeof(Exception).IsAssignableFrom(t):
+                    DeserializeException(sb, indentation, instanceName, objType);
+                    break;
+                case Type t when t.IsClass:
+                    DeserializeClass(sb, indentation, instanceName, objType);
+                    break;
+                default:
+                    throw new NotImplementedException($"No support for {objType}");
+
+            }
+        }
+
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
@@ -18,15 +75,18 @@ namespace BisterLib
             Type keyType = objType.GenericTypeArguments[0];
             Type valType = objType.GenericTypeArguments[1];
 
+            string niceKeyTypeName = Bister.GetFriendlyGenericTypeName(keyType);
+            string niceValueTypeName = Bister.GetFriendlyGenericTypeName(valType);
+
             sb.AppendLine(indentation + $"int {usefulVariableName}_capacity = br.ReadInt32();");
             sb.AppendLine(indentation + $"for (int i =0; i<{usefulVariableName}_capacity;i++)");
             sb.AppendLine(indentation + "{");
 
             Bister.IncreaseIndent(ref indentation);
 
-            DeserializeAnyType(sb, indentation, "var key",keyType);
+            DeserializeAnyType(sb, indentation, "var key", keyType);
             DeserializeAnyType(sb, indentation, "var val", valType);
-            
+
             sb.AppendLine(indentation + $"{instanceName}.Add(key,val);");
 
             Bister.DecreaseIndent(ref indentation);
@@ -136,72 +196,22 @@ namespace BisterLib
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
-            else if (arrayItemType == typeof(DateTime))
-            {
-                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = null;");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
-                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = DateTime.FromBinary(br.ReadInt64());");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
-            else if (arrayItemType == typeof(TimeSpan))
-            {
-                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = null;");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
-                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = TimeSpan.FromTicks(br.ReadInt64());");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
             else if (arrayItemType == typeof(object))
             {
                 sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemArrayOfObjects(br);");
+            }
+            else if (arrayItemType == typeof(DateTime))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeSerializeDateTimeArr(br);");
+            }
+            else if (arrayItemType == typeof(TimeSpan))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeSerializeTimeSpanArr(br);");
             }
             else
             {
                 throw new NotImplementedException($"No support for deserializing {arrayItemType.FullName}[]");
             }
-        }
-
-        public static void DeserializeArrayObjectItem(string indentation, StringBuilderVerbose sb, string instanceName)
-        {
-            Bister.PrintMethodName(sb, indentation);
-            sb.AppendLine(indentation + $"if (br.ReadBoolean())"); // is null?
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName}.Add(null);");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\tstring itemTypeStr = br.ReadString();");
-            sb.AppendLine(indentation + $"\tType itemType = Type.GetType(itemTypeStr);");
-            sb.AppendLine(indentation + $"\tif (itemType == typeof(string)) {instanceName}.Add(br.ReadString());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(decimal)) {instanceName}.Add(br.ReadDecimal());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(bool)) {instanceName}.Add(br.ReadBoolean());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(short)) {instanceName}.Add(br.ReadInt16());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(ushort)) {instanceName}.Add(br.ReadUInt16());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(int)) {instanceName}.Add(br.ReadInt32());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(uint)) {instanceName}.Add(br.ReadUInt32());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(long)) {instanceName}.Add(br.ReadInt64());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(ulong)) {instanceName}.Add(br.ReadUInt64());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(char)) {instanceName}.Add(br.ReadChar());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(byte)) {instanceName}.Add(br.ReadByte());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(sbyte)) {instanceName}.Add(br.ReadSByte());");
-            sb.AppendLine(indentation + $"\telse if (itemType == typeof(object)) {instanceName}.Add(new object());");
-            sb.AppendLine(indentation + $"\telse throw new NotImplementedException();");
-            sb.AppendLine(indentation + "}");
         }
 
         public static void DeserializeSystemObject(StringBuilderVerbose sb, string indentation, string instanceName)
@@ -210,58 +220,18 @@ namespace BisterLib
             sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemObject(br);");
         }
 
-        public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType, bool isStructField = false)
+        private static void DeserializeKeyValuePair(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+            string usefulName = Bister.GetUsefulName(instanceName);
+            Type keyType = objType.GenericTypeArguments[0];
+            Type valType = objType.GenericTypeArguments[1];
 
-            switch (objType)
-            {
-                case Type t when t == typeof(string):
-                    DeserializeString(sb, indentation, instanceName);
-                    break;
-                case Type t when Bister.IsPrimitive(t):
-                    DeserializePrimitive(sb, indentation, instanceName, objType, isStructField);
-                    break;
-                case Type t when t == typeof(DateTime):
-                    DeserializeDateTime(sb, indentation, instanceName);
-                    break;
-                case Type t when t == typeof(TimeSpan):
-                    DeserializeTimeSpan(sb, indentation, instanceName);
-                    break;
-                case Type t when t == typeof(Enum):
-                    DeserializerSystemEnum(sb, indentation, instanceName);
-                    break;
-                case Type t when t == typeof(object):
-                    DeserializeSystemObject(sb, indentation, instanceName);
-                    break;
-                case Type t when t == typeof(Guid):
-                    DeserializeGuid(sb, indentation, instanceName);
-                    break;
-                case Type t when t == typeof(Type):
-                    DeserializeSystemType(sb, indentation, instanceName, objType);
-                    break;
-                case Type t when t.IsEnum:
-                    DeserializerUserEnum(sb, indentation, instanceName, objType);
-                    break;
-                case Type t when t == typeof(ArrayList):
-                    DeserializeArrayList(sb, indentation, instanceName);
-                    break;
-                case Type t when t.IsArray:
-                    DeserializeSystemArray(sb, indentation, instanceName, objType);
-                    break;
-                case Type t when t.IsValueType:
-                    DeserializeStruct(sb, indentation, instanceName, objType);
-                    break;
-                case Type t when typeof(Exception).IsAssignableFrom(t):
-                    DeserializeException(sb, indentation, instanceName, objType);
-                    break;
-                case Type t when t.IsClass:
-                    DeserializeClass(sb, indentation, instanceName, objType);
-                    break;
-                default:
-                    throw new NotImplementedException($"No support for {objType}");
-
-            }
+            string niceKeyTypeName = Bister.GetFriendlyGenericTypeName(keyType);
+            string niceValueTypeName = Bister.GetFriendlyGenericTypeName(valType);
+            DeserializeAnyType(sb, indentation, $"var {usefulName}_key", keyType);
+            DeserializeAnyType(sb, indentation, $"var {usefulName}_val", valType);
+            sb.AppendLine(indentation + $"{instanceName} = new KeyValuePair<{niceKeyTypeName},{niceValueTypeName}>({usefulName}_key,{usefulName}_val);");
         }
 
         private static void DeserializeGuid(StringBuilderVerbose sb, string indentation, string instanceName)
@@ -297,6 +267,7 @@ namespace BisterLib
         private static void DeserializeException(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation);
+            DeserializePublicProperties(sb,indentation, instanceName,objType);
             sb.AppendLine(indentation + $"{instanceName} = ({objType.FullName})StaticHelper.DeserializeException(br);");
         }
 
@@ -395,11 +366,11 @@ namespace BisterLib
             {
                 if (Bister.TestGenericType(objType, typeof(IList<>)))
                 {
-                    DeserializeGenericList(sb,indentation,instanceName, objType);
+                    DeserializeGenericList(sb, indentation, instanceName, objType);
                 }
                 else if (Bister.TestGenericType(objType, typeof(IDictionary<,>)))
                 {
-                    DeserializeGenericDictionary(sb,indentation,instanceName, objType);
+                    DeserializeGenericDictionary(sb, indentation, instanceName, objType);
                 }
                 else if (Bister.TestGenericType(objType, typeof(ISet<>)))
                 {
@@ -415,15 +386,19 @@ namespace BisterLib
                 }
             }
 
-            var props = Bister.GetRelevantProperties(objType);
-            foreach (var prop in props)
-            {
-                sb.AppendLine(indentation + $"// For each property: {instanceName}.{prop.Name}");
-                DeserializeAnyType(sb, indentation , $"{instanceName}.{prop.Name}", prop.PropertyType);
-            }
+            DeserializePublicProperties(sb, indentation, instanceName, objType);
             Bister.DecreaseIndent(ref indentation);
             sb.AppendLine(indentation + "}");
         }
 
+        private static void DeserializePublicProperties(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            var props = Bister.GetRelevantProperties(objType);
+            foreach (var prop in props)
+            {
+                sb.AppendLine(indentation + $"// For each property: {instanceName}.{prop.Name}");
+                DeserializeAnyType(sb, indentation, $"{instanceName}.{prop.Name}", prop.PropertyType);
+            }
+        }
     }
 }
