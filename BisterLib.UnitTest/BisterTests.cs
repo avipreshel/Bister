@@ -1,5 +1,6 @@
 using BisterLib;
 using BisterUnitTestTypes;
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.Drawing;
 
@@ -245,51 +246,18 @@ namespace BisterLib.UnitTest
 
        
         [TestMethod]
-        [DataRow(1)]
-        [DataRow(10)]
-        public void Test_ClassWithAListOfEnum(int size)
+        public void Test_ClassWithGenericLists()
         {
-            var instance = new ClassWithAListOfEnum();
-            Random random = new Random(42);
-            
-            instance.Prop = Enumerable.Range(0, size).Select(i => (Enum)Enum.ToObject(typeof(TestEnum),random.Next((int)TestEnum.One, (int)TestEnum.Three + 1))).ToList();
+            var instance = new ClassWithListsOfEnum();
 
+            instance.PropSystemEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three];
+            instance.PropEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three];
+            instance.PropFloat = [1f, 2f, 3f];
+            instance.PropStrings = ["1", "2", "3", string.Empty, null];
 
             ValidateLogic(instance);
         }
-
-        [TestMethod]
-        [DataRow(1)]
-        [DataRow(1000)]
-        public void Test_ClassWithAListOfEnumExplicit(int size)
-        {
-            var instance = new ClassWithAListOfEnumExplicit();
-            Random random = new Random(42);
-            instance.Prop = Enumerable.Range(0, size).Select(i => (TestEnum)random.Next((int)TestEnum.One, (int)TestEnum.Three + 1)).ToList();
-
-            ValidateLogic(instance);
-        }
-
-        [TestMethod]
-        [DataRow(1)]
-        [DataRow(1000)]
-        public void Test_ClassWithAListOfPrimitives(int size)
-        {
-            var instance = new ClassWithAListOfFloats(size);
-            
-            ValidateLogic(instance);
-        }
-
-        [TestMethod]
-        [DataRow(1)]
-        [DataRow(1000)]
-        public void Test_ClassWithAListOfStrings(int size)
-        {
-            var instance = new ClassWithAListOfStrings(size);
-
-            ValidateLogic(instance);
-        }
-
+        
         [TestMethod]
         [DataRow(1)]
         [DataRow(1000)]

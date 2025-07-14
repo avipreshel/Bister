@@ -73,14 +73,12 @@ namespace BisterLib.UnitTest
     }
 
 
-    public class ClassWithAListOfEnum
+    public class ClassWithListsOfEnum
     {
-        public List<Enum> Prop { get; set; } = new List<Enum>();
-    }
-
-    public class ClassWithAListOfEnumExplicit
-    {
-        public List<TestEnum> Prop { get; set; } = new List<TestEnum>();
+        public List<Enum> PropSystemEnum { get; set; } = new();
+        public List<TestEnum> PropEnum { get; set; } = new();
+        public List<float> PropFloat { get; set; } = new();
+        public List<string> PropStrings { get; set; } = new();
     }
 
     public class ClassWithADictStringToInt
@@ -90,37 +88,6 @@ namespace BisterLib.UnitTest
         public ClassWithADictStringToInt()
         {
             Prop = new Dictionary<string, int>();
-        }
-    }
-
-    public class ClassWithAListOfFloats
-    {
-        public List<float> Prop { get; set; }
-
-        public ClassWithAListOfFloats()
-        {
-            Prop = new List<float>();
-        }
-
-        public ClassWithAListOfFloats(int size)
-        {
-            Prop = Enumerable.Range(1,size).Select(i=>(float)i).ToList();
-        }
-    }
-
-    public class ClassWithAListOfStrings
-    {
-
-        public List<string> Prop { get; set; }
-
-        public ClassWithAListOfStrings()
-        {
-            Prop = new List<string>();
-        }
-
-        public ClassWithAListOfStrings(int size)
-        {
-            Prop = Enumerable.Range(1, size).Select(i => i.ToString()).ToList();
         }
     }
 }
