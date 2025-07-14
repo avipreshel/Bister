@@ -70,15 +70,19 @@ namespace BisterLib.UnitTest
         public Enum[] ArrayPropSystemEnum { get; set; } = new Enum[10];
         public DateTime[] ArrayPropDateTime { get; set; } = new DateTime[10];
         public TimeSpan[] ArrayPropTimeSpan { get; set; } = new TimeSpan[10];
+        public ClassWithPrimitivesOnly[] ArrayOfClasses { get; set; } = new ClassWithPrimitivesOnly[1];
     }
 
 
-    public class ClassWithListsOfEnum
+    public class ClassWithGenericLists
     {
         public List<Enum> PropSystemEnum { get; set; } = new();
         public List<TestEnum> PropEnum { get; set; } = new();
         public List<float> PropFloat { get; set; } = new();
+        public List<int> PropInt { get; set; } = new();
+        public List<sbyte> PropSByte { get; set; } = new();
         public List<string> PropStrings { get; set; } = new();
+        public List<uint> PropUint { get; set; } = new();
     }
 
     public class ClassWithADictStringToInt

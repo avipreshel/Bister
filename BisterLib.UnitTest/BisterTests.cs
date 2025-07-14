@@ -125,7 +125,6 @@ namespace BisterLib.UnitTest
         {
             var instance = new ClassWithArrays();
 
-
             ValidateLogic(instance);
         }
 
@@ -181,7 +180,8 @@ namespace BisterLib.UnitTest
                 ArrayPropTimeSpan = [new TimeSpan(), TimeSpan.Zero, TimeSpan.MinValue, TimeSpan.MaxValue, DateTime.Now.TimeOfDay],
                 ArrayPropSByte = [1, 2, 3, 4],
                 ArrayPropDouble = [6.4, 9.4, 1.1, -99.223, Math.E, Math.PI],
-                ArraySystemObjects = [1, 2.2f, DateTime.UtcNow, TimeSpan.Zero, TestEnum.One, TestEnum.Three]
+                ArraySystemObjects = [1, 2.2f, DateTime.UtcNow, TimeSpan.Zero, TestEnum.One, TestEnum.Three],
+                ArrayOfClasses = [ new ClassWithPrimitivesOnly() { PropTestEnum = TestEnum.One, Prop_bool = false, Prop_double = 1.0 }  ]
             };
 
             ValidateLogic(instance);
@@ -248,13 +248,16 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_ClassWithGenericLists()
         {
-            var instance = new ClassWithListsOfEnum();
-
-            instance.PropSystemEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three];
-            instance.PropEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three];
-            instance.PropFloat = [1f, 2f, 3f];
-            instance.PropStrings = ["1", "2", "3", string.Empty, null];
-
+            var instance = new ClassWithGenericLists()
+            {
+                PropSystemEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
+                PropEnum = [TestEnum.One, TestEnum.Two, TestEnum.Three],
+                PropFloat = [1f, 2f, 3f],
+                PropStrings = ["1", "2", "3", string.Empty, null],
+                PropInt = [1, 2, 3],
+                PropSByte = [1, 2, 3],
+                PropUint = [1,2,3]
+            };
             ValidateLogic(instance);
         }
         

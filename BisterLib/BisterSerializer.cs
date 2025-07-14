@@ -282,7 +282,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write(byteSpan);");
                 sb.AppendLine(indentation + "}");
             }
-            else if (arrayItemType == typeof(Enum) || arrayItemType == typeof(object))
+            else if (arrayItemType == typeof(Enum) || arrayItemType == typeof(object) || arrayItemType == typeof(DateTime) || arrayItemType == typeof(TimeSpan))
             {
                 sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
@@ -303,9 +303,25 @@ namespace BisterLib
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
-            else 
+            else if (arrayItemType.IsClass)
             {
-                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
+                sb.AppendLine(indentation + $"if ({instanceName} == null)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(true);");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(false);");
+                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
+                sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\tBister.Instance.Serialize({instanceName}[i],typeof({Bister.GetFriendlyGenericTypeName(arrayItemType)}),bw);");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
+            }
+            else
+            {
+                throw new NotImplementedException($"Failed to serialize array of {arrayItemType}");
             }
         }
     }
