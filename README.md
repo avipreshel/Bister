@@ -1,12 +1,13 @@
 # Bister
 
-A binary serializer for C#, which is based on run time code generation, implemented in dotnet standard 2.0.
+A high performing binary serializer for C#, but unlike other serializers, Bister doesn't require you to add any attributes.
 
-* No special attributes required! Bister can serialize ANYTHING with public properties
-* Offers better performance than System.Text.Json (see benchmarks below)
-* Offers better type coverage than both System.Text.Json and Newtonsoft (For example: Ability to serialize and de-serialize Generics with Enum type)
-* Implemented in pure dotnet standard 2.0 and does not rely on any 3rd party library
-* Ability to handle System.Enum with run-time serialization and de-serialization of the underlying enum type
+* No special attributes required! Bister serializes public properties
+* Comparable or better performance to other serializers
+* Better type coverage than both System.Text.Json and Newtonsoft (For example: Ability to handle System.Object and System.Enum fields which types are known only in run time)
+* Ability to handle any type derived from IEnumerable, with optimzied implementation for the popular ones: List<>, Dictionary<,>, HashSet<>
+* Ability to handle special types such as Exception (including derived types of it), Guid, System.Type, DateTime, TimeSpan
+* Ability to handle legacy types such as ArrayList
 
 # Usage
 ```cs
