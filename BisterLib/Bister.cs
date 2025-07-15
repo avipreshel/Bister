@@ -495,7 +495,7 @@ namespace BisterLib
                     }
                 }
 
-                if (t.FullName.StartsWith("System"))
+                if (string.IsNullOrEmpty(t.FullName) || t.FullName.StartsWith("System"))
                     return;
 
                 if (t != type)

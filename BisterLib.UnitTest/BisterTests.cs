@@ -11,7 +11,37 @@ namespace BisterLib.UnitTest
     {
         public BisterTests() 
         {
+            
+        }
+
+        [TestMethod]
+        public void Test_InheritedFromEnumerable()
+        {
             Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+            var instance = new InheritedFromEnumerable<int>() { 1, 2, 3 };
+            instance.SomeProp = 4;
+
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_InheritedFromList()
+        {
+            var instance = new InheritedFromList<int>() { 1,2,3};
+            instance.SomeProp = 4;
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_InheritedFromDictionary()
+        {
+            var instance = new InheritedFromDictionary<string,int>() { { "1", 1 }, { "2", 2 },{ "3", 3 } };
+            instance.SomeKey = "4";
+            instance.SomeVal = 4;
+
+            ValidateLogic(instance);
         }
 
         [TestMethod]

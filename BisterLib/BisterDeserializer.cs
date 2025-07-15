@@ -382,6 +382,8 @@ namespace BisterLib
             Bister.IncreaseIndent(ref indentation);
             sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
 
+            DeserializePublicProperties(sb, indentation, instanceName, objType);
+
             if (Bister.IsImplementingIEnumerable(objType))
             {
                 if (Bister.TestGenericType(objType, typeof(IList<>)))
@@ -398,7 +400,7 @@ namespace BisterLib
                 }
                 else if (Bister.TestGenericType(objType, typeof(IEnumerable<>)))
                 {
-                    throw new NotImplementedException("Not supporting IEnumerable<> yet");
+                    DeserializeIEnumerable(sb, indentation, instanceName, objType);
                 }
                 else
                 {
@@ -406,8 +408,21 @@ namespace BisterLib
                 }
             }
 
-            DeserializePublicProperties(sb, indentation, instanceName, objType);
+            
             Bister.DecreaseIndent(ref indentation);
+            sb.AppendLine(indentation + "}");
+        }
+
+        private static void DeserializeIEnumerable(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+
+            Type valType = objType.GenericTypeArguments[0];
+            sb.AppendLine(indentation + $"while (br.ReadBoolean())");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{Bister.GetFriendlyGenericTypeName(valType)} item;");
+            DeserializeAnyType(sb, indentation + "\t", "item", valType);
+            sb.AppendLine(indentation + $"\t{instanceName}.Add(item);");
             sb.AppendLine(indentation + "}");
         }
 

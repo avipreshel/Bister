@@ -18,7 +18,41 @@ namespace BisterLib.UnitTest
         public string SomeField {  get; set; } = string.Empty;
     }
 
+    public class InheritedFromList<T> : List<T> 
+    {
+        public T? SomeProp { get; set; }
+    }
 
+    public class InheritedFromDictionary<K,V> : Dictionary<K, V> where K : notnull
+    {
+        public K? SomeKey { get; set; }
+        public V? SomeVal { get; set; }
+    }
+
+    public class InheritedFromEnumerable<T> : IEnumerable<T>
+    {
+        public T? SomeProp { get; set; }
+
+        private readonly List<T> _items = new List<T>();
+
+        // Method to add items to the collection
+        public void Add(T item)
+        {
+            _items.Add(item);
+        }
+
+        // Implement IEnumerable<T>.GetEnumerator
+        public IEnumerator<T> GetEnumerator()
+        {
+            return _items.GetEnumerator();
+        }
+
+        // Implement non-generic IEnumerable.GetEnumerator
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator(); // Reuse the generic enumerator
+        }
+    }
 
     public class ClassWithObject
     { 
