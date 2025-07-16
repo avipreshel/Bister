@@ -1,6 +1,7 @@
 # Bister
 
-A high performing binary serializer for C#, but unlike other serializers, Bister doesn't require you to add any attributes.
+A high performing binary serializer for C#, but unlike other serializers - Bister is non intrusive! 
+Bister doesn't require you to add any attributes to your type, while not compromising on performance.
 
 * No special attributes required! Bister serializes public properties
 * Comparable or better performance to other serializers
