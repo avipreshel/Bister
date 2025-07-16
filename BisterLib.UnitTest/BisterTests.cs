@@ -14,6 +14,30 @@ namespace BisterLib.UnitTest
             
         }
 
+        // SomeClassWithInterfaceProp
+        
+        [TestMethod]
+        public void Test_SomeClassWithInterfaceProp()
+        {
+            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+            SomeClassWithInterfaceProp instance = new SomeClassWithInterfaceProp()
+            { 
+                SomeProp1 = new SomeClass() { KVPProp = new KeyValuePair<object, Enum>("1", TestEnum.One), SomeProp = "one" },
+                SomeProp2 = new SomeClass() { KVPProp = new KeyValuePair<object, Enum>("2", TestEnum.Two), SomeProp = "2" },
+                SomePropAlwaysNull = null
+            };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_ISomeInterace()
+        {
+            ISomeInterace instance = new SomeClass() { KVPProp = new KeyValuePair<object, Enum>("wow", TestEnum.Three), SomeProp = "hi" };
+
+            ValidateLogic(instance);
+        }
+
         [TestMethod]
         public void Test_InheritedFromEnumerable()
         {

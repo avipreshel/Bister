@@ -61,10 +61,22 @@ namespace BisterLib
                 case Type t when t.IsClass:
                     DeserializeClass(sb, indentation, instanceName, objType);
                     break;
+                case Type t when t.IsInterface:
+                    DeserializeInterface(sb, indentation, instanceName, objType);
+                    break;
                 default:
                     throw new NotImplementedException($"No support for {objType}");
 
             }
+        }
+
+        
+
+        private static void DeserializeInterface(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            
+            sb.AppendLine(indentation + $"{instanceName} = br.ReadBoolean()? null : ({Bister.GetFriendlyGenericTypeName(objType)})Bister.Instance.Deserialize(br,Type.GetType(br.ReadString()));");
         }
 
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

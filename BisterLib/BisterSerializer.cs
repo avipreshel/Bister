@@ -69,9 +69,30 @@ namespace BisterLib
                 case Type t when t.IsClass:
                     SerializeClass(sb, indentation, instanceName, objType);
                     break;
+                case Type t when t.IsInterface:
+                    SerializeInterface(sb, indentation, instanceName, objType);
+                    break;
                 default:
                     throw new Exception($"Cannot serialize {objType}");
             }
+        }
+
+        private static void SerializeInterface(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            // public void Serialize(object instance, Type objType, BinaryWriter bw)
+            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(true);");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(false);");
+            sb.AppendLine(indentation + $"\tbw.Write(StaticHelper.GetFQTypeName({instanceName}.GetType()));");
+            sb.AppendLine(indentation + $"\tBister.Instance.Serialize({instanceName},{instanceName}.GetType(),bw);");
+            sb.AppendLine(indentation + "}");
+            
+            
         }
 
         private static void SerializeKeyValuePair(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)

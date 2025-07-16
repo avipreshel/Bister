@@ -11,7 +11,24 @@ using System.Threading.Tasks;
 namespace BisterLib.UnitTest
 {
 
-    
+    public interface ISomeInterace
+    { 
+        string SomeProp { get; set; }
+    }
+
+    public class SomeClass : ISomeInterace
+    {
+        public string SomeProp { get; set; } = string.Empty;
+
+        public KeyValuePair<object, Enum> KVPProp { get; set; }
+    }
+
+    public class SomeClassWithInterfaceProp
+    {
+        public ISomeInterace? SomeProp1 { get; set; } = null;
+        public ISomeInterace? SomeProp2 { get; set; } = null;
+        public ISomeInterace? SomePropAlwaysNull { get; set; } = null;
+    }
 
     public class SomeInheritedFromGeneric : SomeGenericClass<ClassWithVector>
     { 

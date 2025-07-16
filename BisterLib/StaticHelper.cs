@@ -24,6 +24,16 @@ namespace GeneratedNS
             return fileTime == 0 ? new DateTime(0) : DateTime.FromFileTime(fileTime);
         }
 
+        public static bool PeekBooleanExt(this BinaryReader reader)
+        {
+            if (reader == null) throw new ArgumentNullException(nameof(reader));
+            if (!reader.BaseStream.CanSeek) throw new InvalidOperationException("Stream does not support seeking.");
+            long position = reader.BaseStream.Position;
+            bool value = reader.ReadBoolean();
+            reader.BaseStream.Seek(position, SeekOrigin.Begin);
+            return value;
+        }
+
         public static void Serialize(Exception ex, BinaryWriter bw)
         {
             if (ex == null)
