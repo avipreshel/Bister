@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 
 namespace BisterLib
 {
@@ -115,37 +116,9 @@ namespace BisterLib
             sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
             sb.AppendLine(indentation + "{");
             Bister.IncreaseIndent(ref indentation);
-            if (valType == typeof(Enum))
-            {
-                sb.AppendLine(indentation + $"{instanceName}.Add(StaticHelper.DeserializeSystemEnum(br));");
-            }
-            else if (valType == typeof(object))
-            {
-                sb.AppendLine(indentation + $"{instanceName}.Add(StaticHelper.DeserializeSystemObject(br));");
-            }
-            else if (valType == typeof(string))
-            {
-                sb.AppendLine(indentation + $"{instanceName}.Add(StaticHelper.DeserializeString(br));");
-            }
-            else if (valType.IsEnum)
-            {
-                Type enumPrimitiveType = valType.GetEnumUnderlyingType();
-
-                sb.AppendLine(indentation + $"{instanceName}.Add(({valType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(enumPrimitiveType))});");
-            }
-            else if (valType.IsPrimitive)
-            {
-                sb.AppendLine(indentation + $"{instanceName}.Add(br.{Bister.BinaryReaderMethod(Type.GetTypeCode(valType))});");
-            }
-            else if (valType == typeof(DateTime))
-            {
-                
-                sb.AppendLine(indentation + $"{instanceName}.Add(DateTime.FromBinary(br.ReadInt64()));");
-            }
-            else
-            {
-                throw new NotImplementedException($"No support for deserialization of {Bister.GetFriendlyGenericTypeName(objType)}");
-            }
+            sb.AppendLine(indentation + $"{Bister.GetFriendlyGenericTypeName(valType)} item;");
+            DeserializeAnyType(sb, indentation, "item", valType);
+            sb.AppendLine(indentation + $"{instanceName}.Add(item);");
             Bister.DecreaseIndent(ref indentation);
             sb.AppendLine(indentation + "}");
         }
