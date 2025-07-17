@@ -64,6 +64,13 @@ namespace BisterLib.UnitTest
         public int SomeVal { get; set; }
     }
 
+    public class ClassWithGenericListOfClass
+    {
+        public int SomeVal { get; set; }
+
+        public List<SimpleTestClass> ListOfClass { get; set; } = new();
+    }
+
     public class InheritedFromEnumerableString : IEnumerable<string>
     {
         public int SomeProp { get; set; }

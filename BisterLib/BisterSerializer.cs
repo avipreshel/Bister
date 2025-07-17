@@ -306,7 +306,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + "else");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tReadOnlySpan<byte> byteSpan = MemoryMarshal.AsBytes<{arrayItemType.FullName}>({instanceName});");
+                sb.AppendLine(indentation + $"\tvar byteSpan = MemoryMarshal.AsBytes<{arrayItemType.FullName}>({instanceName});");
                 sb.AppendLine(indentation + $"\tbw.Write((int)byteSpan.Length);");
                 sb.AppendLine(indentation + $"\tbw.Write(byteSpan);");
                 sb.AppendLine(indentation + "}");

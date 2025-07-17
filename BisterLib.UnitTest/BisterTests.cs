@@ -16,6 +16,19 @@ namespace BisterLib.UnitTest
 
         //  
         [TestMethod]
+        public void Test_ClassWithGenericListOfClass()
+        {
+            var instance = new ClassWithGenericListOfClass()
+            {
+                SomeVal = 1,
+                ListOfClass = new List<SimpleTestClass>() { new SimpleTestClass() { SomeString = "one" }, new SimpleTestClass() { SomeString = "2" }, new SimpleTestClass() { SomeString = "Three" } }
+
+            };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
         public void Test_InheritedFromEnumerableString()
         {
             var instance = new InheritedFromEnumerableString() { "1", "2", "3" };
