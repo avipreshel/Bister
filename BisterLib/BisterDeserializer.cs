@@ -1,10 +1,6 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Reflection;
-using System.Text;
 
 namespace BisterLib
 {
@@ -185,10 +181,11 @@ namespace BisterLib
                 TypeCode arrayItemTypeCode = Type.GetTypeCode(arrayItemType);
                 sb.AppendLine(indentation + $"if (br.ReadBoolean() == false)");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + "\tint length = br.ReadInt32();");
-                sb.AppendLine(indentation + "\tbyte[] blob = br.ReadBytes(length);");
+                sb.AppendLine(indentation + "\tbyte[] blob = br.ReadBytes(br.ReadInt32());");
                 sb.AppendLine(indentation + $"\t{instanceName} = MemoryMarshal.Cast<byte, {arrayItemType.FullName}>(blob).ToArray();");
                 sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + $"else {instanceName}=null;");
+
             }
             else if (arrayItemType == typeof(Enum))
             {
@@ -238,7 +235,18 @@ namespace BisterLib
             }
             else
             {
-                throw new NotImplementedException($"No support for deserializing {arrayItemType.FullName}[]");
+                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = null;");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
+                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = br.ReadBoolean()? null : ({Bister.GetFriendlyGenericTypeName(arrayItemType)})Bister.Instance.Deserialize(br,Type.GetType(br.ReadString()));");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
             }
         }
 

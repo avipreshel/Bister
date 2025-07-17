@@ -1,15 +1,6 @@
-﻿using GeneratedNS;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
-using System.Data;
-using System.IO;
-using System.Linq;
-using System.Reflection;
-using System.Runtime.InteropServices;
-using System.Security.Authentication;
-using System.Text;
 
 namespace BisterLib
 {
@@ -355,7 +346,28 @@ namespace BisterLib
             }
             else
             {
-                throw new NotImplementedException($"Failed to serialize array of {arrayItemType}");
+                sb.AppendLine(indentation + $"if ({instanceName} == null)");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(true);");
+                sb.AppendLine(indentation + "}");
+                sb.AppendLine(indentation + "else");
+                sb.AppendLine(indentation + "{");
+                sb.AppendLine(indentation + $"\tbw.Write(false);");
+                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
+                sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
+                sb.AppendLine(indentation + "\t{");
+                sb.AppendLine(indentation + $"\t\tif({instanceName}[i] == null)");
+                sb.AppendLine(indentation + "\t\t{");
+                sb.AppendLine(indentation + "\t\t\tbw.Write(true);");
+                sb.AppendLine(indentation + "\t\t}");
+                sb.AppendLine(indentation + "\t\telse");
+                sb.AppendLine(indentation + "\t\t{");
+                sb.AppendLine(indentation + "\t\t\tbw.Write(false);");
+                sb.AppendLine(indentation + $"\t\t\tbw.Write(StaticHelper.GetFQTypeName({instanceName}[i].GetType()));");
+                sb.AppendLine(indentation + $"\t\t\tBister.Instance.Serialize({instanceName}[i],{instanceName}[i].GetType(),bw);");
+                sb.AppendLine(indentation + "\t\t}");
+                sb.AppendLine(indentation + "\t}");
+                sb.AppendLine(indentation + "}");
             }
         }
     }

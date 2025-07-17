@@ -10,6 +10,14 @@ using System.Threading.Tasks;
 
 namespace BisterLib.UnitTest
 {
+    public interface ISimpleTestClass
+    {
+    }
+
+    public class SimpleTestClass : ISimpleTestClass
+    {
+        public string SomeString { get; set; } = string.Empty;
+    }
 
     public interface ISomeInterace
     { 

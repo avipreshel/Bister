@@ -3,26 +3,14 @@ using Microsoft.CodeAnalysis.Emit;
 using Microsoft.CodeAnalysis;
 using System;
 using System.Collections.Generic;
-using System.IO.Pipes;
 using System.Linq;
 using System.Reflection;
 using System.Text;
-using System.Threading.Tasks;
-using System.Data;
-using Microsoft.VisualBasic;
 using System.IO;
 using System.Collections.ObjectModel;
-using System.Xml.Linq;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections;
 using System.Runtime.InteropServices;
-using System.Numerics;
 using System.Diagnostics;
-using System.Drawing;
-using System.Globalization;
-using System.ComponentModel.Design;
-using static System.Runtime.CompilerServices.RuntimeHelpers;
-using GeneratedNS;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
@@ -197,7 +185,7 @@ namespace BisterLib
             string friendlyTypeName = GetFriendlyGenericTypeName(objType);
             sb.Replace("___TYPE_NAME___", friendlyTypeName);
 
-            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_')}";
+            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_').Replace("[]", "_1DARR_")}";
 
             sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
 
@@ -544,11 +532,14 @@ namespace BisterLib
             // If the user is trying to generate serializer for generic type, no need to have any "using"
             if (objType.Namespace.StartsWith("System"))
             {
-                sb.Replace("<<<USINGS>>>", string.Empty);
+                StringBuilder sbUsings = new StringBuilder();
+                sbUsings.AppendLine($"using {typeof(IBisterGenerated).Namespace};");
+                sb.Replace("<<<USINGS>>>", sbUsings.ToString());
             }
             else
             {
                 StringBuilder sbUsings = new StringBuilder();
+                sbUsings.AppendLine($"using {typeof(IBisterGenerated).Namespace};");
                 sbUsings.AppendLine($"using {objType.Namespace};");
                 foreach (var ns in subDependencies.Select(t => t.Namespace).Distinct())
                 {

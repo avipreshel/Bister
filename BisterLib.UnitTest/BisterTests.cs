@@ -14,12 +14,39 @@ namespace BisterLib.UnitTest
             
         }
 
-        // SomeClassWithInterfaceProp
-        
+        [TestMethod]
+        public void Test_Array1D()
+        {
+            var instanceInt = new int[] {1, 2, 3};
+
+            ValidateLogic(instanceInt);
+
+            //Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+            var instanceEnum = new Enum[] { TestEnum.One , TestEnum2.Five, TestEnum2.Six };
+
+            ValidateLogic(instanceEnum);
+
+            var instanceObject = new object[] { "one",TestEnum.Two,3,4f,5.0, TestEnum2.Six  };
+
+            ValidateLogic(instanceObject);
+
+            var instanceDateTime = new DateTime[] { DateTime.Now, DateTime.UtcNow, DateTime.MinValue, DateTime.MaxValue };
+
+            ValidateLogic(instanceDateTime);
+
+            var instanceClass = new SimpleTestClass[2] { new SimpleTestClass() { SomeString = "1" }, new SimpleTestClass() { SomeString = "2" } };
+
+            ValidateLogic(instanceDateTime);
+
+            var instanceInterface = new ISimpleTestClass[2] { new SimpleTestClass() { SomeString = "1" }, new SimpleTestClass() { SomeString = "2" } };
+
+            ValidateLogic(instanceInterface);
+        }
+
         [TestMethod]
         public void Test_SomeClassWithInterfaceProp()
         {
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
+            
             SomeClassWithInterfaceProp instance = new SomeClassWithInterfaceProp()
             { 
                 SomeProp1 = new SomeClass() { KVPProp = new KeyValuePair<object, Enum>("1", TestEnum.One), SomeProp = "one" },
