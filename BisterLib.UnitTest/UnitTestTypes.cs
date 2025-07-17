@@ -54,6 +54,11 @@ namespace BisterLib.UnitTest
         public V? SomeVal { get; set; }
     }
 
+    public class InheritedFromDictionaryStringToInt : Dictionary<string,int>
+    {
+        public string SomeVal { get; set; } = string.Empty;
+    }
+
     public class InheritedFromEnumerable<T> : IEnumerable<T>
     {
         public T? SomeProp { get; set; }

@@ -46,7 +46,7 @@ namespace BisterLib
                     SerializeGuid(sb, indentation, instanceName);
                     break;
                 case Type t when t.IsGenericType && t.GetGenericTypeDefinition() == typeof(KeyValuePair<,>):
-                    SerializeKeyValuePair(sb, indentation, instanceName, objType);
+                    SerializeKeyValuePair(sb, indentation, instanceName, objType.GenericTypeArguments[0], objType.GenericTypeArguments[1]);
                     break;
                 case Type t when t.IsArray:
                     SerializeSystemArray(sb, indentation, instanceName, objType);
@@ -86,12 +86,10 @@ namespace BisterLib
             
         }
 
-        private static void SerializeKeyValuePair(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        private static void SerializeKeyValuePair(StringBuilderVerbose sb, string indentation, string instanceName, Type keyType, Type valType)
         {
-            Bister.PrintMethodName(sb, indentation, objType);
-
-            Type keyType = objType.GenericTypeArguments[0];
-            Type valType = objType.GenericTypeArguments[1];
+            Bister.PrintMethodName(sb, indentation, keyType);
+            Bister.PrintMethodName(sb, indentation, valType);
 
             SerializeAnyType(sb, indentation, $"{instanceName}.Key", keyType);
             SerializeAnyType(sb, indentation, $"{instanceName}.Value", valType);
@@ -101,10 +99,14 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
+            var genericType = Bister.GetGenericAncestor(objType, typeof(Dictionary<,>));
+            Type keyType = genericType.GenericTypeArguments[0];
+            Type valType = genericType.GenericTypeArguments[1];
+
             sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");
-            SerializeKeyValuePair(sb, indentation + "\t", "item", objType);
+            SerializeKeyValuePair(sb, indentation + "\t", "item", keyType,valType);
             sb.AppendLine(indentation + "}");
         }
 

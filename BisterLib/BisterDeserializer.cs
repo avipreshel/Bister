@@ -80,8 +80,10 @@ namespace BisterLib
             Bister.PrintMethodName(sb, indentation, objType);
             string niceTypeName = Bister.GetFriendlyGenericTypeName(objType);
             string usefulVariableName = Bister.GetUsefulName(instanceName);
-            Type keyType = objType.GenericTypeArguments[0];
-            Type valType = objType.GenericTypeArguments[1];
+
+            Type genericType = Bister.GetGenericAncestor(objType,typeof(Dictionary<,>));
+            Type keyType = genericType.GenericTypeArguments[0];
+            Type valType = genericType.GenericTypeArguments[1];
 
             string niceKeyTypeName = Bister.GetFriendlyGenericTypeName(keyType);
             string niceValueTypeName = Bister.GetFriendlyGenericTypeName(valType);

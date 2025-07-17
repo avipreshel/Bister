@@ -15,6 +15,15 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_InheritedFromDictionaryStringToInt()
+        {
+            var instance = new InheritedFromDictionaryStringToInt() { {"one",1 }, {"2",2 },{ "3", 3 } };
+            instance.SomeVal = "four";
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
         public void Test_Array1D()
         {
             var instanceInt = new int[] {1, 2, 3};

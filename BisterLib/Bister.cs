@@ -13,6 +13,7 @@ using System.Runtime.InteropServices;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BisterLib
 {
@@ -105,6 +106,20 @@ namespace BisterLib
         public static bool TestGenericType(Type objType,Type genericType)
         {
             return genericType.IsAssignableFrom(objType) || objType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericType);
+        }
+
+        public static Type GetGenericAncestor(Type objType, Type genericTypeLookup)
+        {
+            Type currType = objType;
+            while (!(currType.IsGenericType && currType.GetGenericTypeDefinition() == genericTypeLookup))
+            {
+                currType = currType.BaseType;
+                if (currType == null)
+                {
+                    throw new Exception($"{objType} does not inherit or implement {genericTypeLookup}");
+                }
+            }
+            return currType;
         }
 
         public static void IncreaseIndent(ref string indent)
@@ -333,8 +348,6 @@ namespace BisterLib
             }
             else if (typeof(IDictionary).IsAssignableFrom(objType))
             {
-                Type keyType = objType.GenericTypeArguments[0];
-                Type valType = objType.GenericTypeArguments[1];
                 sbSizeOfObject.Append($"+instance.Count * 32");
             }
             else
