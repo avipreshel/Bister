@@ -59,6 +59,36 @@ namespace BisterLib.UnitTest
         public string SomeVal { get; set; } = string.Empty;
     }
 
+    public class InheritedFromListOfString : List<string>
+    {
+        public int SomeVal { get; set; }
+    }
+
+    public class InheritedFromEnumerableString : IEnumerable<string>
+    {
+        public int SomeProp { get; set; }
+
+        private readonly List<string> _items = new List<string>();
+
+        // Method to add items to the collection
+        public void Add(string item)
+        {
+            _items.Add(item);
+        }
+
+        // Implement IEnumerable<T>.GetEnumerator
+        public IEnumerator<string> GetEnumerator()
+        {
+            return _items.GetEnumerator();
+        }
+
+        // Implement non-generic IEnumerable.GetEnumerator
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator(); // Reuse the generic enumerator
+        }
+    }
+
     public class InheritedFromEnumerable<T> : IEnumerable<T>
     {
         public T? SomeProp { get; set; }

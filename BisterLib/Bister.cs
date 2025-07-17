@@ -111,15 +111,36 @@ namespace BisterLib
         public static Type GetGenericAncestor(Type objType, Type genericTypeLookup)
         {
             Type currType = objType;
-            while (!(currType.IsGenericType && currType.GetGenericTypeDefinition() == genericTypeLookup))
+            do
             {
+                if (currType.IsGenericType && currType.GetGenericTypeDefinition() == genericTypeLookup)
+                    break;
+
+                //Type iPotential = currType.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == genericTypeLookup);
+                //if (iPotential != null)
+                //{
+                //    currType = iPotential;
+                //    break;
+                //}
+
                 currType = currType.BaseType;
-                if (currType == null)
-                {
-                    throw new Exception($"{objType} does not inherit or implement {genericTypeLookup}");
-                }
+                
+            } while (currType != null);
+            if (currType == null)
+            {
+                throw new Exception($"{objType} does not inherit or implement {genericTypeLookup}");
             }
             return currType;
+        }
+
+        public static Type GetGenericInterface(Type objType, Type genericInterface)
+        {
+            var iType = objType.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == genericInterface);
+            if (iType == null)
+            {
+                throw new Exception($"{objType} does not inherit or implement {genericInterface}");
+            }
+            return iType;
         }
 
         public static void IncreaseIndent(ref string indent)

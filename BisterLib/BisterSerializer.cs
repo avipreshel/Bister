@@ -117,7 +117,8 @@ namespace BisterLib
             sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");
-            Type valType = objType.GenericTypeArguments[0];
+            var genericType = Bister.GetGenericAncestor(objType,typeof(List<>));
+            Type valType = genericType.GenericTypeArguments[0];
             SerializeAnyType(sb,indentation + "\t","item",valType);
             sb.AppendLine(indentation + "}");
         }
@@ -167,7 +168,8 @@ namespace BisterLib
         private static void SerializeIEnumerable(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            Type valType = objType.GenericTypeArguments[0];
+            var genericType = Bister.GetGenericInterface(objType, typeof(IEnumerable<>));
+            Type valType = genericType.GenericTypeArguments[0];
             
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");

@@ -109,8 +109,8 @@ namespace BisterLib
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-
-            Type valType = objType.GenericTypeArguments[0];
+            var genericType = Bister.GetGenericAncestor(objType, typeof(List<>));
+            Type valType = genericType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"{instanceName}.Capacity = br.ReadInt32();");
             sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
             sb.AppendLine(indentation + "{");
@@ -438,8 +438,8 @@ namespace BisterLib
         private static void DeserializeIEnumerable(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-
-            Type valType = objType.GenericTypeArguments[0];
+            Type genericType = Bister.GetGenericInterface(objType, typeof(IEnumerable<>));
+            Type valType = genericType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"while (br.ReadBoolean())");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{Bister.GetFriendlyGenericTypeName(valType)} item;");

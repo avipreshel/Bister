@@ -14,6 +14,25 @@ namespace BisterLib.UnitTest
             
         }
 
+        //  
+        [TestMethod]
+        public void Test_InheritedFromEnumerableString()
+        {
+            var instance = new InheritedFromEnumerableString() { "1", "2", "3" };
+            instance.SomeProp = 4;
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_InheritedFromListOfString()
+        {
+            var instance = new InheritedFromListOfString() { "1","2","3" };
+            instance.SomeVal = 4;
+
+            ValidateLogic(instance);
+        }
+
         [TestMethod]
         public void Test_InheritedFromDictionaryStringToInt()
         {
