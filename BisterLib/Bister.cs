@@ -128,7 +128,7 @@ namespace BisterLib
 
         public static Type GetGenericInterface(Type objType, Type genericInterface)
         {
-            var iType = objType.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == genericInterface);
+            var iType = objType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericInterface);
             if (iType == null)
             {
                 throw new Exception($"{objType} does not inherit or implement {genericInterface}");

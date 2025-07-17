@@ -149,7 +149,7 @@ namespace BisterLib
                 }
                 else if (Bister.TestGenericType(objType, typeof(ISet<>)))
                 {
-                    throw new NotImplementedException("Not supporting ISet<> yet");
+                    SerializeGenericHashSet(instanceName, indentation, sb, objType);
                 }
                 else if (Bister.TestGenericType(objType, typeof(IEnumerable<>)))
                 {
@@ -163,6 +163,19 @@ namespace BisterLib
 
             Bister.DecreaseIndent(ref indentation);
             SerializeNullCheckEnd(sb, indentation);
+        }
+
+        private static void SerializeGenericHashSet(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            var genericType = Bister.GetGenericInterface(objType, typeof(ISet<>));
+            Type valType = genericType.GenericTypeArguments[0];
+            sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(true);"); // true will mark that we have an item to read
+            SerializeAnyType(sb, indentation + "\t", "item", valType);
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "bw.Write(false);"); // false will mark that we don't have anymore to read
         }
 
         private static void SerializeIEnumerable(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)

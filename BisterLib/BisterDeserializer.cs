@@ -391,7 +391,7 @@ namespace BisterLib
                 }
                 else if (Bister.TestGenericType(objType, typeof(ISet<>)))
                 {
-                    throw new NotImplementedException("Not supporting ISet<> yet");
+                    DeserializeGenericHashSet(sb, indentation, instanceName, objType);
                 }
                 else if (Bister.TestGenericType(objType, typeof(IEnumerable<>)))
                 {
@@ -404,6 +404,22 @@ namespace BisterLib
             }
 
             
+            Bister.DecreaseIndent(ref indentation);
+            sb.AppendLine(indentation + "}");
+        }
+
+        private static void DeserializeGenericHashSet(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+
+            var genericType = Bister.GetGenericInterface(objType, typeof(ISet<>));
+            Type valType = genericType.GenericTypeArguments[0];
+            sb.AppendLine(indentation + $"while (br.ReadBoolean())");
+            sb.AppendLine(indentation + "{");
+            Bister.IncreaseIndent(ref indentation);
+            sb.AppendLine(indentation + $"{Bister.GetFriendlyGenericTypeName(valType)} item;");
+            DeserializeAnyType(sb, indentation, "item", valType);
+            sb.AppendLine(indentation + $"{instanceName}.Add(item);");
             Bister.DecreaseIndent(ref indentation);
             sb.AppendLine(indentation + "}");
         }

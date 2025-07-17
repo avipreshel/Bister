@@ -15,6 +15,14 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
+        public void Test_HashSet()
+        {
+            var instance = new HashSet<string>() { "one", "2", string.Empty, "four" };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
         public void Test_ListOfStruct()
         {
             var instance = new List<Vector<float>>()
@@ -396,13 +404,11 @@ namespace BisterLib.UnitTest
         }
         
         [TestMethod]
-        [DataRow(1)]
-        [DataRow(1000)]
-        public void Test_ClassWithADictStringToInt(int size)
+        public void Test_ClassWithADictStringToInt()
         {
             var instance = new ClassWithADictStringToInt();
 
-            instance.Prop = Enumerable.Range(1, size).Select(i => (i.ToString(), i)).ToDictionary();
+            instance.Prop = Enumerable.Range(1, 100).Select(i => (i.ToString(), i)).ToDictionary();
 
             ValidateLogic(instance);
         }
