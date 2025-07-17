@@ -116,13 +116,6 @@ namespace BisterLib
                 if (currType.IsGenericType && currType.GetGenericTypeDefinition() == genericTypeLookup)
                     break;
 
-                //Type iPotential = currType.GetInterfaces().FirstOrDefault(i => i.GetGenericTypeDefinition() == genericTypeLookup);
-                //if (iPotential != null)
-                //{
-                //    currType = iPotential;
-                //    break;
-                //}
-
                 currType = currType.BaseType;
                 
             } while (currType != null);
@@ -563,28 +556,20 @@ namespace BisterLib
             
             domainDependencies.AddRange(subDependencies);
 
-            // If the user is trying to generate serializer for generic type, no need to have any "using"
-            if (objType.Namespace.StartsWith("System"))
+           
+            StringBuilder sbUsings = new StringBuilder();
+            sbUsings.AppendLine($"using {typeof(IBisterGenerated).Namespace};");
+            sbUsings.AppendLine($"using {objType.Namespace};");
+            foreach (var ns in subDependencies.Select(t => t.Namespace).Distinct())
             {
-                StringBuilder sbUsings = new StringBuilder();
-                sbUsings.AppendLine($"using {typeof(IBisterGenerated).Namespace};");
-                sb.Replace("<<<USINGS>>>", sbUsings.ToString());
-            }
-            else
-            {
-                StringBuilder sbUsings = new StringBuilder();
-                sbUsings.AppendLine($"using {typeof(IBisterGenerated).Namespace};");
-                sbUsings.AppendLine($"using {objType.Namespace};");
-                foreach (var ns in subDependencies.Select(t => t.Namespace).Distinct())
+                if (ns != objType.Namespace && !ns.StartsWith("System"))
                 {
-                    if (ns != objType.Namespace)
-                    {
-                        sbUsings.AppendLine($"using {ns};");
-                    }
-                    
+                    sbUsings.AppendLine($"using {ns};");
                 }
-                sb.Replace("<<<USINGS>>>", sbUsings.ToString());
+                    
             }
+            sb.Replace("<<<USINGS>>>", sbUsings.ToString());
+            
 
             if (IsDebug)
             {

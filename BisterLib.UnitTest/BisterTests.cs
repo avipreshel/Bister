@@ -14,7 +14,19 @@ namespace BisterLib.UnitTest
             
         }
 
-        //  
+        [TestMethod]
+        public void Test_ListOfStruct()
+        {
+            var instance = new List<Vector<float>>()
+            {
+                new Vector<float>(){ X = 1, Y = 1},
+                new Vector<float>(){ X = 2, Y = 2},
+                new Vector<float>(){ X = 3, Y = 3}
+            };
+
+            ValidateLogic(instance);
+        }
+
         [TestMethod]
         public void Test_ClassWithGenericListOfClass()
         {
