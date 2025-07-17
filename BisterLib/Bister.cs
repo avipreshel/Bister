@@ -281,7 +281,7 @@ namespace BisterLib
                 case TypeCode.String:
                     return $"bw.Write((string){instanceName})";
                 case TypeCode.DateTime:
-                    return $"bw.Write({instanceName}.Ticks == 0 ? 0 : (long){instanceName}.ToFileTime())";
+                    return $"bw.Write({instanceName}.ToBinary())";
                 default:
                     throw new NotImplementedException();
             }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace BisterLib
 {
@@ -321,7 +322,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write(false);");
                 sb.AppendLine(indentation + $"\tvar byteSpan = MemoryMarshal.AsBytes<{arrayItemType.FullName}>({instanceName});");
                 sb.AppendLine(indentation + $"\tbw.Write((int)byteSpan.Length);");
-                sb.AppendLine(indentation + $"\tbw.Write(byteSpan);");
+                sb.AppendLine(indentation + $"\tbw.Write(byteSpan.ToArray());");
                 sb.AppendLine(indentation + "}");
             }
             else if (arrayItemType == typeof(Enum) || arrayItemType == typeof(object) || arrayItemType == typeof(DateTime) || arrayItemType == typeof(TimeSpan))
