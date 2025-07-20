@@ -562,7 +562,7 @@ namespace BisterLib
             sbUsings.AppendLine($"using {objType.Namespace};");
             foreach (var ns in subDependencies.Select(t => t.Namespace).Distinct())
             {
-                if (ns != objType.Namespace && !ns.StartsWith("System"))
+                if (ns!= null && ns != objType.Namespace && !ns.StartsWith("System"))
                 {
                     sbUsings.AppendLine($"using {ns};");
                 }

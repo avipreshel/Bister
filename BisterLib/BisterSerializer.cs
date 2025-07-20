@@ -100,7 +100,7 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
-            var genericType = Bister.GetGenericAncestor(objType, typeof(Dictionary<,>));
+            var genericType = Bister.GetGenericInterface(objType, typeof(IDictionary<,>));
             Type keyType = genericType.GenericTypeArguments[0];
             Type valType = genericType.GenericTypeArguments[1];
 
@@ -118,7 +118,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");
-            var genericType = Bister.GetGenericAncestor(objType,typeof(List<>));
+            var genericType = Bister.GetGenericInterface(objType,typeof(IList<>));
             Type valType = genericType.GenericTypeArguments[0];
             SerializeAnyType(sb,indentation + "\t","item",valType);
             sb.AppendLine(indentation + "}");

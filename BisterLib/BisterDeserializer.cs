@@ -82,7 +82,7 @@ namespace BisterLib
             string niceTypeName = Bister.GetFriendlyGenericTypeName(objType);
             string usefulVariableName = Bister.GetUsefulName(instanceName);
 
-            Type genericType = Bister.GetGenericAncestor(objType,typeof(Dictionary<,>));
+            Type genericType = Bister.GetGenericInterface(objType,typeof(IDictionary<,>));
             Type keyType = genericType.GenericTypeArguments[0];
             Type valType = genericType.GenericTypeArguments[1];
 
@@ -110,7 +110,7 @@ namespace BisterLib
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            var genericType = Bister.GetGenericAncestor(objType, typeof(List<>));
+            var genericType = Bister.GetGenericInterface(objType, typeof(IList<>));
             Type valType = genericType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"{instanceName}.Capacity = br.ReadInt32();");
             sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
