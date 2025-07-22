@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace BisterLib
@@ -22,7 +23,7 @@ namespace BisterLib
                 case Type t when t.IsEnum:
                     SerializeEnum(sb, indentation, instanceName, objType);
                     break;
-                case Type t when Bister.IsPrimitive(t):
+                case Type t when BisterHelpers.IsPrimitive(t):
                     SerializePrimitive(sb, indentation, instanceName, objType);
                     break;
                 case Type t when t == typeof(ArrayList):
@@ -58,6 +59,9 @@ namespace BisterLib
                 case Type t when typeof(Exception).IsAssignableFrom(t):
                     SerializeException(sb, indentation, instanceName, objType);
                     break;
+                case Type t when t.FullName == "System.Drawing.Bitmap":
+                    SerializeSystemDrawingBitmap(sb, indentation, instanceName, objType);
+                    break;
                 case Type t when t.IsClass:
                     SerializeClass(sb, indentation, instanceName, objType);
                     break;
@@ -67,6 +71,30 @@ namespace BisterLib
                 default:
                     throw new Exception($"Cannot serialize {objType}");
             }
+        }
+
+        private static void SerializeSystemDrawingBitmap(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+
+            string usefulName = BisterHelpers.GetUsefulName(instanceName);
+
+            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(true);");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tbw.Write(false);");
+            sb.AppendLine(indentation + $"\tusing (MemoryStream memoryStream = new MemoryStream())");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + $"\t\t{instanceName}.Save(memoryStream, ImageFormat.Tiff);");
+            sb.AppendLine(indentation + $"\t\tvar {usefulName}_blob = memoryStream.ToArray();");
+            sb.AppendLine(indentation + $"\t\tbw.Write({usefulName}_blob.Length);");
+            sb.AppendLine(indentation + $"\t\tbw.Write({usefulName}_blob);");
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "}");
+
         }
 
         private static void SerializeInterface(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
@@ -100,7 +128,7 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
-            var genericType = Bister.GetGenericInterface(objType, typeof(IDictionary<,>));
+            var genericType = BisterHelpers.GetGenericInterface(objType, typeof(IDictionary<,>));
             Type keyType = genericType.GenericTypeArguments[0];
             Type valType = genericType.GenericTypeArguments[1];
 
@@ -118,7 +146,7 @@ namespace BisterLib
             sb.AppendLine(indentation + $"bw.Write((int){instanceName}.Count);");
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");
-            var genericType = Bister.GetGenericInterface(objType,typeof(IList<>));
+            var genericType = BisterHelpers.GetGenericInterface(objType,typeof(IList<>));
             Type valType = genericType.GenericTypeArguments[0];
             SerializeAnyType(sb,indentation + "\t","item",valType);
             sb.AppendLine(indentation + "}");
@@ -136,21 +164,21 @@ namespace BisterLib
             SerializeNullCheckStart(sb, indentation, instanceName, objType);
             Bister.IncreaseIndent(ref indentation);
 
-            if (Bister.IsImplementingIEnumerable(objType))
+            if (BisterHelpers.IsImplementingIEnumerable(objType))
             {
-                if (Bister.TestGenericType(objType, typeof(IList<>)))
+                if (BisterHelpers.TestGenericType(objType, typeof(IList<>)))
                 {
                     SerializeGenericList(instanceName,indentation,sb, objType);
                 }
-                else if (Bister.TestGenericType(objType, typeof(IDictionary<,>)))
+                else if (BisterHelpers.TestGenericType(objType, typeof(IDictionary<,>)))
                 {
                     SerializeGenericDictionary(instanceName,indentation,sb,objType);
                 }
-                else if (Bister.TestGenericType(objType, typeof(ISet<>)))
+                else if (BisterHelpers.TestGenericType(objType, typeof(ISet<>)))
                 {
                     SerializeGenericHashSet(instanceName, indentation, sb, objType);
                 }
-                else if (Bister.TestGenericType(objType, typeof(IEnumerable<>)))
+                else if (BisterHelpers.TestGenericType(objType, typeof(IEnumerable<>)))
                 {
                     SerializeIEnumerable(instanceName, indentation, sb, objType);
                 }
@@ -169,7 +197,7 @@ namespace BisterLib
         private static void SerializeGenericHashSet(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            var genericType = Bister.GetGenericInterface(objType, typeof(ISet<>));
+            var genericType = BisterHelpers.GetGenericInterface(objType, typeof(ISet<>));
             Type valType = genericType.GenericTypeArguments[0];
             sb.AppendLine(indentation + $"bw.Write({instanceName}.Count);");
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
@@ -181,7 +209,7 @@ namespace BisterLib
         private static void SerializeIEnumerable(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            var genericType = Bister.GetGenericInterface(objType, typeof(IEnumerable<>));
+            var genericType = BisterHelpers.GetGenericInterface(objType, typeof(IEnumerable<>));
             Type valType = genericType.GenericTypeArguments[0];
             
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
@@ -200,7 +228,7 @@ namespace BisterLib
 
         private static void SerializePublicProperties(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
-            var props = Bister.GetRelevantProperties(objType);
+            var props = BisterHelpers.GetRelevantProperties(objType);
             foreach (var prop in props)
             {
                 sb.AppendLine(indentation + $"// For each property...");
@@ -310,7 +338,7 @@ namespace BisterLib
             {
                 sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
-            else if (Bister.IsPrimitive(arrayItemType))
+            else if (BisterHelpers.IsPrimitive(arrayItemType))
             {
                 sb.AppendLine(indentation + $"if ({instanceName} == null)");
                 sb.AppendLine(indentation + "{");
@@ -357,7 +385,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
                 sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
                 sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\tBister.Instance.Serialize({instanceName}[i],typeof({Bister.GetFriendlyGenericTypeName(arrayItemType)}),bw);");
+                sb.AppendLine(indentation + $"\t\tBister.Instance.Serialize({instanceName}[i],typeof({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}),bw);");
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }

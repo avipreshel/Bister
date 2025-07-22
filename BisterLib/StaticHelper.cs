@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.CompilerServices;
 
 namespace GeneratedNS
 {
@@ -452,7 +453,8 @@ namespace GeneratedNS
             }
         }
 
-        public static void Serialize(string item, BinaryWriter bw)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void Serialize(in string item, BinaryWriter bw)
         {
             if (item == null)
             {
@@ -465,6 +467,7 @@ namespace GeneratedNS
             }
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static string DeserializeString(BinaryReader br)
         {
             if (br.ReadBoolean() == true)

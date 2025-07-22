@@ -27,10 +27,9 @@ namespace BisterLib
         public static readonly string NullStr = "_NUL_";
     }
 
+
     public class Bister : IBister
     {
-
-
         static Lazy<IBister> _lazy = new Lazy<IBister>(() => new Bister());
         public static IBister Instance => _lazy.Value;
 
@@ -103,39 +102,6 @@ namespace BisterLib
 
         #endregion
 
-        public static bool TestGenericType(Type objType,Type genericType)
-        {
-            return genericType.IsAssignableFrom(objType) || objType.GetInterfaces().Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericType);
-        }
-
-        public static Type GetGenericAncestor(Type objType, Type genericTypeLookup)
-        {
-            Type currType = objType;
-            do
-            {
-                if (currType.IsGenericType && currType.GetGenericTypeDefinition() == genericTypeLookup)
-                    break;
-
-                currType = currType.BaseType;
-                
-            } while (currType != null);
-            if (currType == null)
-            {
-                throw new Exception($"{objType} does not inherit or implement {genericTypeLookup}");
-            }
-            return currType;
-        }
-
-        public static Type GetGenericInterface(Type objType, Type genericInterface)
-        {
-            var iType = objType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericInterface);
-            if (iType == null)
-            {
-                throw new Exception($"{objType} does not inherit or implement {genericInterface}");
-            }
-            return iType;
-        }
-
         public static void IncreaseIndent(ref string indent)
         {
             indent = indent + "\t";
@@ -146,10 +112,7 @@ namespace BisterLib
             indent = indent.Substring(0,indent.Length-1);
         }
 
-        public static bool IsTopLevelInstanceDecleration(string instanceName)
-        {
-            return !instanceName.Contains(".") && !instanceName.Contains("[");
-        }
+        
 
         string ReadTemplateFromResource()
         {
@@ -173,32 +136,8 @@ namespace BisterLib
             }
             else
             {
-                sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}({Bister.GetFriendlyGenericTypeName(objType)})");
+                sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}({BisterHelpers.GetFriendlyGenericTypeName(objType)})");
             }
-        }
-
-        public static string GetFriendlyGenericTypeName(Type type)
-        {
-            if (!type.IsGenericType)
-            {
-                return type.FullName;
-            }
-
-            string typeName = type.Name;
-            int backtickIndex = typeName.IndexOf('`');
-            if (backtickIndex > 0)
-            {
-                typeName = typeName.Remove(backtickIndex);
-            }
-
-            Type[] genericArguments = type.GetGenericArguments();
-            string[] genericArgumentNames = new string[genericArguments.Length];
-            for (int i = 0; i < genericArguments.Length; i++)
-            {
-                genericArgumentNames[i] = GetFriendlyGenericTypeName(genericArguments[i]);
-            }
-
-            return $"{typeName}<{string.Join(", ", genericArgumentNames)}>";
         }
 
         IBisterGenerated GenerateSerializationEngine(Type objType)
@@ -211,7 +150,7 @@ namespace BisterLib
             var sb = new StringBuilderVerbose(true);
             sb.Append(ReadTemplateFromResource());
 
-            string friendlyTypeName = GetFriendlyGenericTypeName(objType);
+            string friendlyTypeName = BisterHelpers.GetFriendlyGenericTypeName(objType);
             sb.Replace("___TYPE_NAME___", friendlyTypeName);
 
             string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_').Replace("[]", "_1DARR_")}";
@@ -226,7 +165,7 @@ namespace BisterLib
 
            
 
-            Type genType = GenerateType(sb, serializerTypeName, new List<Type>() { objType, typeof(IBisterGenerated) });
+            Type genType = GenerateSerializerForType(sb, serializerTypeName, objType);
 
             var serializer = (IBisterGenerated)Activator.CreateInstance(genType);
             _typeToSerializer[objType] = serializer;
@@ -239,7 +178,7 @@ namespace BisterLib
             
             string indentation = "\t\t\t";
 
-            sbDeserializer.AppendLine(indentation + $"{Bister.GetFriendlyGenericTypeName(objType)} instance;");
+            sbDeserializer.AppendLine(indentation + $"{BisterHelpers.GetFriendlyGenericTypeName(objType)} instance;");
 
             BisterDeserializer.DeserializeAnyType(sbDeserializer, indentation, "instance", objType);
 
@@ -287,12 +226,6 @@ namespace BisterLib
             }
         }
 
-        public static string GetUsefulName(string instanceName)
-        {
-            return instanceName.Replace(".", "");
-        } 
-
-     
         public static string BinaryReaderMethod(TypeCode typeCode)
         {
             switch (typeCode)
@@ -366,7 +299,7 @@ namespace BisterLib
             }
             else
             {
-                IEnumerable<PropertyInfo> props = GetRelevantProperties(objType);
+                IEnumerable<PropertyInfo> props = BisterHelpers.GetRelevantProperties(objType);
 
                 foreach (var prop in props)
                 {
@@ -429,251 +362,72 @@ namespace BisterLib
             sb.Replace("___BINARY_WRITER_BUFFER_SIZE___", $"(int)Math.Ceiling(1.5f * ({sbSizeOfObject.ToString()}))");
         }
 
-        
-
-        /// <summary>
-        /// Returns list of properties which have a public getter and setter
-        /// </summary>
-        /// <param name="objType"></param>
-        /// <returns></returns>
-        public static IEnumerable<PropertyInfo> GetRelevantProperties(Type objType)
+        private Type GenerateSerializerForType(StringBuilderVerbose sb, string expectedTypeName, Type objType)
         {
-            foreach (var prop in objType.GetProperties())
-            {
-                if (!prop.CanRead || !prop.CanWrite)
-                    continue;
+            var allAsm = new HashSet<Assembly>(AssemblyEqualityComparer.Instance);
+            BisterHelpers.GetAllReferencedAssemblies(objType, allAsm);
+            allAsm.Add(typeof(IBisterGenerated).Assembly); // Include self
 
-                if (prop.DeclaringType.Namespace.StartsWith("System"))
-                    continue;
-
-                if (MightContainCircularReference(objType, prop.PropertyType))
-                    continue;
-                //if (!prop.GetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
-                //    continue;
-
-                //if (!prop.SetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
-                //    continue;
-
-                if (prop.PropertyType.FullName.StartsWith("System.Action") || prop.PropertyType.FullName.StartsWith("System.Func"))
-                    continue;
-
-                if (prop.Name == "Item" && prop.GetIndexParameters().Length > 0)
-                    continue;
-
-                yield return prop;
-            }
-        }
-
-        public static bool MightContainCircularReference(Type classType, Type propertyType)
-        {
-            if (classType == null || propertyType == null)
-                throw new ArgumentNullException("classType or propertyType cannot be null.");
-
-            if (propertyType.Namespace.StartsWith("System"))
-                return false;
-
-            // Case 1: Property is of the same type as the class
-            if (propertyType == classType)
-                return true;
-
-            // Handle generic types (e.g., List<T>, IEnumerable<T>)
-            Type propertyBaseType = propertyType;
-            if (propertyType.IsGenericType)
-            {
-                // Get the generic type argument (e.g., T in List<T>)
-                propertyBaseType = propertyType.GetGenericArguments()[0];
-                if (propertyBaseType == classType)
-                    return true;
-            }
-
-            // Case 2: Property type is derived from a shared base class
-            // Check if property type is a subclass of classType or vice versa
-            if (propertyBaseType.IsAssignableFrom(classType) || classType.IsAssignableFrom(propertyBaseType))
-                return true;
-
-            // Case 3: Check for shared interfaces
-            var classInterfaces = classType.GetInterfaces();
-            var propertyInterfaces = propertyBaseType.GetInterfaces();
-            foreach (var classInterface in classInterfaces)
-            {
-                foreach (var propertyInterface in propertyInterfaces)
-                {
-                    if (classInterface == propertyInterface)
-                        return true;
-                }
-            }
-
-            // Case 4: Check for shared base class (other than object)
-            Type currentClassBase = classType.BaseType;
-            Type currentPropBase = propertyBaseType.BaseType;
-            while (currentClassBase != null && currentPropBase != null)
-            {
-                if (currentClassBase == currentPropBase && currentClassBase != typeof(object))
-                    return true;
-                currentClassBase = currentClassBase.BaseType;
-                currentPropBase = currentPropBase.BaseType;
-            }
-
-            return false;
-        }
-
-        public static bool IsImplementingIEnumerable(Type objType)
-        {
-            return typeof(IEnumerable).IsAssignableFrom(objType);
-        }
-
-        public static bool IsPrimitive(Type type)
-        {
-            return type.IsPrimitive || type == typeof(decimal);
-        }
-
-        public static List<Assembly> GetDependentAssemblies(Type type)
-        {
-            var assemblies = new List<Assembly>();
-            var visitedAssemblies = new HashSet<Assembly>();
-
-            void AddAssembly(Assembly assembly)
-            {
-                if (assembly != null && visitedAssemblies.Add(assembly))
-                {
-                    assemblies.Add(assembly);
-                    foreach (var referencedAssembly in assembly.GetReferencedAssemblies())
-                    {
-                        AddAssembly(Assembly.Load(referencedAssembly));
-                    }
-                }
-            }
-
-            AddAssembly(type.Assembly);
-            return assemblies;
-        }
-
-        public static List<Type> GetDependentTypes(Type type)
-        {
-            var dependentTypes = new HashSet<Type>();
-            var visitedTypes = new HashSet<Type>();
-
-            void AddType(Type t)
-            {
-                if (visitedTypes.Contains(t))
-                    return;
-
-                visitedTypes.Add(t);
-
-                if (t.IsGenericType)
-                {
-                    foreach (var gt in t.GetGenericArguments())
-                    {
-                        AddType(gt);
-                    }
-                }
-
-                if (string.IsNullOrEmpty(t.FullName) || t.FullName.StartsWith("System"))
-                    return;
-
-                if (t != type)
-                {
-                    dependentTypes.Add(t);
-                }
+            var allDepends = allAsm
+                .SelectMany(asm => asm.GetExportedTypes())
+                .ToList();
 
 
-                foreach (var field in t.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                {
-                    AddType(field.FieldType);
-                }
-                foreach (var property in t.GetProperties(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                {
-                    AddType(property.PropertyType);
-                }
-                foreach (var method in t.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.Static))
-                {
-                    AddType(method.ReturnType);
-                    foreach (var parameter in method.GetParameters())
-                    {
-                        AddType(parameter.ParameterType);
-                    }
-                }
-            }
-
-            AddType(type);
-            return dependentTypes.ToList();
-        }
-
-        private Type GenerateType(StringBuilderVerbose sb, string expectedTypeName, List<Type> domainDependencies)
-        {
-            var objType = domainDependencies.First();
-            
-
-            if (domainDependencies == null)
-            {
-                domainDependencies = new List<Type>();
-            }
-
-            var subDependencies = GetDependentTypes(objType)
-                .Distinct();
-            
-            domainDependencies.AddRange(subDependencies);
-
-           
             StringBuilder sbUsings = new StringBuilder();
-            sbUsings.AppendLine($"using {typeof(IBisterGenerated).Namespace};");
-            sbUsings.AppendLine($"using {objType.Namespace};");
-            foreach (var ns in subDependencies.Select(t => t.Namespace).Distinct())
+            foreach (var ns in allDepends.Select(t => t.Namespace).Distinct())
             {
-                if (ns!= null && ns != objType.Namespace && !ns.StartsWith("System"))
+                if (ns!= null)
                 {
                     sbUsings.AppendLine($"using {ns};");
                 }
                     
             }
             sb.Replace("<<<USINGS>>>", sbUsings.ToString());
-            
 
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sb.ToString());
 
-            var dependencyFiles = domainDependencies
-                .Select(t => MetadataReference.CreateFromFile(t.Assembly.Location))
+            var dependencyFileNames = allAsm
+                .Select(asm => asm.Location)
                 .Distinct()
                 .ToList();
 
-            // Compile the syntax tree into an assembly
+            
+            dependencyFileNames.AddRange(BisterHelpers.RunTimeAssemblyFilePath.Value);
+
+            if (BisterHelpers.NetStandardAssemblyFilePath.Value != null)
+            {
+                dependencyFileNames.Add(BisterHelpers.NetStandardAssemblyFilePath.Value);
+            }
+
+            List<PortableExecutableReference> dependencyReferences = dependencyFileNames
+                .Distinct()
+                .Select(file => MetadataReference.CreateFromFile(file))
+                .ToList();
+
+            // Create a compilation object
             CSharpCompilation compilation = CSharpCompilation.Create(
                 $"{expectedTypeName}.asm",
                 new[] { syntaxTree },
-                new[] {
-                    MetadataReference.CreateFromFile(Assembly.Load("netstandard, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51").Location),
-                    MetadataReference.CreateFromFile(typeof(object).Assembly.Location),
-                    MetadataReference.CreateFromFile(Path.GetDirectoryName(typeof(object).Assembly.Location) + @"\System.Runtime.dll"),
-                    MetadataReference.CreateFromFile(Path.GetDirectoryName(typeof(object).Assembly.Location) + @"\System.Collections.dll"),
-                    MetadataReference.CreateFromFile(typeof(Enum).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(ICollection<>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(System.Collections.Hashtable).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Collection<>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(IEnumerable<>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(IDictionary<,>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Dictionary<,>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(Console).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(MemoryStream).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(BinaryReader).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(ReadOnlySpan<>).Assembly.Location),
-                    MetadataReference.CreateFromFile(typeof(BinaryWriter).Assembly.Location)
-                    //Marshal
-                },
+                dependencyReferences,
                 new CSharpCompilationOptions(
                     outputKind: OutputKind.DynamicallyLinkedLibrary,
                     optimizationLevel: Bister.Instance.IsDebug ? OptimizationLevel.Release : OptimizationLevel.Debug,
-                    platform: Platform.X64
-                ))
-                .AddReferences(dependencyFiles);
+                    platform: Platform.X64, publicSign: false, reportSuppressedDiagnostics: false
+                ));
 
             using (var ms = new MemoryStream())
             {
+                // Compile
                 EmitResult result = compilation.Emit(ms);
 
                 if (result.Success)
                 {
                     if (IsDebug)
                     {
+                        if (!Directory.Exists(DebugPath))
+                        {
+                            Directory.CreateDirectory(DebugPath);
+                        }
                         File.WriteAllText(Path.Combine(DebugPath,"bister.cs"), sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
                         string friendlyFilename = expectedTypeName.Replace("<", "[").Replace(">", "]");
                         File.WriteAllText(Path.Combine(DebugPath, $"{friendlyFilename}.cs"), sb.ToString());
@@ -687,7 +441,7 @@ namespace BisterLib
                         sbErrors.AppendLine($"{error}");
                     }
                     File.WriteAllText(@"c:\temp\bister.cs", sb.ToString());
-                    File.AppendAllText(@"c:\temp\bister.cs", Environment.NewLine + sbErrors.ToString());
+                    File.AppendAllText(@"c:\temp\bister.cs", "\n********* COMPILATION ERRORS *******\n" + sbErrors.ToString());
 
                     throw new Exception($"CODEGEN ERROR {sbErrors}");
                 }
