@@ -82,7 +82,6 @@ namespace BisterLib.UnitTest
 
             ValidateLogic(instanceInt);
 
-            //Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var instanceEnum = new Enum[] { TestEnum.One , TestEnum2.Five, TestEnum2.Six };
 
             ValidateLogic(instanceEnum);
@@ -129,7 +128,6 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_InheritedFromEnumerable()
         {
-            Bister.Instance.DebugPath = @"C:\temp\serialize.cs";
             var instance = new InheritedFromEnumerable<int>() { 1, 2, 3 };
             instance.SomeProp = 4;
 

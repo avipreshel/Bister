@@ -443,11 +443,16 @@ namespace BisterLib
                 if (!prop.CanRead || !prop.CanWrite)
                     continue;
 
-                if (!prop.GetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                if (prop.DeclaringType.Namespace.StartsWith("System"))
                     continue;
 
-                if (!prop.SetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                if (MightContainCircularReference(objType, prop.PropertyType))
                     continue;
+                //if (!prop.GetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                //    continue;
+
+                //if (!prop.SetMethod.IsDefined(typeof(CompilerGeneratedAttribute), false))
+                //    continue;
 
                 if (prop.PropertyType.FullName.StartsWith("System.Action") || prop.PropertyType.FullName.StartsWith("System.Func"))
                     continue;
@@ -457,6 +462,59 @@ namespace BisterLib
 
                 yield return prop;
             }
+        }
+
+        public static bool MightContainCircularReference(Type classType, Type propertyType)
+        {
+            if (classType == null || propertyType == null)
+                throw new ArgumentNullException("classType or propertyType cannot be null.");
+
+            if (propertyType.Namespace.StartsWith("System"))
+                return false;
+
+            // Case 1: Property is of the same type as the class
+            if (propertyType == classType)
+                return true;
+
+            // Handle generic types (e.g., List<T>, IEnumerable<T>)
+            Type propertyBaseType = propertyType;
+            if (propertyType.IsGenericType)
+            {
+                // Get the generic type argument (e.g., T in List<T>)
+                propertyBaseType = propertyType.GetGenericArguments()[0];
+                if (propertyBaseType == classType)
+                    return true;
+            }
+
+            // Case 2: Property type is derived from a shared base class
+            // Check if property type is a subclass of classType or vice versa
+            if (propertyBaseType.IsAssignableFrom(classType) || classType.IsAssignableFrom(propertyBaseType))
+                return true;
+
+            // Case 3: Check for shared interfaces
+            var classInterfaces = classType.GetInterfaces();
+            var propertyInterfaces = propertyBaseType.GetInterfaces();
+            foreach (var classInterface in classInterfaces)
+            {
+                foreach (var propertyInterface in propertyInterfaces)
+                {
+                    if (classInterface == propertyInterface)
+                        return true;
+                }
+            }
+
+            // Case 4: Check for shared base class (other than object)
+            Type currentClassBase = classType.BaseType;
+            Type currentPropBase = propertyBaseType.BaseType;
+            while (currentClassBase != null && currentPropBase != null)
+            {
+                if (currentClassBase == currentPropBase && currentClassBase != typeof(object))
+                    return true;
+                currentClassBase = currentClassBase.BaseType;
+                currentPropBase = currentPropBase.BaseType;
+            }
+
+            return false;
         }
 
         public static bool IsImplementingIEnumerable(Type objType)
@@ -571,13 +629,6 @@ namespace BisterLib
             sb.Replace("<<<USINGS>>>", sbUsings.ToString());
             
 
-            if (IsDebug)
-            {
-                File.WriteAllText($@"c:\temp\bister.cs", sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
-                string friendlyFilename = expectedTypeName.Replace("<", "[").Replace(">", "]");
-                File.WriteAllText($@"c:\temp\{friendlyFilename}.cs", sb.ToString());
-            }
-
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(sb.ToString());
 
             var dependencyFiles = domainDependencies
@@ -619,7 +670,16 @@ namespace BisterLib
             {
                 EmitResult result = compilation.Emit(ms);
 
-                if (!result.Success)
+                if (result.Success)
+                {
+                    if (IsDebug)
+                    {
+                        File.WriteAllText(Path.Combine(DebugPath,"bister.cs"), sb.ToString()); // always dump the latest under the same file name. It's useful for debugging.
+                        string friendlyFilename = expectedTypeName.Replace("<", "[").Replace(">", "]");
+                        File.WriteAllText(Path.Combine(DebugPath, $"{friendlyFilename}.cs"), sb.ToString());
+                    }
+                }
+                else
                 {
                     StringBuilder sbErrors = new StringBuilder();
                     foreach (var error in result.Diagnostics)

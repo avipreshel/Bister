@@ -136,8 +136,6 @@ namespace BisterLib
             SerializeNullCheckStart(sb, indentation, instanceName, objType);
             Bister.IncreaseIndent(ref indentation);
 
-            SerializePublicProperties(sb, indentation, instanceName, objType);
-
             if (Bister.IsImplementingIEnumerable(objType))
             {
                 if (Bister.TestGenericType(objType, typeof(IList<>)))
@@ -162,6 +160,8 @@ namespace BisterLib
                 }
             }
 
+            SerializePublicProperties(sb, indentation, instanceName, objType);
+
             Bister.DecreaseIndent(ref indentation);
             SerializeNullCheckEnd(sb, indentation);
         }
@@ -171,12 +171,11 @@ namespace BisterLib
             Bister.PrintMethodName(sb, indentation, objType);
             var genericType = Bister.GetGenericInterface(objType, typeof(ISet<>));
             Type valType = genericType.GenericTypeArguments[0];
+            sb.AppendLine(indentation + $"bw.Write({instanceName}.Count);");
             sb.AppendLine(indentation + $"foreach (var item in {instanceName})");
             sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(true);"); // true will mark that we have an item to read
             SerializeAnyType(sb, indentation + "\t", "item", valType);
             sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "bw.Write(false);"); // false will mark that we don't have anymore to read
         }
 
         private static void SerializeIEnumerable(string instanceName, string indentation, StringBuilderVerbose sb, Type objType)

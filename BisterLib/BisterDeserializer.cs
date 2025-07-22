@@ -79,7 +79,7 @@ namespace BisterLib
         public static void DeserializeGenericDictionary(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            string niceTypeName = Bister.GetFriendlyGenericTypeName(objType);
+            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
             string usefulVariableName = Bister.GetUsefulName(instanceName);
 
             Type genericType = Bister.GetGenericInterface(objType,typeof(IDictionary<,>));
@@ -89,8 +89,17 @@ namespace BisterLib
             string niceKeyTypeName = Bister.GetFriendlyGenericTypeName(keyType);
             string niceValueTypeName = Bister.GetFriendlyGenericTypeName(valType);
 
-            sb.AppendLine(indentation + $"int {usefulVariableName}_capacity = br.ReadInt32();");
-            sb.AppendLine(indentation + $"for (int i =0; i<{usefulVariableName}_capacity;i++)");
+            sb.AppendLine(indentation + $"int {usefulVariableName}_count = br.ReadInt32();");
+            if (objType.FullName.StartsWith("System"))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}({usefulVariableName}_count);");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
+            }
+
+            sb.AppendLine(indentation + $"for (int i =0; i<{usefulVariableName}_count;i++)");
             sb.AppendLine(indentation + "{");
 
             Bister.IncreaseIndent(ref indentation);
@@ -110,10 +119,24 @@ namespace BisterLib
         public static void DeserializeGenericList(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+
+            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
+            string usefulName = Bister.GetUsefulName(instanceName);
             var genericType = Bister.GetGenericInterface(objType, typeof(IList<>));
             Type valType = genericType.GenericTypeArguments[0];
-            sb.AppendLine(indentation + $"{instanceName}.Capacity = br.ReadInt32();");
-            sb.AppendLine(indentation + $"for (int i = 0; i < {instanceName}.Capacity; i++)");
+
+            
+            sb.AppendLine(indentation + $"int {usefulName}_count = br.ReadInt32();");
+            if (objType.FullName.StartsWith("System"))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}({usefulName}_count);");
+            }
+            else
+            {
+                sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
+            }
+            
+            sb.AppendLine(indentation + $"for (int i = 0; i < {usefulName}_count; i++)");
             sb.AppendLine(indentation + "{");
             Bister.IncreaseIndent(ref indentation);
             sb.AppendLine(indentation + $"{Bister.GetFriendlyGenericTypeName(valType)} item;");
@@ -375,9 +398,7 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
 
             Bister.IncreaseIndent(ref indentation);
-            sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
-
-            DeserializePublicProperties(sb, indentation, instanceName, objType);
+            
 
             if (Bister.IsImplementingIEnumerable(objType))
             {
@@ -402,8 +423,13 @@ namespace BisterLib
                     throw new NotImplementedException($"Unknown IEnumerable type {objType}");
                 }
             }
+            else
+            {
+                sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
+            }
 
-            
+            DeserializePublicProperties(sb, indentation, instanceName, objType);
+
             Bister.DecreaseIndent(ref indentation);
             sb.AppendLine(indentation + "}");
         }
@@ -411,10 +437,13 @@ namespace BisterLib
         private static void DeserializeGenericHashSet(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-
+            string usefulName = Bister.GetUsefulName(instanceName);
+            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
             var genericType = Bister.GetGenericInterface(objType, typeof(ISet<>));
             Type valType = genericType.GenericTypeArguments[0];
-            sb.AppendLine(indentation + $"while (br.ReadBoolean())");
+            sb.AppendLine(indentation + $"int {usefulName}_count = br.ReadInt32();");
+            sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
+            sb.AppendLine(indentation + $"for (int i =0;i<{usefulName}_count;i++)");
             sb.AppendLine(indentation + "{");
             Bister.IncreaseIndent(ref indentation);
             sb.AppendLine(indentation + $"{Bister.GetFriendlyGenericTypeName(valType)} item;");
@@ -427,8 +456,10 @@ namespace BisterLib
         private static void DeserializeIEnumerable(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+            string friendlyTypeName = Bister.GetFriendlyGenericTypeName(objType);
             Type genericType = Bister.GetGenericInterface(objType, typeof(IEnumerable<>));
             Type valType = genericType.GenericTypeArguments[0];
+            sb.AppendLine(indentation + $"{instanceName} = new {friendlyTypeName}();");
             sb.AppendLine(indentation + $"while (br.ReadBoolean())");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + $"\t{Bister.GetFriendlyGenericTypeName(valType)} item;");
