@@ -2,6 +2,9 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Drawing;
+using System.IO;
+using System.Reflection.PortableExecutable;
 
 namespace BisterLib
 {
@@ -10,6 +13,12 @@ namespace BisterLib
         public static void DeserializeAnyType(StringBuilderVerbose sb, string indentation, string instanceName, Type objType, bool isStructField = false)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+
+            if (Bister.Instance.IsKnownType(objType))
+            {
+                sb.AppendLine(indentation + $"{instanceName} = ({objType})Bister.Instance.Deserialize(br,typeof({objType}));");
+                return;
+            }
 
             switch (objType)
             {
@@ -55,6 +64,9 @@ namespace BisterLib
                 case Type t when typeof(Exception).IsAssignableFrom(t):
                     DeserializeException(sb, indentation, instanceName, objType);
                     break;
+                //case Type t when t.FullName == "System.Drawing.Bitmap":
+                //    DeserializeSystemDrawingBitmap(sb, indentation, instanceName, objType);
+                //    break;
                 case Type t when t.IsClass:
                     DeserializeClass(sb, indentation, instanceName, objType);
                     break;
@@ -67,7 +79,21 @@ namespace BisterLib
             }
         }
 
-        
+        private static void DeserializeSystemDrawingBitmap(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
+        {
+            Bister.PrintMethodName(sb, indentation, objType);
+            sb.AppendLine(indentation + "if (br.ReadBoolean())");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + $"\t{instanceName} = null;");
+            sb.AppendLine(indentation + "}");
+            sb.AppendLine(indentation + "else");
+            sb.AppendLine(indentation + "{");
+            sb.AppendLine(indentation + "\tusing (var ms = new MemoryStream(br.ReadBytes(br.ReadInt32())))");
+            sb.AppendLine(indentation + "\t{");
+            sb.AppendLine(indentation + $"\t\t{instanceName} = new Bitmap(ms);");
+            sb.AppendLine(indentation + "\t}");
+            sb.AppendLine(indentation + "}");
+        }
 
         private static void DeserializeInterface(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {

@@ -16,7 +16,7 @@ using System.Drawing;
 
 namespace GeneratedNS
 {
-    internal class ___SERIALIZER_TYPE_NAME___ : IBisterGenerated
+    internal class ___SERIALIZER_TYPE_NAME___ : IBisterTypeSerializer
     {
         public void Serialize(object instanceX, BinaryWriter bw)
         {

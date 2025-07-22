@@ -8,6 +8,15 @@ using System.Reflection;
 
 namespace BisterLib
 {
+    public static class BisterConsts
+    {
+        public static readonly FieldInfo ExceptionHResult = typeof(Exception).GetField("_HResult", BindingFlags.Instance | BindingFlags.NonPublic);
+        public static readonly FieldInfo ExceptionSource = typeof(Exception).GetField("_source", BindingFlags.Instance | BindingFlags.NonPublic);
+        public static readonly FieldInfo ExceptionMessage = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
+        public static readonly FieldInfo ExceptionStackTrace = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
+
+        public static readonly string NullStr = "_NUL_";
+    }
     internal static class BisterHelpers
     {
         public static Lazy<List<string>> RunTimeAssemblyFilePath = new Lazy<List<string>>(() =>
@@ -206,13 +215,13 @@ namespace BisterLib
                 if (prop.DeclaringType.Namespace.StartsWith("System"))
                     continue;
 
-                if (MightContainCircularReference(objType, prop.PropertyType))
-                    continue;
-
                 if (prop.PropertyType.FullName.StartsWith("System.Action") || prop.PropertyType.FullName.StartsWith("System.Func"))
                     continue;
 
                 if (prop.Name == "Item" && prop.GetIndexParameters().Length > 0)
+                    continue;
+
+                if (MightContainCircularReference(objType, prop.PropertyType))
                     continue;
 
                 yield return prop;
@@ -234,57 +243,14 @@ namespace BisterLib
             return type.IsPrimitive || type == typeof(decimal);
         }
 
-        public static bool MightContainCircularReference(Type classType, Type propertyType)
+        public static bool MightContainCircularReference(Type objectType, Type propertyType)
         {
-            if (classType == null || propertyType == null)
-                throw new ArgumentNullException("classType or propertyType cannot be null.");
-
-            if (propertyType.Namespace.StartsWith("System"))
+            if (objectType == null || propertyType == null || propertyType == typeof(object))
                 return false;
 
-            // Case 1: Property is of the same type as the class
-            if (propertyType == classType)
-                return true;
+            bool isAssignable = propertyType.IsAssignableFrom(objectType);
 
-            // Handle generic types (e.g., List<T>, IEnumerable<T>)
-            Type propertyBaseType = propertyType;
-            if (propertyType.IsGenericType)
-            {
-                // Get the generic type argument (e.g., T in List<T>)
-                propertyBaseType = propertyType.GetGenericArguments()[0];
-                if (propertyBaseType == classType)
-                    return true;
-            }
-
-            // Case 2: Property type is derived from a shared base class
-            // Check if property type is a subclass of classType or vice versa
-            if (propertyBaseType.IsAssignableFrom(classType) || classType.IsAssignableFrom(propertyBaseType))
-                return true;
-
-            // Case 3: Check for shared interfaces
-            var classInterfaces = classType.GetInterfaces();
-            var propertyInterfaces = propertyBaseType.GetInterfaces();
-            foreach (var classInterface in classInterfaces)
-            {
-                foreach (var propertyInterface in propertyInterfaces)
-                {
-                    if (classInterface == propertyInterface)
-                        return true;
-                }
-            }
-
-            // Case 4: Check for shared base class (other than object)
-            Type currentClassBase = classType.BaseType;
-            Type currentPropBase = propertyBaseType.BaseType;
-            while (currentClassBase != null && currentPropBase != null)
-            {
-                if (currentClassBase == currentPropBase && currentClassBase != typeof(object))
-                    return true;
-                currentClassBase = currentClassBase.BaseType;
-                currentPropBase = currentPropBase.BaseType;
-            }
-
-            return false;
+            return isAssignable;
         }
 
 

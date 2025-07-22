@@ -17,23 +17,12 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace BisterLib
 {
-    public static class BisterConsts
-    {
-        public static readonly FieldInfo ExceptionHResult = typeof(Exception).GetField("_HResult", BindingFlags.Instance | BindingFlags.NonPublic);
-        public static readonly FieldInfo ExceptionSource = typeof(Exception).GetField("_source", BindingFlags.Instance | BindingFlags.NonPublic);
-        public static readonly FieldInfo ExceptionMessage = typeof(Exception).GetField("_message", BindingFlags.Instance | BindingFlags.NonPublic);
-        public static readonly FieldInfo ExceptionStackTrace = typeof(Exception).GetField("_stackTraceString", BindingFlags.Instance | BindingFlags.NonPublic);
-
-        public static readonly string NullStr = "_NUL_";
-    }
-
-
     public class Bister : IBister
     {
         static Lazy<IBister> _lazy = new Lazy<IBister>(() => new Bister());
         public static IBister Instance => _lazy.Value;
 
-        ConcurrentDictionary<Type, IBisterGenerated> _typeToSerializer = new ConcurrentDictionary<Type, IBisterGenerated>();
+        ConcurrentDictionary<Type, IBisterTypeSerializer> _typeToSerializer = new ConcurrentDictionary<Type, IBisterTypeSerializer>();
         ConcurrentDictionary<Type, int> _typeToMaxSize = new ConcurrentDictionary<Type, int>();
 
         /// <summary>
@@ -69,7 +58,15 @@ namespace BisterLib
             }
         }
 
-        
+        public void RegisterSerializer(Type objType, IBisterTypeSerializer serializer)
+        {
+            _typeToSerializer[objType] = serializer;
+        }
+
+        public bool IsKnownType(Type objType)
+        {
+            return _typeToSerializer.ContainsKey(objType);
+        }
 
         public byte[] Serialize<T>(T instance)
         {
@@ -140,9 +137,9 @@ namespace BisterLib
             }
         }
 
-        IBisterGenerated GenerateSerializationEngine(Type objType)
+        IBisterTypeSerializer GenerateSerializationEngine(Type objType)
         {
-            if (_typeToSerializer.TryGetValue(objType, out IBisterGenerated serTmp))
+            if (_typeToSerializer.TryGetValue(objType, out IBisterTypeSerializer serTmp))
             {
                 return serTmp;
             }
@@ -167,7 +164,7 @@ namespace BisterLib
 
             Type genType = GenerateSerializerForType(sb, serializerTypeName, objType);
 
-            var serializer = (IBisterGenerated)Activator.CreateInstance(genType);
+            var serializer = (IBisterTypeSerializer)Activator.CreateInstance(genType);
             _typeToSerializer[objType] = serializer;
             return serializer;
         }
@@ -366,7 +363,7 @@ namespace BisterLib
         {
             var allAsm = new HashSet<Assembly>(AssemblyEqualityComparer.Instance);
             BisterHelpers.GetAllReferencedAssemblies(objType, allAsm);
-            allAsm.Add(typeof(IBisterGenerated).Assembly); // Include self
+            allAsm.Add(typeof(IBister).Assembly); // Include self
 
             var allDepends = allAsm
                 .SelectMany(asm => asm.GetExportedTypes())

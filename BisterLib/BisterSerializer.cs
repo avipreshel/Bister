@@ -14,6 +14,12 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
+            if (Bister.Instance.IsKnownType(objType))
+            {
+                //void Serialize(object instance, Type objType,BinaryWriter bw);
+                sb.AppendLine(indentation + $"Bister.Instance.Serialize({instanceName},typeof({objType}),bw);");
+                return;
+            }
 
             switch (objType)
             {
@@ -59,9 +65,9 @@ namespace BisterLib
                 case Type t when typeof(Exception).IsAssignableFrom(t):
                     SerializeException(sb, indentation, instanceName, objType);
                     break;
-                case Type t when t.FullName == "System.Drawing.Bitmap":
-                    SerializeSystemDrawingBitmap(sb, indentation, instanceName, objType);
-                    break;
+                //case Type t when t.FullName == "System.Drawing.Bitmap":
+                //    SerializeSystemDrawingBitmap(sb, indentation, instanceName, objType);
+                //    break;
                 case Type t when t.IsClass:
                     SerializeClass(sb, indentation, instanceName, objType);
                     break;
@@ -161,6 +167,14 @@ namespace BisterLib
         public static void SerializeClass(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
+
+            if (Bister.Instance.IsKnownType(objType))
+            {
+                // object instance, Type objType,BinaryWriter bw
+                sb.AppendLine(indentation + $"Bister.Instance.Serialize({instanceName},{objType},bw");
+                return;
+            }
+
             SerializeNullCheckStart(sb, indentation, instanceName, objType);
             Bister.IncreaseIndent(ref indentation);
 
