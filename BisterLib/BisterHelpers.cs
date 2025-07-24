@@ -1,6 +1,7 @@
 ﻿using Microsoft.CodeAnalysis;
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -19,6 +20,25 @@ namespace BisterLib
     }
     internal static class BisterHelpers
     {
+        public static ConcurrentBag<Type> NonEnumerables = new ConcurrentBag<Type>();
+
+        /// <summary>
+        /// Will return true is type can be treated as enumerable type
+        /// </summary>
+        /// <param name="objType"></param>
+        /// <returns></returns>
+        public static bool CanTreatAsEnumerable(Type objType)
+        {
+            foreach (var type in NonEnumerables)
+            {
+                if (type.IsAssignableFrom(objType))
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+
         public static Lazy<List<string>> RunTimeAssemblyFilePath = new Lazy<List<string>>(() =>
         {
             var loadedModules = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().ToList();
@@ -235,7 +255,14 @@ namespace BisterLib
 
         public static bool IsImplementingIEnumerable(Type objType)
         {
-            return typeof(IEnumerable).IsAssignableFrom(objType);
+            if (CanTreatAsEnumerable(objType))
+            {
+                return typeof(IEnumerable).IsAssignableFrom(objType);
+            }
+            else
+            {
+                return false;
+            }
         }
 
         public static bool IsPrimitive(Type type)

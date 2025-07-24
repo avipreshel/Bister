@@ -3,9 +3,11 @@ using BenchmarkDotNet.Running;
 using BinaryPack;
 using BisterLib;
 using FastSerialization;
+using Iced.Intel;
 using MessagePack;
 using Microsoft.Diagnostics.Runtime;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -118,13 +120,15 @@ namespace BisterBenchmarks
         byte[] _instanceAsBinaryPack;
         byte[] _instanceAsMessagePack;
         JsonSerializerOptions _jsonSettings;
+
+        float[] _blob = Array.Empty<float>();
         public Program()
         {
             _jsonSettings = new JsonSerializerOptions
             {
-                 Converters = { new SystemObjectConverter(), new EnumTypeNameConverter() }
+                 Converters = { new SystemObjectConverter(), new EnumTypeNameConverter() },
             };
-
+            _blob = Enumerable.Range(0,1024).Select(i=>(float)i).ToArray();
             //_instance = new ClassWithArrays()
             //{
             //    ArrayPropInt = Enumerable.Range(0, 1000).Select(i=>i).ToArray(),
@@ -150,57 +154,80 @@ namespace BisterBenchmarks
             _instanceAsMessagePack = MessagePackSerializer.Serialize(_instance);
         }
 
+        //[Benchmark]
+        //public byte[] MessagePack_Serialize()
+        //{
+        //    return MessagePackSerializer.Serialize(_instance);
+        //}
+
+        //[Benchmark]
+        //public SimpleClass MessagePack_Deserialize()
+        //{
+        //    return MessagePackSerializer.Deserialize<SimpleClass>(_instanceAsMessagePack);
+        //}
+
+        //[Benchmark]
+        //public byte[] BinaryPack_Serialize()
+        //{
+        //    return BinaryConverter.Serialize(_instance);
+        //}
+
+        //[Benchmark]
+        //public SimpleClass BinaryPack_Deserialize()
+        //{
+        //    return BinaryConverter.Deserialize<SimpleClass>(_instanceAsBinaryPack);
+        //}
+
+        //[Benchmark]
+        //public string SystemTextJsonSerialize()
+        //{
+        //    return System.Text.Json.JsonSerializer.Serialize(_instance, _jsonSettings);
+        //}
+
+        //[Benchmark]
+        //public SimpleClass? SystemTextJsonDeserialize()
+        //{
+        //    return System.Text.Json.JsonSerializer.Deserialize<SimpleClass>(_instanceAsJson, _jsonSettings);
+        //}
+
+        //[Benchmark]
+        //public byte[] BisterSerialize()
+        //{
+        //    return Bister.Instance.Serialize(_instance);
+        //}
+
+        //[Benchmark]
+        //public SimpleClass? BisterDeserialize()
+        //{
+        //    return Bister.Instance.Deserialize<SimpleClass>(_instanceAsBister);
+        //}
+
         [Benchmark]
-        public byte[] MessagePack_Serialize()
+        public void SerializeAsBlob()
         {
-            return MessagePackSerializer.Serialize(_instance);
+            using (var bw = new BinaryWriter(new MemoryStream(_blob.Length)))
+            {
+                ReadOnlySpan<byte> bytes = MemoryMarshal.AsBytes(_blob.AsSpan());
+                bw.Write(bytes.Length);
+                bw.Write(bytes.ToArray());
+            }
         }
 
         [Benchmark]
-        public SimpleClass MessagePack_Deserialize()
+        public void SerializeAsArray()
         {
-            return MessagePackSerializer.Deserialize<SimpleClass>(_instanceAsMessagePack);
-        }
-
-        [Benchmark]
-        public byte[] BinaryPack_Serialize()
-        {
-            return BinaryConverter.Serialize(_instance);
-        }
-
-        [Benchmark]
-        public SimpleClass BinaryPack_Deserialize()
-        {
-            return BinaryConverter.Deserialize<SimpleClass>(_instanceAsBinaryPack);
-        }
-
-        [Benchmark]
-        public string SystemTextJsonSerialize()
-        {
-            return System.Text.Json.JsonSerializer.Serialize(_instance, _jsonSettings);
-        }
-
-        [Benchmark]
-        public SimpleClass? SystemTextJsonDeserialize()
-        {
-            return System.Text.Json.JsonSerializer.Deserialize<SimpleClass>(_instanceAsJson, _jsonSettings);
-        }
-
-        [Benchmark]
-        public byte[] BisterSerialize()
-        {
-            return Bister.Instance.Serialize(_instance);
-        }
-
-        [Benchmark]
-        public SimpleClass? BisterDeserialize()
-        {
-            return Bister.Instance.Deserialize<SimpleClass>(_instanceAsBister);
+            using (var bw = new BinaryWriter(new MemoryStream(_blob.Length)))
+            {
+                for (int i = 0; i < _blob.Length; i++)
+                {
+                    bw.Write(_blob[i]);
+                }
+            }
         }
 
         static void Main(string[] args)
         {
-            var _instance = new SimpleClass()
+            var instance = new SimpleClass()
             {
                 ArrayPropInt = Enumerable.Range(0, 100).Select(i => i).ToArray(),
                 ArrayPropString = Enumerable.Range(0, 100).Select(i => $"Number{i}").ToArray(),
@@ -208,11 +235,16 @@ namespace BisterBenchmarks
                 ListOfStrings = Enumerable.Range(0, 100).Select(i => i.ToString()).ToList(),
             };
 
-            do
-            {
-                var blob = Bister.Instance.Serialize(_instance);
-                _ = Bister.Instance.Deserialize<SimpleClass>(blob);
-            } while (true);
+            //var _jsonSettings = new JsonSerializerOptions
+            //{
+            //    Converters = { new SystemObjectConverter(), new EnumTypeNameConverter() },
+            //    WriteIndented = true,
+            //};
+
+            //string _instanceAsJson = System.Text.Json.JsonSerializer.Serialize(_instance, _jsonSettings);
+
+            Bister.Instance.DebugPath = @"c:\temp\bister\";
+            var x = Bister.Instance.Serialize(instance);
 
             _ = BenchmarkRunner.Run<Program>();
         }

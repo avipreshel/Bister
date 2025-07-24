@@ -63,6 +63,11 @@ namespace BisterLib
             _typeToSerializer[objType] = serializer;
         }
 
+        public void SupressEnumerability(Type objType)
+        {
+            BisterHelpers.NonEnumerables.Add(objType);
+        }
+
         public bool IsKnownType(Type objType)
         {
             return _typeToSerializer.ContainsKey(objType);

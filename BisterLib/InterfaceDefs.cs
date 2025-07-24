@@ -28,6 +28,17 @@ namespace BisterLib
         /// <param name="serializer"></param>
         void RegisterSerializer(Type objType, IBisterTypeSerializer serializer);
 
+        /// <summary>
+        /// The given type will not be treated as an enumerable type, even if it is.
+        /// </summary>
+        /// <param name="objType"></param>
+        void SupressEnumerability(Type objType);
+
+        /// <summary>
+        /// Will return true if the given type has any serializer asociated with (either generated automatically, or via RegisterSerializer() call)
+        /// </summary>
+        /// <param name="objType"></param>
+        /// <returns></returns>
         bool IsKnownType(Type objType);
     }
 
