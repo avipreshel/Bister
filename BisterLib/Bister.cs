@@ -369,6 +369,7 @@ namespace BisterLib
             var allAsm = new HashSet<Assembly>(AssemblyEqualityComparer.Instance);
             BisterHelpers.GetAllReferencedAssemblies(objType, allAsm);
             allAsm.Add(typeof(IBister).Assembly); // Include self
+            allAsm.Add(typeof(MemoryMarshal).Assembly); 
 
             var allDepends = allAsm
                 .SelectMany(asm => asm.GetExportedTypes())

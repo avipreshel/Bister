@@ -4,8 +4,10 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.InteropServices;
 
 namespace BisterLib
 {
@@ -41,18 +43,39 @@ namespace BisterLib
 
         public static Lazy<List<string>> RunTimeAssemblyFilePath = new Lazy<List<string>>(() =>
         {
-            var loadedModules = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().ToList();
-            ProcessModule mscorelib = loadedModules.FirstOrDefault(asm => asm.ModuleName == "mscorlib.dll");
-            ProcessModule dotnetCore = loadedModules.FirstOrDefault(asm => asm.ModuleName == "System.Runtime.dll");
-            if (mscorelib == null)
+            var asmRT = typeof(object).Assembly;
+
+            if (RuntimeInformation.FrameworkDescription.Contains(".NET Framework"))
             {
-                string coreLib = loadedModules.FirstOrDefault(asm => asm.ModuleName == "System.Private.CoreLib.dll").FileName;
-                return new List<string>() { dotnetCore.FileName, coreLib };
+                return new List<string>()
+                {
+                    asmRT.Location, // This is the main run time dll
+                    Path.Combine(Path.GetDirectoryName(asmRT.Location),"netstandard.dll")
+                };
             }
             else
             {
-                return new List<string>() { mscorelib.FileName };
+                return new List<string>()
+                {
+                    asmRT.Location, // This is the main run time dll
+                    Path.Combine(Path.GetDirectoryName(asmRT.Location),"netstandard.dll"),
+                    Path.Combine(Path.GetDirectoryName(asmRT.Location),"System.Runtime.dll")
+                };
             }
+            
+
+            //var loadedModules = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().ToList();
+            //ProcessModule mscorelib = loadedModules.FirstOrDefault(asm => asm.ModuleName == "mscorlib.dll");
+            //ProcessModule dotnetCore = loadedModules.FirstOrDefault(asm => asm.ModuleName == "System.Runtime.dll");
+            //if (mscorelib == null)
+            //{
+            //    string coreLib = loadedModules.FirstOrDefault(asm => asm.ModuleName == "System.Private.CoreLib.dll").FileName;
+            //    return new List<string>() { dotnetCore.FileName, coreLib };
+            //}
+            //else
+            //{
+            //    return new List<string>() { mscorelib.FileName };
+            //}
         });
 
         public static Lazy<string> NetStandardAssemblyFilePath = new Lazy<string>(() =>
