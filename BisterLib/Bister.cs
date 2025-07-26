@@ -22,7 +22,8 @@ namespace BisterLib
         static Lazy<IBister> _lazy = new Lazy<IBister>(() => new Bister());
         public static IBister Instance => _lazy.Value;
 
-        ConcurrentDictionary<Type, IBisterTypeSerializer> _typeToSerializer = new ConcurrentDictionary<Type, IBisterTypeSerializer>();
+        ConcurrentDictionary<Type, IBisterTypeSerializer> _registredSerializer = new ConcurrentDictionary<Type, IBisterTypeSerializer>();
+        ConcurrentDictionary<Type, IBisterTypeSerializer> _generatedSerializer = new ConcurrentDictionary<Type, IBisterTypeSerializer>();
         ConcurrentDictionary<Type, int> _typeToMaxSize = new ConcurrentDictionary<Type, int>();
 
         /// <summary>
@@ -60,17 +61,17 @@ namespace BisterLib
 
         public void RegisterSerializer(Type objType, IBisterTypeSerializer serializer)
         {
-            _typeToSerializer[objType] = serializer;
+            _registredSerializer[objType] = serializer;
+        }
+
+        public bool IsRegistredType(Type objType)
+        {
+            return _registredSerializer.ContainsKey(objType);
         }
 
         public void SupressEnumerability(Type objType)
         {
             BisterHelpers.NonEnumerables.Add(objType);
-        }
-
-        public bool IsKnownType(Type objType)
-        {
-            return _typeToSerializer.ContainsKey(objType);
         }
 
         public byte[] Serialize<T>(T instance)
@@ -144,7 +145,7 @@ namespace BisterLib
 
         IBisterTypeSerializer GenerateSerializationEngine(Type objType)
         {
-            if (_typeToSerializer.TryGetValue(objType, out IBisterTypeSerializer serTmp))
+            if (_generatedSerializer.TryGetValue(objType, out IBisterTypeSerializer serTmp))
             {
                 return serTmp;
             }
@@ -170,7 +171,7 @@ namespace BisterLib
             Type genType = GenerateSerializerForType(sb, serializerTypeName, objType);
 
             var serializer = (IBisterTypeSerializer)Activator.CreateInstance(genType);
-            _typeToSerializer[objType] = serializer;
+            _generatedSerializer[objType] = serializer;
             return serializer;
         }
 

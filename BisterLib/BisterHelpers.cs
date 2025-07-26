@@ -11,7 +11,7 @@ using System.Runtime.InteropServices;
 
 namespace BisterLib
 {
-    public static class BisterConsts
+    internal static class BisterConsts
     {
         public static readonly FieldInfo ExceptionHResult = typeof(Exception).GetField("_HResult", BindingFlags.Instance | BindingFlags.NonPublic);
         public static readonly FieldInfo ExceptionSource = typeof(Exception).GetField("_source", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -45,7 +45,7 @@ namespace BisterLib
         {
             var asmRT = typeof(object).Assembly;
 
-            if (RuntimeInformation.FrameworkDescription.Contains(".NET Framework"))
+            if (RuntimeInformation.FrameworkDescription.Contains(".NET Framework")) // Is dotnet Fwk?
             {
                 return new List<string>()
                 {
@@ -59,23 +59,9 @@ namespace BisterLib
                 {
                     asmRT.Location, // This is the main run time dll
                     Path.Combine(Path.GetDirectoryName(asmRT.Location),"netstandard.dll"),
-                    Path.Combine(Path.GetDirectoryName(asmRT.Location),"System.Runtime.dll")
+                    Path.Combine(Path.GetDirectoryName(asmRT.Location),"System.Runtime.dll") // thank you Microsoft for splitting the run time into multiple binaries...
                 };
             }
-            
-
-            //var loadedModules = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().ToList();
-            //ProcessModule mscorelib = loadedModules.FirstOrDefault(asm => asm.ModuleName == "mscorlib.dll");
-            //ProcessModule dotnetCore = loadedModules.FirstOrDefault(asm => asm.ModuleName == "System.Runtime.dll");
-            //if (mscorelib == null)
-            //{
-            //    string coreLib = loadedModules.FirstOrDefault(asm => asm.ModuleName == "System.Private.CoreLib.dll").FileName;
-            //    return new List<string>() { dotnetCore.FileName, coreLib };
-            //}
-            //else
-            //{
-            //    return new List<string>() { mscorelib.FileName };
-            //}
         });
 
         public static Lazy<string> NetStandardAssemblyFilePath = new Lazy<string>(() =>

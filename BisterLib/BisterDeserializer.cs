@@ -14,9 +14,9 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
-            if (Bister.Instance.IsKnownType(objType))
+            if (Bister.Instance.IsRegistredType(objType))
             {
-                sb.AppendLine(indentation + $"{instanceName} = ({objType})Bister.Instance.Deserialize(br,typeof({objType}));");
+                sb.AppendLine(indentation + $"{instanceName} = ({BisterHelpers.GetFriendlyGenericTypeName(objType)})Bister.Instance.Deserialize(br,typeof({BisterHelpers.GetFriendlyGenericTypeName(objType)}));");
                 return;
             }
 
