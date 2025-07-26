@@ -64,14 +64,11 @@ namespace BisterLib
                 case Type t when typeof(Exception).IsAssignableFrom(t):
                     DeserializeException(sb, indentation, instanceName, objType);
                     break;
-                //case Type t when t.FullName == "System.Drawing.Bitmap":
-                //    DeserializeSystemDrawingBitmap(sb, indentation, instanceName, objType);
-                //    break;
+                case Type t when t.IsInterface || t.IsAbstract:
+                    DeserializeInterface(sb, indentation, instanceName, objType);
+                    break;
                 case Type t when t.IsClass:
                     DeserializeClass(sb, indentation, instanceName, objType);
-                    break;
-                case Type t when t.IsInterface:
-                    DeserializeInterface(sb, indentation, instanceName, objType);
                     break;
                 default:
                     throw new NotImplementedException($"No support for {objType}");
@@ -250,7 +247,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + "}");
                 sb.AppendLine(indentation + "else");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}[br.ReadInt32()];");
                 sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
                 sb.AppendLine(indentation + "\t{");
                 sb.AppendLine(indentation + $"\t\t{instanceName}[i] = ({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)})Bister.Instance.Deserialize(br,typeof({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}));");
@@ -265,7 +262,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + "}");
                 sb.AppendLine(indentation + "else");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}[br.ReadInt32()];");
                 sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
                 sb.AppendLine(indentation + "\t{");
                 sb.AppendLine(indentation + $"\t\t{instanceName}[i] = br.ReadBoolean()? null : ({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)})Bister.Instance.Deserialize(br,Type.GetType(br.ReadString()));");
@@ -424,7 +421,6 @@ namespace BisterLib
             sb.AppendLine(indentation + "{");
 
             Bister.IncreaseIndent(ref indentation);
-            
 
             if (BisterHelpers.IsImplementingIEnumerable(objType))
             {

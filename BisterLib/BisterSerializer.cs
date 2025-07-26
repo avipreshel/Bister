@@ -65,15 +65,13 @@ namespace BisterLib
                 case Type t when typeof(Exception).IsAssignableFrom(t):
                     SerializeException(sb, indentation, instanceName, objType);
                     break;
-                //case Type t when t.FullName == "System.Drawing.Bitmap":
-                //    SerializeSystemDrawingBitmap(sb, indentation, instanceName, objType);
-                //    break;
+                case Type t when t.IsInterface || t.IsAbstract:
+                    SerializeInterface(sb, indentation, instanceName, objType);
+                    break;
                 case Type t when t.IsClass:
                     SerializeClass(sb, indentation, instanceName, objType);
                     break;
-                case Type t when t.IsInterface:
-                    SerializeInterface(sb, indentation, instanceName, objType);
-                    break;
+                
                 default:
                     throw new Exception($"Cannot serialize {objType}");
             }

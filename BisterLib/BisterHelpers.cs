@@ -193,9 +193,20 @@ namespace BisterLib
 
         public static string GetFriendlyGenericTypeName(Type type)
         {
-            if (!type.IsGenericType)
+            if (!type.IsGenericType && !type.IsArray)
             {
                 return type.FullName;
+            }
+
+            if (type.IsArray)
+            {
+                Type itemValType = type.GetElementType();
+                string friendlyItemValType = GetFriendlyGenericTypeName(itemValType);
+                if (type.GetArrayRank() == 1)
+                {
+                    return $"{friendlyItemValType}[]";
+                }
+                
             }
 
             string typeName = type.FullName;

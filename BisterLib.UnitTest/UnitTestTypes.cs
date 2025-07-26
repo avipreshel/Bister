@@ -10,6 +10,21 @@ using System.Threading.Tasks;
 
 namespace BisterLib.UnitTest
 {
+    public abstract class SomeAbstractClass
+    {
+        public string[] StringArrayProp { get; set; } = Array.Empty<string>();
+    }
+
+    public class InheritingFromSomeAbstractClass : SomeAbstractClass
+    { 
+        public int SomeIntProp { get; set; }
+    }
+
+    public class ClassWithAbstractProp
+    {
+        public SomeAbstractClass? SomeAbstractProp { get; set; } = null;
+    }
+
     public interface ISimpleTestClass
     {
     }

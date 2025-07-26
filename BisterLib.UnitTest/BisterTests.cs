@@ -13,6 +13,38 @@ namespace BisterLib.UnitTest
         {
             
         }
+        
+        [TestMethod]
+        public void Test_SystemArrayOfVector()
+        {
+            Vector<float>[] instance = new Vector<float>[2] { new Vector<float>() { X = 1f, Y = 2f }, new Vector<float>() { X = (float)Math.PI, Y = 4f } };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_SimpleTestClass()
+        {
+            var instance = new SimpleTestClass() { SomeString = "hello" };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_ClassWithAbstractProp()
+        {
+            var instance = new ClassWithAbstractProp() { SomeAbstractProp = new InheritingFromSomeAbstractClass() { SomeIntProp = 1, StringArrayProp = ["1", "2"] } };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_InheritingFromSomeAbstractClass()
+        {
+            var instance = new InheritingFromSomeAbstractClass() { SomeIntProp = 1, StringArrayProp = ["1", "2"] };
+
+            ValidateLogic(instance);
+        }
 
         [TestMethod]
         public void Test_HashSet()
