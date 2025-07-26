@@ -187,6 +187,8 @@ namespace BisterLib.UnitTest
         public DateTime[] ArrayPropDateTime { get; set; } = new DateTime[10];
         public TimeSpan[] ArrayPropTimeSpan { get; set; } = new TimeSpan[10];
         public ClassWithPrimitivesOnly[] ArrayOfClasses { get; set; } = new ClassWithPrimitivesOnly[1];
+
+        public Vector<double>[] ArrayOfStructs { get; set; } = Array.Empty<Vector<double>>();
     }
 
 

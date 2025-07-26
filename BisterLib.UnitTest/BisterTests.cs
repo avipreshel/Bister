@@ -17,7 +17,7 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_SystemArrayOfVector()
         {
-            Vector<float>[] instance = new Vector<float>[2] { new Vector<float>() { X = 1f, Y = 2f }, new Vector<float>() { X = (float)Math.PI, Y = 4f } };
+            Vector<float>[] instance = [new Vector<float>() { X = 1f, Y = 2f }, new Vector<float>() { X = (float)Math.PI, Y = 4f }];
 
             ValidateLogic(instance);
         }
@@ -295,6 +295,7 @@ namespace BisterLib.UnitTest
         [TestMethod]
         public void Test_ClassWithArrays_allempty()
         {
+            Bister.Instance.DebugPath = @"c:\temp\";
             var instance = new ClassWithArrays();
 
             ValidateLogic(instance);
@@ -353,7 +354,8 @@ namespace BisterLib.UnitTest
                 ArrayPropSByte = [1, 2, 3, 4],
                 ArrayPropDouble = [6.4, 9.4, 1.1, -99.223, Math.E, Math.PI],
                 ArraySystemObjects = [1, 2.2f, DateTime.UtcNow, TimeSpan.Zero, TestEnum.One, TestEnum.Three],
-                ArrayOfClasses = [ new ClassWithPrimitivesOnly() { PropTestEnum = TestEnum.One, Prop_bool = false, Prop_double = 1.0 }  ]
+                ArrayOfClasses = [ new ClassWithPrimitivesOnly() { PropTestEnum = TestEnum.One, Prop_bool = false, Prop_double = 1.0 }  ],
+                ArrayOfStructs = [ new Vector<double>() {X = 1.0,Y =2.0}, new Vector<double>() { X = Math.PI, Y = Math.Tau }]
             };
 
             ValidateLogic(instance);

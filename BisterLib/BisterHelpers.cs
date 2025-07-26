@@ -204,9 +204,9 @@ namespace BisterLib
                 string friendlyItemValType = GetFriendlyGenericTypeName(itemValType);
                 if (type.GetArrayRank() == 1)
                 {
-                    return $"{friendlyItemValType}[]";
+                    string dimStr = string.Join("",Enumerable.Range(0, type.GetArrayRank()).Select(i => "[]")); // will generate "[][]" according to array dim...
+                    return $"{friendlyItemValType}{dimStr}";
                 }
-                
             }
 
             string typeName = type.FullName;

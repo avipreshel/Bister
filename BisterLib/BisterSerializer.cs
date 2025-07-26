@@ -342,11 +342,12 @@ namespace BisterLib
 
             if (dims != 1)
             {
-                throw new NotImplementedException("Only supporting 1D arrays, not support for 2D arrays yet");
+                throw new NotImplementedException("Only supporting 1D arrays, not support for higher dimentions yet");
             }
 
             Type arrayItemType = arrayType.GetElementType();
-            if (arrayItemType == typeof(string))
+
+            if (arrayItemType == typeof(string) || arrayItemType == typeof(Enum) || arrayItemType == typeof(object) || arrayItemType == typeof(DateTime) || arrayItemType == typeof(TimeSpan))
             {
                 sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
             }
@@ -364,28 +365,7 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write(byteSpan.ToArray());");
                 sb.AppendLine(indentation + "}");
             }
-            else if (arrayItemType == typeof(Enum) || arrayItemType == typeof(object) || arrayItemType == typeof(DateTime) || arrayItemType == typeof(TimeSpan))
-            {
-                sb.AppendLine(indentation + $"StaticHelper.Serialize({instanceName},bw);");
-            }
-            else if (arrayItemType.IsEnum)
-            {
-                TypeCode arrayItemTypeCode = Type.GetTypeCode(arrayItemType);
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(true);");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
-                sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + "\t\t" + Bister.BinaryWriterMethod(arrayItemTypeCode, $"{instanceName}[i]") + ";");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
-            else if (arrayItemType.IsClass)
+            else 
             {
                 sb.AppendLine(indentation + $"if ({instanceName} == null)");
                 sb.AppendLine(indentation + "{");
@@ -397,35 +377,11 @@ namespace BisterLib
                 sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
                 sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
                 sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\tBister.Instance.Serialize({instanceName}[i],typeof({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}),bw);");
+                SerializeAnyType(sb, indentation + "\t\t", $"{instanceName}[i]", arrayItemType);
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
-            else
-            {
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(true);");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\tbw.Write((int){instanceName}.Length);");
-                sb.AppendLine(indentation + $"\tfor (int i = 0 ; i < {instanceName}.Length ; i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\tif({instanceName}[i] == null)");
-                sb.AppendLine(indentation + "\t\t{");
-                sb.AppendLine(indentation + "\t\t\tbw.Write(true);");
-                sb.AppendLine(indentation + "\t\t}");
-                sb.AppendLine(indentation + "\t\telse");
-                sb.AppendLine(indentation + "\t\t{");
-                sb.AppendLine(indentation + "\t\t\tbw.Write(false);");
-                sb.AppendLine(indentation + $"\t\t\tbw.Write(StaticHelper.GetFQTypeName({instanceName}[i].GetType()));");
-                sb.AppendLine(indentation + $"\t\t\tBister.Instance.Serialize({instanceName}[i],{instanceName}[i].GetType(),bw);");
-                sb.AppendLine(indentation + "\t\t}");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
+
         }
     }
 }

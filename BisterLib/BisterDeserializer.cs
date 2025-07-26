@@ -189,10 +189,11 @@ namespace BisterLib
 
             if (dims != 1)
             {
-                throw new NotImplementedException("Only supporting 1D arrays, not support for 2D arrays yet");
+                throw new NotImplementedException("Only supporting 1D arrays, not support for higher dimentions yet");
             }
 
             Type arrayItemType = arrayType.GetElementType();
+
             if (arrayItemType == typeof(string))
             {
                 sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemStringArray(br);");
@@ -212,60 +213,23 @@ namespace BisterLib
             {
                 sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemArrayOfEnums(br);");
             }
-            else if (arrayItemType.IsEnum)
-            {
-                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = null;");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {arrayItemType}[br.ReadInt32()];");
-                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = ({arrayItemType})br.{Bister.BinaryReaderMethod(Type.GetTypeCode(arrayItemType))};");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
-            else if (arrayItemType == typeof(object))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeserializeSystemArrayOfObjects(br);");
-            }
-            else if (arrayItemType == typeof(DateTime))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeSerializeDateTimeArr(br);");
-            }
-            else if (arrayItemType == typeof(TimeSpan))
-            {
-                sb.AppendLine(indentation + $"{instanceName} = StaticHelper.DeSerializeTimeSpanArr(br);");
-            }
-            else if (arrayItemType.IsClass)
-            {
-                sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = null;");
-                sb.AppendLine(indentation + "}");
-                sb.AppendLine(indentation + "else");
-                sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}[br.ReadInt32()];");
-                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
-                sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = ({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)})Bister.Instance.Deserialize(br,typeof({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}));");
-                sb.AppendLine(indentation + "\t}");
-                sb.AppendLine(indentation + "}");
-            }
             else
             {
+
+                
+                string friendlyItemType = BisterHelpers.GetFriendlyGenericTypeName(arrayItemType);
                 sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\t{instanceName} = null;");
                 sb.AppendLine(indentation + "}");
                 sb.AppendLine(indentation + "else");
                 sb.AppendLine(indentation + "{");
-                sb.AppendLine(indentation + $"\t{instanceName} = new {BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)}[br.ReadInt32()];");
+                sb.AppendLine(indentation + $"\t{instanceName} = new {friendlyItemType}[br.ReadInt32()];");
                 sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
                 sb.AppendLine(indentation + "\t{");
-                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = br.ReadBoolean()? null : ({BisterHelpers.GetFriendlyGenericTypeName(arrayItemType)})Bister.Instance.Deserialize(br,Type.GetType(br.ReadString()));");
+                sb.AppendLine(indentation + $"\t\t{friendlyItemType} item;");
+                DeserializeAnyType(sb, indentation + "\t\t", "item", arrayItemType);
+                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = item;");
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }
