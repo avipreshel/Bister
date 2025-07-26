@@ -11,6 +11,12 @@ using System.Threading.Tasks;
 
 namespace BisterLib.UnitTest
 {
+    public class SomeClassWithArrayAndDictionary
+    {
+        public Vector<int>[] IntArrayProp { get; set; } = Array.Empty<Vector<int>>();
+        public Dictionary<string, Vector<int>[]> StringToInt1DDictProp { get; set; } = new Dictionary<string, Vector<int>[]>();
+    }
+
     public abstract class SomeAbstractClass
     {
         public string[] StringArrayProp { get; set; } = Array.Empty<string>();

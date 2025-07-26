@@ -145,7 +145,7 @@ namespace BisterLib
         public static void PrintMethodName(StringBuilderVerbose sb, string indentation, Type objType = null)
         {
             var callingMethod = (new StackTrace()).GetFrame(1).GetMethod();
-            if (objType == null)
+            if (objType is null)
             {
                 sb.AppendLine(indentation + $"// Method : {callingMethod.DeclaringType.Name}.{callingMethod.Name}()");
             }
@@ -306,7 +306,7 @@ namespace BisterLib
 
             if (typeof(Exception).IsAssignableFrom(objType))
             {
-                sbSizeOfObject.Append($"+instance.Message.Length+(instance.StackTrace == null? 0 : instance.StackTrace.Length)+(instance.Source == null? 0 : instance.Source.Length)+8");
+                sbSizeOfObject.Append($"+instance.Message.Length+(instance.StackTrace is null? 0 : instance.StackTrace.Length)+(instance.Source is null? 0 : instance.Source.Length)+8");
             }
             else if (typeof(IDictionary).IsAssignableFrom(objType))
             {
@@ -409,11 +409,6 @@ namespace BisterLib
 
             
             dependencyFileNames.AddRange(BisterHelpers.RunTimeAssemblyFilePath.Value);
-
-            if (BisterHelpers.NetStandardAssemblyFilePath.Value != null)
-            {
-                dependencyFileNames.Add(BisterHelpers.NetStandardAssemblyFilePath.Value);
-            }
 
             List<PortableExecutableReference> dependencyReferences = dependencyFileNames
                 .Distinct()

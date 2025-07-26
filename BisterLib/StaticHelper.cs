@@ -23,7 +23,7 @@ namespace GeneratedNS
 
         public static bool PeekBooleanExt(this BinaryReader reader)
         {
-            if (reader == null) throw new ArgumentNullException(nameof(reader));
+            if (reader is null) throw new ArgumentNullException(nameof(reader));
             if (!reader.BaseStream.CanSeek) throw new InvalidOperationException("Stream does not support seeking.");
             long position = reader.BaseStream.Position;
             bool value = reader.ReadBoolean();
@@ -33,7 +33,7 @@ namespace GeneratedNS
 
         public static void Serialize(Exception ex, BinaryWriter bw)
         {
-            if (ex == null)
+            if (ex is null)
             {
                 bw.Write(true);
             }
@@ -41,9 +41,9 @@ namespace GeneratedNS
             {
                 bw.Write(false);
                 bw.Write(GetFQTypeName(ex.GetType()));
-                bw.Write(ex.Source == null ? BisterConsts.NullStr : ex.Source);
+                bw.Write(ex.Source is null ? BisterConsts.NullStr : ex.Source);
                 bw.Write(ex.Message);
-                bw.Write(ex.StackTrace == null ? BisterConsts.NullStr : ex.StackTrace);
+                bw.Write(ex.StackTrace is null ? BisterConsts.NullStr : ex.StackTrace);
                 bw.Write(ex.HResult);
             }
         }
@@ -89,7 +89,7 @@ namespace GeneratedNS
 
         public static void Serialize(IEnumerable<Enum> arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -106,7 +106,7 @@ namespace GeneratedNS
 
         public static void Serialize(IEnumerable<DateTime> arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -123,7 +123,7 @@ namespace GeneratedNS
 
         public static void Serialize(IEnumerable<TimeSpan> arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -170,7 +170,7 @@ namespace GeneratedNS
 
         public static void Serialize(IEnumerable<object> arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -243,7 +243,7 @@ namespace GeneratedNS
 
         public static void Serialize(string[] arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -253,7 +253,7 @@ namespace GeneratedNS
                 bw.Write(arr.Length);
                 for (int i = 0; i < arr.Length; i++)
                 {
-                    if (arr[i] == null)
+                    if (arr[i] is null)
                     {
                         bw.Write(true);
                     }
@@ -324,7 +324,7 @@ namespace GeneratedNS
 
         public static void Serialize(object item, BinaryWriter bw)
         {
-            if (item == null)
+            if (item is null)
             {
                 bw.Write(true);
             }
@@ -376,7 +376,7 @@ namespace GeneratedNS
 
         public static void Serialize(Enum item, BinaryWriter bw)
         {
-            if (item == null)
+            if (item is null)
             {
                 bw.Write(true);
             }
@@ -421,7 +421,7 @@ namespace GeneratedNS
 
         public static void Serialize(IEnumerable<string> arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -438,7 +438,7 @@ namespace GeneratedNS
 
         public static void Serialize(IEnumerable<int> arr, BinaryWriter bw)
         {
-            if (arr == null)
+            if (arr is null)
             {
                 bw.Write(true);
             }
@@ -456,7 +456,7 @@ namespace GeneratedNS
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static void Serialize(in string item, BinaryWriter bw)
         {
-            if (item == null)
+            if (item is null)
             {
                 bw.Write(true);
             }
@@ -600,7 +600,7 @@ namespace GeneratedNS
         {
             if (objType == typeof(string))
             {
-                if (instance == null)
+                if (instance is null)
                 {
                     bw.Write(true);
                 }
@@ -728,7 +728,7 @@ namespace GeneratedNS
 
         public static void SerializeArrayList(ArrayList instance, BinaryWriter bw)
         {
-            if (instance == null)
+            if (instance is null)
             {
                 bw.Write(true);
             }

@@ -15,9 +15,26 @@ namespace BisterLib.UnitTest
         }
 
         [TestMethod]
-        public void Test_CustomSerializer()
+        public void Test_SomeClassWithArrayAndDictionary()
         {
             Bister.Instance.DebugPath = @"c:\temp\bister\";
+            var instance = new SomeClassWithArrayAndDictionary()
+            {
+                IntArrayProp = [ new Vector<int>() { X = 1, Y = 1 }, new Vector<int>() { X = 2, Y = 2 }],
+                StringToInt1DDictProp = 
+                { 
+                    { "one", [new Vector<int>() { X = 1, Y = 1 }, new Vector<int>() { X = 2, Y = 2 }] },
+                    { "two", [new Vector<int>() { X = 3, Y = 3 }, new Vector<int>() { X = 4, Y = 4 }] },
+                }
+            };
+
+            ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_CustomSerializer()
+        {
+            
 
             Bister.Instance.RegisterSerializer(typeof(CustomSerializer.CustomClass), CustomSerializer.Instance);
 

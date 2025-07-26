@@ -14,12 +14,8 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
-            //IBisterTypeSerializer
-
             if (Bister.Instance.IsRegistredType(objType))
             {
-                //void Serialize(object instance, Type objType,BinaryWriter bw);
-                // void Serialize(object instance, Type objType,BinaryWriter bw);
                 sb.AppendLine(indentation + $"Bister.Instance.GetRegistredType({instanceName}.GetType()).Serialize({instanceName},bw);");
                 return;
             }
@@ -80,35 +76,11 @@ namespace BisterLib
             }
         }
 
-        private static void SerializeSystemDrawingBitmap(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
-        {
-            Bister.PrintMethodName(sb, indentation, objType);
-
-            string usefulName = BisterHelpers.GetUsefulName(instanceName);
-
-            sb.AppendLine(indentation + $"if ({instanceName} == null)");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(true);");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tbw.Write(false);");
-            sb.AppendLine(indentation + $"\tusing (MemoryStream memoryStream = new MemoryStream())");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName}.Save(memoryStream, ImageFormat.Tiff);");
-            sb.AppendLine(indentation + $"\t\tvar {usefulName}_blob = memoryStream.ToArray();");
-            sb.AppendLine(indentation + $"\t\tbw.Write({usefulName}_blob.Length);");
-            sb.AppendLine(indentation + $"\t\tbw.Write({usefulName}_blob);");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "}");
-
-        }
-
         private static void SerializeInterface(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
             // public void Serialize(object instance, Type objType, BinaryWriter bw)
-            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + $"if ({instanceName} is null)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(true);");
             sb.AppendLine(indentation + "}");
@@ -247,7 +219,7 @@ namespace BisterLib
         static void SerializeNullCheckStart(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + $"if ({instanceName} == null)");
+            sb.AppendLine(indentation + $"if ({instanceName} is null)");
             sb.AppendLine(indentation + "{");
             sb.AppendLine(indentation + "\tbw.Write(true);");
             sb.AppendLine(indentation + "}");
@@ -349,7 +321,7 @@ namespace BisterLib
             }
             else if (BisterHelpers.IsPrimitive(arrayItemType))
             {
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
+                sb.AppendLine(indentation + $"if ({instanceName} is null)");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\tbw.Write(true);");
                 sb.AppendLine(indentation + "}");
@@ -363,7 +335,7 @@ namespace BisterLib
             }
             else 
             {
-                sb.AppendLine(indentation + $"if ({instanceName} == null)");
+                sb.AppendLine(indentation + $"if ({instanceName} is null)");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\tbw.Write(true);");
                 sb.AppendLine(indentation + "}");

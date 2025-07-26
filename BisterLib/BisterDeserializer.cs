@@ -76,22 +76,6 @@ namespace BisterLib
             }
         }
 
-        private static void DeserializeSystemDrawingBitmap(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
-        {
-            Bister.PrintMethodName(sb, indentation, objType);
-            sb.AppendLine(indentation + "if (br.ReadBoolean())");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + $"\t{instanceName} = null;");
-            sb.AppendLine(indentation + "}");
-            sb.AppendLine(indentation + "else");
-            sb.AppendLine(indentation + "{");
-            sb.AppendLine(indentation + "\tusing (var ms = new MemoryStream(br.ReadBytes(br.ReadInt32())))");
-            sb.AppendLine(indentation + "\t{");
-            sb.AppendLine(indentation + $"\t\t{instanceName} = new Bitmap(ms);");
-            sb.AppendLine(indentation + "\t}");
-            sb.AppendLine(indentation + "}");
-        }
-
         private static void DeserializeInterface(StringBuilderVerbose sb, string indentation, string instanceName, Type objType)
         {
             Bister.PrintMethodName(sb, indentation, objType);
@@ -216,7 +200,8 @@ namespace BisterLib
             else
             {
 
-                
+                string usefulName = BisterHelpers.GetUsefulName(instanceName);
+                string iteratorIndexName = $"i{usefulName}";
                 string friendlyItemType = BisterHelpers.GetFriendlyGenericTypeName(arrayItemType);
                 sb.AppendLine(indentation + "if (br.ReadBoolean() == true)");
                 sb.AppendLine(indentation + "{");
@@ -225,11 +210,11 @@ namespace BisterLib
                 sb.AppendLine(indentation + "else");
                 sb.AppendLine(indentation + "{");
                 sb.AppendLine(indentation + $"\t{instanceName} = new {friendlyItemType}[br.ReadInt32()];");
-                sb.AppendLine(indentation + $"\tfor (int i = 0;i < {instanceName}.Length;i++)");
+                sb.AppendLine(indentation + $"\tfor (int {iteratorIndexName} = 0;{iteratorIndexName} < {instanceName}.Length;{iteratorIndexName}++)");
                 sb.AppendLine(indentation + "\t{");
                 sb.AppendLine(indentation + $"\t\t{friendlyItemType} item;");
                 DeserializeAnyType(sb, indentation + "\t\t", "item", arrayItemType);
-                sb.AppendLine(indentation + $"\t\t{instanceName}[i] = item;");
+                sb.AppendLine(indentation + $"\t\t{instanceName}[{iteratorIndexName}] = item;");
                 sb.AppendLine(indentation + "\t}");
                 sb.AppendLine(indentation + "}");
             }

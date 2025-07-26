@@ -64,13 +64,6 @@ namespace BisterLib
             }
         });
 
-        public static Lazy<string> NetStandardAssemblyFilePath = new Lazy<string>(() =>
-        {
-            var loadedModules = Process.GetCurrentProcess().Modules.Cast<ProcessModule>().ToList();
-            ProcessModule netStandard = loadedModules.FirstOrDefault(asm => asm.ModuleName == "netstandard.dll");
-            return netStandard == null ? null : netStandard.FileName;
-        });
-
         public static bool IsTopLevelInstanceDecleration(string instanceName)
         {
             return !instanceName.Contains(".") && !instanceName.Contains("[");
@@ -97,7 +90,7 @@ namespace BisterLib
 
         public static void GetAllDependentTypes(Type type, HashSet<Type> visited)
         {
-            if (type == null)
+            if (type is null)
                 throw new ArgumentNullException(nameof(type));
 
 
@@ -223,7 +216,7 @@ namespace BisterLib
                 currType = currType.BaseType;
 
             } while (currType != null);
-            if (currType == null)
+            if (currType is null)
             {
                 throw new Exception($"{objType} does not inherit or implement {genericTypeLookup}");
             }
@@ -233,7 +226,7 @@ namespace BisterLib
         public static Type GetGenericInterface(Type objType, Type genericInterface)
         {
             var iType = objType.GetInterfaces().FirstOrDefault(i => i.IsGenericType && i.GetGenericTypeDefinition() == genericInterface);
-            if (iType == null)
+            if (iType is null)
             {
                 throw new Exception($"{objType} does not inherit or implement {genericInterface}");
             }
@@ -292,7 +285,7 @@ namespace BisterLib
 
         public static bool MightContainCircularReference(Type objectType, Type propertyType)
         {
-            if (objectType == null || propertyType == null || propertyType == typeof(object))
+            if (objectType is null || propertyType is null || propertyType == typeof(object))
                 return false;
 
             bool isAssignable = propertyType.IsAssignableFrom(objectType);
@@ -309,7 +302,7 @@ namespace BisterLib
         private static void ProcessType(Type type, HashSet<Type> visited)
         {
             // Stop if type is null, void, or already processed
-            if (type == null || type == typeof(void))
+            if (type is null || type == typeof(void))
                 return;
 
             if (visited.Contains(type))
