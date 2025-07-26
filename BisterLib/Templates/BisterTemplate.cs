@@ -20,12 +20,6 @@ namespace GeneratedNS
     {
         public void Serialize(object instanceX, BinaryWriter bw)
         {
-            if (instanceX == null)
-            {
-                bw.Write(true);
-                return;
-            }
-            
             var instance = (___TYPE_NAME___)instanceX;
 ___SERIALIZER_BODY___
         }

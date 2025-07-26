@@ -40,6 +40,8 @@ namespace BisterLib
         /// <param name="objType"></param>
         /// <returns></returns>
         bool IsRegistredType(Type objType);
+
+        IBisterTypeSerializer GetRegistredType(Type objType);
     }
 
     public interface IBisterTypeSerializer

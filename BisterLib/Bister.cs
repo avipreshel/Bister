@@ -69,6 +69,18 @@ namespace BisterLib
             return _registredSerializer.ContainsKey(objType);
         }
 
+        public IBisterTypeSerializer GetRegistredType(Type objType)
+        {
+            if (_registredSerializer.TryGetValue(objType, out IBisterTypeSerializer result))
+            {
+                return result;
+            }
+            else
+            {
+                throw new Exception($"Type {objType} is not registred via Bister.Instance.RegisterSerializer()");
+            }
+        }
+
         public void SupressEnumerability(Type objType)
         {
             BisterHelpers.NonEnumerables.Add(objType);
@@ -156,7 +168,7 @@ namespace BisterLib
             string friendlyTypeName = BisterHelpers.GetFriendlyGenericTypeName(objType);
             sb.Replace("___TYPE_NAME___", friendlyTypeName);
 
-            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_').Replace("[]", "_1DARR_")}";
+            string serializerTypeName = $"Serializer_{friendlyTypeName.Replace(" ", string.Empty).Replace(',', '_').Replace('.', '_').Replace('<', '_').Replace('>', '_').Replace("[]", "_1DARR_").Replace("+", "_plus_")}";
 
             sb.Replace("___SERIALIZER_TYPE_NAME___", serializerTypeName);
 

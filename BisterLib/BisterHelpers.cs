@@ -181,7 +181,7 @@ namespace BisterLib
         {
             if (!type.IsGenericType && !type.IsArray)
             {
-                return type.FullName;
+                return type.FullName.Replace("+",".");
             }
 
             if (type.IsArray)
@@ -191,7 +191,7 @@ namespace BisterLib
                 if (type.GetArrayRank() == 1)
                 {
                     string dimStr = string.Join("",Enumerable.Range(0, type.GetArrayRank()).Select(i => "[]")); // will generate "[][]" according to array dim...
-                    return $"{friendlyItemValType}{dimStr}";
+                    return $"{friendlyItemValType}{dimStr}".Replace("+", ".");
                 }
             }
 
@@ -209,7 +209,7 @@ namespace BisterLib
                 genericArgumentNames[i] = GetFriendlyGenericTypeName(genericArguments[i]);
             }
 
-            return $"{typeName}<{string.Join(", ", genericArgumentNames)}>";
+            return $"{typeName}<{string.Join(", ", genericArgumentNames)}>".Replace("+", ".");
         }
 
         public static Type GetGenericAncestor(Type objType, Type genericTypeLookup)

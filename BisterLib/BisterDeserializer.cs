@@ -16,7 +16,7 @@ namespace BisterLib
 
             if (Bister.Instance.IsRegistredType(objType))
             {
-                sb.AppendLine(indentation + $"{instanceName} = ({BisterHelpers.GetFriendlyGenericTypeName(objType)})Bister.Instance.Deserialize(br,typeof({BisterHelpers.GetFriendlyGenericTypeName(objType)}));");
+                sb.AppendLine(indentation + $"{instanceName} = ({BisterHelpers.GetFriendlyGenericTypeName(objType)})Bister.Instance.GetRegistredType(typeof({BisterHelpers.GetFriendlyGenericTypeName(objType)})).Deserialize(br);");
                 return;
             }
 

@@ -5,6 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using System.Reflection.Metadata;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -212,4 +213,38 @@ namespace BisterLib.UnitTest
             Prop = new Dictionary<string, int>();
         }
     }
+
+    public class CustomSerializer : IBisterTypeSerializer
+    {
+        public static CustomSerializer Instance { get; } = new CustomSerializer();
+
+        public class CustomClass
+        { 
+            public int SomeField { get; set; }
+            public byte[] Blob { get; set; } = Array.Empty<byte>();
+
+            public CustomClass(byte[] blob)
+            {
+                Blob = blob;
+                SomeField = Blob.Length;
+            }
+        }
+
+        public object? Deserialize(BinaryReader br)
+        {
+            int length = br.ReadInt32();
+            byte[] blob = br.ReadBytes(length);
+            CustomClass instance = new CustomClass(blob);
+            return instance;
+        }
+
+        public void Serialize(object instanceX, BinaryWriter bw)
+        {
+            CustomClass instance = (CustomClass)instanceX;
+
+            bw.Write(instance.SomeField);
+            bw.Write(instance.Blob);
+        }
+    }
+
 }

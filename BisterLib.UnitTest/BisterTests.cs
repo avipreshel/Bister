@@ -13,7 +13,19 @@ namespace BisterLib.UnitTest
         {
             
         }
-        
+
+        [TestMethod]
+        public void Test_CustomSerializer()
+        {
+            Bister.Instance.DebugPath = @"c:\temp\bister\";
+
+            Bister.Instance.RegisterSerializer(typeof(CustomSerializer.CustomClass), CustomSerializer.Instance);
+
+            var instance = new CustomSerializer.CustomClass(Enumerable.Range(0, 1024).Select(i => (byte)i).ToArray());
+
+            ValidateLogic(instance);
+        }
+
         [TestMethod]
         public void Test_SystemArrayOfVector()
         {
@@ -28,6 +40,14 @@ namespace BisterLib.UnitTest
             var instance = new SimpleTestClass() { SomeString = "hello" };
 
             ValidateLogic(instance);
+        }
+
+        [TestMethod]
+        public void Test_NullSimpleTestClass()
+        {
+            SimpleTestClass? instance = null;
+
+            ValidateLogic(instance, isExpectingNull : true);
         }
 
         [TestMethod]

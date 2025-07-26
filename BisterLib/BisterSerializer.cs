@@ -14,10 +14,13 @@ namespace BisterLib
         {
             Bister.PrintMethodName(sb, indentation, objType);
 
+            //IBisterTypeSerializer
+
             if (Bister.Instance.IsRegistredType(objType))
             {
                 //void Serialize(object instance, Type objType,BinaryWriter bw);
-                sb.AppendLine(indentation + $"Bister.Instance.Serialize({instanceName},typeof({objType}),bw);");
+                // void Serialize(object instance, Type objType,BinaryWriter bw);
+                sb.AppendLine(indentation + $"Bister.Instance.GetRegistredType({instanceName}.GetType()).Serialize({instanceName},bw);");
                 return;
             }
 
